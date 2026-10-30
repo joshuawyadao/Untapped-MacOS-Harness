@@ -16,7 +16,8 @@ Build a reversible, version-pinned native macOS diagnostic harness around Untapp
 - [x] Attempt preparation and bounded offline startup on the pinned local artifact when safe; stop at any concrete signing/security/terms gate and record each unverified milestone. Never infer reward success from a visible UI.
 - [x] Update README, CONTRIBUTING, governance, and focused architecture/verification docs with ownership, isolation limits, rollback, actual results, and the explicit game-profile strategy needed before gameplay.
 - [x] Review staged files for vendor/private data, checkpoint coherent slices, and push this feature branch through save-branch. Do not open or merge a PR.
-- [ ] Demonstrate one correctly detected real card-reward screen and visually check the existing overlay. Blocked on an observable desktop startup and an agreed gameplay/profile strategy; no compatibility success is claimed.
+- [ ] Demonstrate one correctly detected real card-reward screen and visually check the existing overlay. Blocked by Gatekeeper rejecting the patched disposable companion and an agreed gameplay/profile strategy; no compatibility success is claimed.
+- [ ] Prepare a reviewable, opt-in outer-companion ad-hoc signing command and session-bound receipt guard, with synthetic tests. Do not execute signing until the owner explicitly approves the exact per-copy change. Preserve the five original entitlements, Hardened Runtime, nested code, and all game/OS protections.
 
 ## Open questions
 - None for implementation. Runtime approval gates are explicit constraints: leave terms untouched and request separate approval for any concrete signing or debugging-entitlement change if evidence shows one is needed.
@@ -42,3 +43,11 @@ Build a reversible, version-pinned native macOS diagnostic harness around Untapp
 - Implementation checkpoint: `a2d46db`. A second preparation of the final guarded patches passed Node syntax checks for both changed vendor chunks; a full packed-entry comparison confirmed exactly two changed entries and the source hash remained pinned. No second launch occurred. No processes from the first probe remained running after cleanup.
 - Documentation now covers runnable commands, architecture, evidence, reward comparison, and rollback. Vendor distributions, private sessions, and logs are outside the repository; no unrelated tracked changes were present at task start.
 - Save result: `codex/native-sts2-poc` pushed successfully to this repository’s `origin`; the working tree is scoped to the harness task. Checkpoints include `383ce9e`, `a2d46db`, and `35a01d4`. Runtime acceptance remains pending as listed above.
+
+## Resumed startup diagnosis
+
+- Owner unlocked the Mac. An unlocked 45-second startup probe still returned exit 1 with NOT_OBSERVED and empty output. Native inventory showed no companion window.
+- A second 20-second bounded reproduction was sampled at the same pre-JavaScript stall: only `_dyld_start`, 96 KiB footprint, and no loaded-image listing. A minimal `ELECTRON_RUN_AS_NODE` diagnostic also stalled without loading the companion JS. These were isolated diagnostic executions, not game tests.
+- Targeted macOS logs identified the immediate blocker: `syspolicyd` reported a Gatekeeper prompt and then terminated the exact sampled probe for Gatekeeper rejection. Outside-sandbox `codesign --verify --deep --strict` and `spctl --assess --type execute` both identify the modified `Contents/Resources/app.asar` as an invalid sealed resource; nested code verified.
+- The locked desktop was an observation limitation, not the startup cause. No security warning was approved or bypassed. No signature, entitlement, sandbox access, game/save state, or global protection was changed.
+- Proposed next experiment: explicitly approved ad-hoc re-signing of only a fresh disposable companion's outer bundle, retaining its original five entitlements and Hardened Runtime; no recursive signing, new entitlement, game change, or automatic Gatekeeper exception. Ad-hoc identity is not vendor/notarized identity and may still need a separately handled OS decision.

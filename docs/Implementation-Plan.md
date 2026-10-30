@@ -15,7 +15,7 @@ Build a reversible, version-pinned native macOS diagnostic harness around Untapp
 - [x] Add synthetic tests for malformed/changed archives, narrow patches, copy/source safety, launch isolation, and reward mismatches; run `python3 -m unittest discover -s tests -v`, Node syntax checks, repository hygiene, and `git diff --check`. Extend `CI Verify` for portable behavior tests; vendor code never runs in CI.
 - [x] Attempt preparation and bounded offline startup on the pinned local artifact when safe; stop at any concrete signing/security/terms gate and record each unverified milestone. Never infer reward success from a visible UI.
 - [x] Update README, CONTRIBUTING, governance, and focused architecture/verification docs with ownership, isolation limits, rollback, actual results, and the explicit game-profile strategy needed before gameplay.
-- [ ] Review staged files for vendor/private data, checkpoint coherent slices, and push this feature branch through save-branch. Do not open or merge a PR.
+- [x] Review staged files for vendor/private data, checkpoint coherent slices, and push this feature branch through save-branch. Do not open or merge a PR.
 - [ ] Demonstrate one correctly detected real card-reward screen and visually check the existing overlay. Blocked on an observable desktop startup and an agreed gameplay/profile strategy; no compatibility success is claimed.
 
 ## Open questions
@@ -41,3 +41,4 @@ Build a reversible, version-pinned native macOS diagnostic harness around Untapp
 - Next runtime action requires an unlocked desktop for observing startup. Any future signing/debugging-access change still requires an exact, separately approved proposal. One real card-reward match remains the acceptance milestone.
 - Implementation checkpoint: `a2d46db`. A second preparation of the final guarded patches passed Node syntax checks for both changed vendor chunks; a full packed-entry comparison confirmed exactly two changed entries and the source hash remained pinned. No second launch occurred. No processes from the first probe remained running after cleanup.
 - Documentation now covers runnable commands, architecture, evidence, reward comparison, and rollback. Vendor distributions, private sessions, and logs are outside the repository; no unrelated tracked changes were present at task start.
+- Save result: `codex/native-sts2-poc` pushed successfully to this repository’s `origin`; the working tree is scoped to the harness task. Checkpoints include `383ce9e`, `a2d46db`, and `35a01d4`. Runtime acceptance remains pending as listed above.

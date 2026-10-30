@@ -9,6 +9,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from .asar import Archive, HarnessError, sha256
@@ -158,7 +159,7 @@ def stop_probe(process):
     process.wait()
 
 
-def launch(session, seconds):
+def _validate_launch_copy(session):
     if platform.system() != "Darwin":
         raise HarnessError("Launch requires macOS with sandbox-exec; there is no unsandboxed fallback")
     session = session.resolve(strict=True)
@@ -178,6 +179,11 @@ def launch(session, seconds):
         raise HarnessError("Profile must not be a symlink to shared settings or saves")
     if (session / "signing.json").exists():
         verify_signed_copy(session)
+    return session, report, app
+
+
+def launch(session, seconds):
+    session, report, app = _validate_launch_copy(session)
     # No silent continuation after terms: each CLI session is a single fresh startup probe.
     if (session / "launch.json").exists():
         raise HarnessError("Startup probes are single-use; prepare a fresh session")
@@ -204,6 +210,50 @@ def launch(session, seconds):
             stop_probe(process)
     write_json(session / "launch.json", result)
     return status(session)
+
+
+def launch_outer(session, seconds, approved=False):
+    """Fresh-profile retry with only the outer sandbox, after explicit approval."""
+    if not approved:
+        raise HarnessError("Explicit owner approval required for Chromium --no-sandbox")
+    session, manifest, app = _validate_launch_copy(session)
+    if not (session / "signing.json").is_file():
+        raise HarnessError("Outer-only startup requires the verified signed disposable copy")
+    attempt = Path(tempfile.mkdtemp(prefix="outer-attempt-", dir=session))
+    profile = attempt / "profile"
+    profile.mkdir(mode=0o700)
+    (profile / "temp").mkdir(mode=0o700)
+    (session / "t").mkdir(mode=0o700, exist_ok=True)
+    write_json(attempt / "manifest.json", {
+        **manifest, "prepared_session": str(session),
+        "app_location": str(app), "profile_is_fresh": True,
+    })
+    policy = attempt / "offline.sb"
+    policy.write_text(sandbox_profile(session, Path.home().resolve())
+                      + '\n(allow network* (subpath ' + json.dumps(str(session)) + '))\n')
+    environment = launch_environment(session)
+    environment["UC_TEST_SANDBOX_DIR"] = str(profile)
+    environment["TMPDIR"] = str(profile / "temp")
+    command = ["/usr/bin/sandbox-exec", "-f", str(policy),
+               str(app / "Contents/MacOS/Untapped.gg Companion"),
+               "--user-data-dir=" + str(profile), "--no-sandbox"]
+    result = {"startup": "ATTEMPTED", "seconds_limit": seconds,
+              "chromium_sandbox": False, "outer_sandbox_retained": True,
+              "network": "LOOPBACK_AND_SESSION_UNIX", "fresh_profile": True}
+    write_json(attempt / "launch.json", result)
+    with (attempt / "stdout.log").open("xb") as output:
+        process = subprocess.Popen(command, cwd=session, env=environment,
+                                   stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
+        try:
+            result["exit_code"] = process.wait(timeout=seconds)
+        except subprocess.TimeoutExpired:
+            result["time_limit_reached"] = True
+        finally:
+            stop_probe(process)
+    write_json(attempt / "launch.json", result)
+    report = {**status(attempt), "attempt_dir": str(attempt)}
+    write_json(attempt / "report.json", report)
+    return report
 
 
 def load_events(session):
@@ -307,6 +357,10 @@ def main(argv=None):
     start = sub.add_parser("launch", help="Run one bounded offline startup probe; never starts the game")
     start.add_argument("session", type=Path)
     start.add_argument("--seconds", type=int, default=20, choices=range(1, 61), metavar="1..60")
+    outer = sub.add_parser("launch-outer", help="Only after approval: fresh-profile startup retaining the outer sandbox")
+    outer.add_argument("session", type=Path)
+    outer.add_argument("--seconds", type=int, default=45, choices=range(1, 61), metavar="1..60")
+    outer.add_argument("--approve-outer-sandbox-only", action="store_true")
     report = sub.add_parser("status")
     report.add_argument("session", type=Path)
     compare = sub.add_parser("compare-reward")
@@ -325,13 +379,17 @@ def main(argv=None):
             result = sign_copy(args.session, approved=args.approve_ad_hoc_signing)
         elif args.command == "launch":
             result = launch(args.session, args.seconds)
+        elif args.command == "launch-outer":
+            result = launch_outer(args.session, args.seconds, approved=args.approve_outer_sandbox_only)
         elif args.command == "status":
             result = status(args.session)
         else:
             result = compare_reward(load_events(args.session), read_json(args.expected), args.reward_index)
         print(json.dumps(result, indent=2))
-        failed_startup = args.command == "launch" and (
-            result.get("startup") != "ELECTRON_READY" or bool(result.get("startup_blockers")))
+        launch_exit = (result.get("launch") or {}).get("exit_code", 0)
+        failed_startup = args.command in ("launch", "launch-outer") and (
+            result.get("startup") != "ELECTRON_READY" or bool(result.get("startup_blockers"))
+            or launch_exit not in (None, 0))
         return 1 if result.get("matches") is False or failed_startup else 0
     except (HarnessError, OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         print(f"Harness stopped: {error}", file=sys.stderr)

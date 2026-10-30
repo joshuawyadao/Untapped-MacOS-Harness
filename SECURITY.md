@@ -15,6 +15,7 @@ This is an independently maintained project with no guaranteed response time. Fi
 - Never commit credentials, access tokens, signing identities, provisioning profiles, account cookies, or private keys.
 - Keep real game saves, account identifiers, unredacted logs, screenshots, and network captures outside Git. Use synthetic fixtures and redact shared evidence.
 - Keep proprietary game and companion binaries or assets outside this repository.
+- Launch disposable companion copies only through the guarded CLI supervisor. Native Electron can initialize before the JavaScript environment guard; opening a copy directly or through an app-launching UI API is not confined by that guard. Use non-launching observation during bounded probes.
 - Review the staged diff before every commit. Ignore rules do not protect a file already tracked by Git.
 - GitHub secret scanning and push protection cover supported secret patterns. The local checker adds filename and private-key checks; neither guarantees that all sensitive data will be detected.
 

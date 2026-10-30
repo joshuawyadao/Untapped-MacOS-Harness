@@ -2,7 +2,7 @@
 
 An unofficial, experimental harness for investigating whether the **existing Untapped.gg companion** can work with native macOS Slay the Spire 2.
 
-**Status: diagnostic proof of concept; Electron startup verified, companion UI blocked.** Owner-approved ad-hoc signing of one disposable copy succeeded. It reaches Electron readiness, then exits on socket setup and child sandbox initialization failures. Game attachment, reward reading, and overlay display remain **unverified**.
+**Status: diagnostic proof of concept; protected startup reaches Terms in logs.** Owner-approved companion-only signing and a bounded outer-sandbox launch now start Core and log its Terms screen. Manual visual review/acceptance is pending. Game attachment, reward reading, and overlay display remain **unverified**.
 
 ## What this repository provides
 
@@ -23,7 +23,15 @@ python3 -m harness.cli status /private/tmp/untapped-sts2-session
 
 `prepare` requires a **new** session path outside the repository and copies only the companion; it does not change the supplied app or the installed game. `launch` is single use per session and has a 1–60 second limit. It uses macOS `sandbox-exec` with local settings/logs, blocks real-home reads and writes outside the session, and permits only loopback networking. There is no unsandboxed fallback. A launch that does not reach `ready`, or reports a recognized startup blocker, returns a nonzero status. This probe does not launch the game or accept Untapped's terms.
 
-For a fresh, unlaunched session, `python3 -m harness.cli signing-proposal /private/tmp/untapped-sts2-session` prints the exact outer-companion signing command and prepares its entitlement plist without executing signing. `sign-copy` requires explicit owner approval and the `--approve-ad-hoc-signing` flag. It replaces only the disposable companion's outer signature with a local ad-hoc signature, preserves its original entitlements and Hardened Runtime, and records the resulting executable hash. It does not add game access or guarantee Gatekeeper acceptance. See [signing results](docs/Verification.md#companion-only-signing) and the [next proposed experiment](docs/Verification.md#next-experiment-requires-separate-approval).
+For a fresh, unlaunched session, `python3 -m harness.cli signing-proposal /private/tmp/untapped-sts2-session` prints the exact outer-companion signing command and prepares its entitlement plist without executing signing. `sign-copy` requires explicit owner approval and the `--approve-ad-hoc-signing` flag. It replaces only the disposable companion's outer signature with a local ad-hoc signature, preserves its original entitlements and Hardened Runtime, and records the resulting executable hash. It does not add game access or guarantee Gatekeeper acceptance. See [signing results](docs/Verification.md#companion-only-signing) and the [approved single-layer experiment](docs/Verification.md#approved-single-layer-experiment).
+
+After separate explicit approval of the Chromium child-sandbox tradeoff, the repeatable outer-only command is:
+
+```sh
+python3 -m harness.cli launch-outer /private/tmp/untapped-sts2-session --seconds 45 --approve-outer-sandbox-only
+```
+
+This requires the signed copy and rechecks its hashes/signature. Each run creates a new private `outer-attempt-*` profile and logs, retaining the outer home/write/network restrictions and allowing Unix sockets only inside that session. It prints `attempt_dir`; pass that path to `status` to inspect the run. Never open the copied app directly in Finder or through an automation API that can launch it: native Electron initialization precedes the JavaScript guard. Observe using non-launching inventory or manual interaction. Terms acceptance remains the user's decision.
 
 If a real reward event is later captured, manually transcribe the visible cards and normalized positions into a private JSON file, then compare it:
 

@@ -1,0 +1,33 @@
+name: CI Verify
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: CI Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Check repository hygiene and documentation links
+        run: python3 scripts/check_repository.py
+      - name: Check committed whitespace
+        run: git show --format= --check -m --first-parent HEAD
+      - name: Check hook syntax
+        run: sh -n .githooks/pre-push

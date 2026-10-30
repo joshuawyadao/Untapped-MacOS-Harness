@@ -1,0 +1,18 @@
+name: Feature proposal
+description: Propose a focused improvement or compatibility investigation.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What macOS workflow or project need does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Proposed outcome
+      description: Describe success, known constraints, and how to verify it.
+    validations:
+      required: true

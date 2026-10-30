@@ -134,6 +134,7 @@ def launch_environment(session):
     return {
         "PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "en_US.UTF-8", "NODE_ENV": "production",
         "TMPDIR": str(session / "profile/temp"), "UC_TEST_SANDBOX_DIR": str(session / "profile"),
+        "MAC_CHROMIUM_TMPDIR": str(session / "t"),
         "UC_TEST_SANDBOX_ID": "native-sts2-harness", "UC_SKIP_UPDATE_CHECKS": "1",
         "UNTAPPED_HARNESS_OFFLINE": "1",
     }
@@ -182,6 +183,7 @@ def launch(session, seconds):
         raise HarnessError("Startup probes are single-use; prepare a fresh session")
     for directory in ("temp", "cache", "sessionData"):
         (session / "profile" / directory).mkdir(exist_ok=True)
+    (session / "t").mkdir(mode=0o700, exist_ok=True)
     policy = session / "offline.sb"
     policy.write_text(sandbox_profile(session, Path.home().resolve()))
     exe = app / "Contents/MacOS/Untapped.gg Companion"
@@ -217,10 +219,21 @@ def status(session):
     events = load_events(session)
     names = {event.get("event") for event in events}
     log_path = session / "profile/log.log"
-    terms_seen = log_path.exists() and "[Core] Showing Terms of Service" in log_path.read_text(errors="replace")
+    log_text = log_path.read_text(errors="replace") if log_path.exists() else ""
+    terms_seen = "[Core] Showing Terms of Service" in log_text
+    stdout_path = session / "stdout.log"
+    stdout = stdout_path.read_text(errors="replace") if stdout_path.exists() else ""
+    blockers = []
+    if "Failed to create socket directory" in stdout:
+        blockers.append("singleton_socket_directory")
+    if "sandbox initialization failed: Operation not permitted" in stdout:
+        blockers.append("child_sandbox_initialization")
+    core_initialized = "[Core] Fully initialized" in log_text
     return {
         "static_inspection": "VERIFIED" if (session / "manifest.json").exists() else "UNTESTED",
         "startup": "ELECTRON_READY" if "ready" in names else "BOOTSTRAP_ONLY" if "bootstrap" in names else "NOT_OBSERVED",
+        "startup_blockers": blockers,
+        "companion_initialization": "CORE_INITIALIZED_LOGGED" if core_initialized else "TERMS_LOGGED" if terms_seen else "NOT_OBSERVED",
         "window_detection": "OBSERVED" if "window-detected" in names else "UNTESTED",
         "attachment": "CONNECT_ACKNOWLEDGED" if "reader-connected" in names else "ATTEMPTED" if "attach-attempt" in names else "UNTESTED",
         "state_reading": "REWARD_EVENT_OBSERVED" if "reward" in names else "UNTESTED",
@@ -317,7 +330,8 @@ def main(argv=None):
         else:
             result = compare_reward(load_events(args.session), read_json(args.expected), args.reward_index)
         print(json.dumps(result, indent=2))
-        failed_startup = args.command == "launch" and result.get("startup") != "ELECTRON_READY"
+        failed_startup = args.command == "launch" and (
+            result.get("startup") != "ELECTRON_READY" or bool(result.get("startup_blockers")))
         return 1 if result.get("matches") is False or failed_startup else 0
     except (HarnessError, OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         print(f"Harness stopped: {error}", file=sys.stderr)

@@ -2,7 +2,7 @@
 
 An unofficial, experimental harness for investigating whether the **existing Untapped.gg companion** can work with native macOS Slay the Spire 2.
 
-**Status: diagnostic proof of concept.** The pinned Mac companion was inspected and a disposable copy was prepared. One bounded offline launch produced no startup event or log, so startup, game attachment, reward reading, and overlay display are **unverified**. There is no installable compatibility release or demonstrated recommendation quality.
+**Status: diagnostic proof of concept; startup blocked by Gatekeeper.** Static inspection and copy preparation work. Unlocked startup diagnostics identify an invalid sealed resource in the patched copy. No signing change has been executed. Game attachment, reward reading, and overlay display remain **unverified**.
 
 ## What this repository provides
 
@@ -22,6 +22,8 @@ python3 -m harness.cli status /private/tmp/untapped-sts2-session
 ```
 
 `prepare` requires a **new** session path outside the repository and copies only the companion; it does not change the supplied app or the installed game. `launch` is single use per session and has a 1–60 second limit. It uses macOS `sandbox-exec` with local settings/logs, blocks real-home reads and writes outside the session, and permits only loopback networking. There is no unsandboxed fallback. A launch that does not reach `ready` returns a nonzero status. This probe does not launch the game or accept Untapped's terms.
+
+For a fresh, unlaunched session, `python3 -m harness.cli signing-proposal /private/tmp/untapped-sts2-session` prints the exact outer-companion signing command and prepares its entitlement plist without executing signing. `sign-copy` requires explicit owner approval and the `--approve-ad-hoc-signing` flag. It replaces only the disposable companion's outer signature with a local ad-hoc signature, preserves its original entitlements and Hardened Runtime, and records the resulting executable hash. It does not add game access or guarantee Gatekeeper acceptance. See the [approval proposal](docs/Verification.md#proposed-next-step-requires-owner-approval).
 
 If a real reward event is later captured, manually transcribe the visible cards and normalized positions into a private JSON file, then compare it:
 

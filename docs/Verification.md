@@ -7,13 +7,31 @@ This record distinguishes static inspection, startup, game detection, reader att
 | Static inspection | Verified | Exact archive hash, guarded STS2 gates, bundled overlay/reader, and both Electron fuse wires `10110001` reproduced. |
 | Source and preparation | Verified | Source signature valid outside the Codex sandbox; a copy-only patched session was prepared. Signature checks inside the Codex sandbox were misleading, so that environment is not used to judge vendor validity. |
 | Offline policy | Smoke-tested | Real-home read, outside write, and remote IP socket denied; session write and loopback allowed. |
-| Companion startup | **Not observed** | One 15-second offline launch hit its time limit with no bootstrap event, vendor log, or stdout. Cause unknown. The Mac UI could not be inspected because it was locked; that does not establish the cause. |
+| Companion startup | **Blocked by Gatekeeper before JavaScript** | An unlocked 45-second retry still produced no bootstrap or log. A sampled 20-second reproduction was rejected by Gatekeeper according to targeted `syspolicyd` logs. Outside-sandbox `codesign` and `spctl` identify the patched ASAR as an invalid sealed resource. |
 | Native game window detection | Untested | Requires a `window-detected` event from the copied companion. |
 | Reader attachment | Untested | Requires `attach-attempt`, then `reader-connected` after vendor `connect()` reports success. The `status` label is `CONNECT_ACKNOWLEDGED`: native connection and runtime wrapper setup were acknowledged, but later game-context traversal remains unproved. Window detection alone is insufficient. |
 | Reward state | Untested | Requires a real `reward` event with card IDs, upgrades, and normalized positions matching the visible game screen. |
 | Overlay and recommendations | Untested | Need visual overlay evidence and separate advice validation; neither follows from a reward event. |
 
-The preparation made no signing or entitlement change. No game was launched, no save was read, no terms were accepted, and no account or run was uploaded. Twenty synthetic tests passed, including Node VM execution of the original bootstrap against stubs; vendor code and native modules were not executed in that suite. The CI test job checks portable harness behavior and repository hygiene, not macOS game compatibility.
+The preparation made no signing or entitlement change. No game was launched, no save was read, no terms were accepted, and no account or run was uploaded. Thirty synthetic tests passed, including Node VM execution of the original bootstrap against stubs and ten signing tests with all codesign calls mocked. Vendor code and native modules were not executed in that suite. The CI test job checks portable harness behavior and repository hygiene, not macOS game compatibility.
+
+The earlier locked desktop prevented UI inspection but was not the startup cause. The unlocked desktop inventory showed no companion window. A process sample contained only `_dyld_start`, a 96 KiB footprint, and no loaded-image listing; a minimal Electron run-as-Node probe stalled before companion JavaScript as well. The decisive evidence is the OS log's explicit Gatekeeper rejection, supported by the invalid-resource assessments. Nested helpers/frameworks verified. No OS warning was approved or bypassed.
+
+## Proposed next step: requires owner approval
+
+For one fresh disposable session, re-sign **only the outer companion bundle** ad hoc while retaining Hardened Runtime and its five existing true entitlements: debugger, JIT, unsigned executable memory, DYLD environment variables, and disabled library validation. Add no entitlement, including `get-task-allow`. Do not sign the game or recursively sign nested code.
+
+The reviewable command produced by `signing-proposal` has this form:
+
+```sh
+/usr/bin/codesign --force --sign - --options runtime --timestamp=none \
+  --entitlements /private/tmp/untapped-sts2-session/companion-entitlements.plist \
+  /private/tmp/untapped-sts2-session/Companion.app
+```
+
+Only after explicit owner approval, `python3 -m harness.cli sign-copy /private/tmp/untapped-sts2-session --approve-ad-hoc-signing` executes that operation, verifies both architectures' entitlements and the nested code, and writes `signing.json`. Launch accepts the specific resulting executable hash while retaining its ASAR/framework/native-reader guards and re-verifying the signed copy. The receipt records the local operation; it is not an authorization credential or vendor trust.
+
+Ad-hoc signing replaces Untapped's Developer ID identity for that copy and provides no vendor notarization. Gatekeeper may still require a separate user decision. No signing command, warning exception, quarantine removal, or global protection change has been performed. Roll back by discarding only the disposable session. Apple's [code-signing guidance](https://developer.apple.com/library/archive/technotes/tn2206/_index.html) distinguishes signing nested code from recursive verification.
 
 ## Commands and private evidence
 

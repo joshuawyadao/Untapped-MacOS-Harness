@@ -14,6 +14,7 @@ from pathlib import Path
 from .asar import Archive, HarnessError, sha256
 from .patches import (ASAR_SHA256, VERSION, OVERLAY, RUNTIME, SCRY, SCRY_SHA256,
                       EXECUTABLE_SHA256, FRAMEWORK_SHA256, patched_entries)
+from .signing import (signing_proposal, sign_copy, expected_executable_hash, verify_signed_copy)
 
 ROOT = Path(__file__).resolve().parents[1]
 FUSE_SENTINEL = b"dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX"
@@ -165,7 +166,7 @@ def launch(session, seconds):
     if sha256((app / "Contents/Resources/app.asar").read_bytes()) != report["patched_asar_sha256"]:
         raise HarnessError("Prepared archive changed; create a new session")
     binary_pins = {
-        "MacOS/Untapped.gg Companion": EXECUTABLE_SHA256,
+        "MacOS/Untapped.gg Companion": expected_executable_hash(session, report),
         "Frameworks/Electron Framework.framework/Versions/A/Electron Framework": FRAMEWORK_SHA256,
         "Resources/app.asar.unpacked/" + SCRY: SCRY_SHA256,
     }
@@ -174,6 +175,8 @@ def launch(session, seconds):
             raise HarnessError("Prepared native binary changed; create a new session")
     if (session / "profile").resolve() != session / "profile":
         raise HarnessError("Profile must not be a symlink to shared settings or saves")
+    if (session / "signing.json").exists():
+        verify_signed_copy(session)
     # No silent continuation after terms: each CLI session is a single fresh startup probe.
     if (session / "launch.json").exists():
         raise HarnessError("Startup probes are single-use; prepare a fresh session")
@@ -283,6 +286,11 @@ def main(argv=None):
     prep = sub.add_parser("prepare", help="Create a fresh disposable patched companion session")
     prep.add_argument("app", type=Path)
     prep.add_argument("session", type=Path)
+    proposal = sub.add_parser("signing-proposal", help="Describe a per-copy signing change without executing it")
+    proposal.add_argument("session", type=Path)
+    sign = sub.add_parser("sign-copy", help="Only after explicit owner approval: ad-hoc sign the outer companion")
+    sign.add_argument("session", type=Path)
+    sign.add_argument("--approve-ad-hoc-signing", action="store_true")
     start = sub.add_parser("launch", help="Run one bounded offline startup probe; never starts the game")
     start.add_argument("session", type=Path)
     start.add_argument("--seconds", type=int, default=20, choices=range(1, 61), metavar="1..60")
@@ -298,6 +306,10 @@ def main(argv=None):
             result = inspect_app(args.app)[0]
         elif args.command == "prepare":
             result = prepare(args.app, args.session)
+        elif args.command == "signing-proposal":
+            result = signing_proposal(args.session)
+        elif args.command == "sign-copy":
+            result = sign_copy(args.session, approved=args.approve_ad_hoc_signing)
         elif args.command == "launch":
             result = launch(args.session, args.seconds)
         elif args.command == "status":

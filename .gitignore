@@ -1,0 +1,47 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
+.aws/
+.ssh/
+.codex/
+.claude/
+.vscode/
+.idea/
+
+# Build and editor state
+.build/
+.swiftpm/
+DerivedData/
+build/
+xcuserdata/
+*.xcuserstate
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+node_modules/
+coverage/
+
+# Local investigation data and generated output
+/artifacts/
+/captures/
+/logs/
+/scratch/
+/tmp/
+/game-data/
+/untapped-data/
+*.log
+.brooks-lint-history.json

@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+# Inspect destination refs, including explicit refspecs and branch deletion.
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$remote_ref" = "refs/heads/main" ]; then
+        echo "Push blocked: main is protected. Push a feature branch and open a pull request." >&2
+        exit 1
+    fi
+done

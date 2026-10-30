@@ -1,0 +1,27 @@
+name: Bug report
+description: Report a reproducible project problem.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Report security issues privately using the Security tab. Redact logs and keep personal data, credentials, and proprietary assets out of attachments."
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: macOS version, Apple silicon or Intel, project revision, and game/companion versions if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include the smallest reproducible steps and redacted evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true

@@ -1,45 +1,43 @@
 # Contributing
 
-This project aims to make Untapped.gg work with Slay the Spire 2 on macOS. Compatibility research, reproducible bug reports, and focused implementation changes are welcome.
+This project investigates native macOS compatibility between the official Untapped.gg companion and Slay the Spire 2. Reproducible evidence and focused original-code contributions are welcome.
 
-## Local setup
+## Local setup and checks
 
-Install Git and Python 3.9 or newer, then clone the repository. Contributors without write access should fork it first.
+Install Git, Python 3.9 or newer, and Node 18 or newer for the stubbed bootstrap test. The harness CLI uses only Python's standard library; neither vendor software nor the game is needed for CI and synthetic tests.
 
 ```sh
 git clone https://github.com/joshuawyadao/Untapped-MacOS-Harness.git
 cd Untapped-MacOS-Harness
 git config --local core.hooksPath .githooks
 git switch -c feat/short-description
+python3 -m unittest discover -s tests -v
+node --check harness/bootstrap.cjs
+python3 scripts/check_repository.py
+git diff --check
 ```
 
-The local hook blocks pushes that update or delete `main` on any remote. GitHub also enforces the protected branch rules independently of local hooks.
+The local hook blocks pushes to `main`. Repository hygiene checks examine tracked files, so rerun after staging new files. They detect common sensitive paths, private-key material, large files, and broken relative Markdown links; they are not a complete secret scanner. The test suite uses synthetic archives and Node stubs. Passing tests or `CI Verify` does not prove companion startup or game integration.
 
 ## Make a change
 
 1. Start a focused branch from the latest `main`; use `feat/`, `fix/`, or `docs/` with a short description.
-2. Explain the problem and include reproducible evidence. Use synthetic or redacted data for integration fixtures.
-3. Update relevant documentation and add behavior tests when changing executable harness behavior.
-4. Run the checks below, commit the intended files, and push your branch.
-5. Open a pull request targeting `main` and complete its checklist.
+2. Explain the problem with the exact companion/game versions and state whether evidence came from static inspection, startup, detection, attachment, state reading, or overlay display. Use synthetic or redacted fixtures.
+3. Update [architecture](docs/Harness-Architecture.md) and [verification](docs/Verification.md) when behavior or evidence changes. Add focused behavior tests for executable changes.
+4. Run the checks above, stage only task files, review the staged diff, commit, and push the branch.
+5. Open a PR targeting `main`; wait for the required `CI Verify` and resolve review discussions.
 
 ```sh
-python3 scripts/check_repository.py
-git diff --check
 git add path/to/your/file
 git diff --cached --check
 git commit -m "Describe the change"
 git push -u origin HEAD
 ```
 
-The checker examines tracked files, so rerun it after staging new files. It rejects common sensitive filenames, private-key material, large files, and broken relative Markdown links. It is a hygiene check, not a complete secret scanner. No harness build or game integration suite exists yet.
+PRs require a current base branch and passing `CI Verify`; squash merging is enabled. Human approvals are optional during solo maintenance. See [repository governance](docs/Repository-Governance.md).
 
-PRs require `CI Verify` from GitHub Actions, an up-to-date branch, and resolved review discussions. Squash merging is the only enabled merge method. Human approvals are optional while the project has a solo maintainer; PRs remain mandatory. Maintainers merge through GitHub after reviewing the final diff and check results.
+## Vendor artifacts and privacy
 
-## Reports and sensitive material
+Keep proprietary companion/game apps and modified distributions, real saves, account identifiers, screenshots, network captures, and raw probe logs outside Git. The prepared session belongs in a private location such as `/private/tmp/untapped-sts2-session`; do not share it as a release artifact. Review the [security policy](SECURITY.md) before publishing evidence. The repository's [MIT License](LICENSE) covers original harness work only.
 
-Use the issue templates for bugs and proposals. Include macOS version, processor architecture, relevant game/companion versions, reproduction steps, and expected versus actual behavior when available.
-
-Use [private vulnerability reporting](https://github.com/joshuawyadao/Untapped-MacOS-Harness/security/advisories/new) for security issues. Follow the [security policy](SECURITY.md) before attaching logs, screenshots, or captures. Keep credentials, account details, game saves, and proprietary software out of commits and public reports.
-
-Contributions to original project work are provided under the repository's [MIT License](LICENSE). Include attribution for permitted third-party dependencies and assets.
+Do not start live gameplay until a game-profile, saves, and Steam Cloud strategy is established. A copied app alone does not isolate them. The harness leaves terms acceptance to the user and makes no signing or debugging-entitlement change; any such step needs a separately reviewed, specific proposal. Do not disable system protections globally.

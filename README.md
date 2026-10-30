@@ -1,49 +1,45 @@
 # Untapped MacOS Harness
 
-An unofficial compatibility harness aiming to make **Untapped.gg work with the macOS version of Slay the Spire 2**.
+An unofficial, experimental harness for investigating whether the **existing Untapped.gg companion** can work with native macOS Slay the Spire 2.
 
-**Status: initial development.** This repository currently contains the collaboration, security, and verification foundation. The harness has not been implemented, and working macOS compatibility has not yet been demonstrated.
+**Status: diagnostic proof of concept.** The pinned Mac companion was inspected and a disposable copy was prepared. One bounded offline launch produced no startup event or log, so startup, game attachment, reward reading, and overlay display are **unverified**. There is no installable compatibility release or demonstrated recommendation quality.
 
-## Project direction
+## What this repository provides
 
-The goal is to close the macOS compatibility gap described by the project owner and document a reproducible way to use Untapped.gg alongside Slay the Spire 2 on a Mac.
+The original Python 3.9+ CLI checks a user-supplied companion against one exact release, prepares a disposable copy with narrow STS2 changes, runs a bounded offline startup probe, and reports separate milestones. It never downloads or contains the game or companion. [Harness architecture](docs/Harness-Architecture.md) explains the patches and isolation; [verification](docs/Verification.md) records what was actually observed.
 
-The next milestones are to:
+Pinned companion: `3.12.3-latest`, `app.asar` SHA-256 `ca3a2e6a6f728b2d635abfc70a5434d4107438b8d801a650357989e8442d798c`. A new release requires a new inspection and pins. The official [Mac companion download](https://companion.untapped.gg/mac-releases/Untapped.gg+Companion+Stable+Installer.dmg) supplied the inspected artifact. Use your own lawful copy; keep its DMG, app, and the prepared session outside Git.
 
-1. Investigate how the existing companion integration detects and communicates with the game.
-2. Implement the smallest viable macOS compatibility path and document its architecture.
-3. Verify the integration on documented macOS, game, and companion versions.
-4. Publish setup instructions, test results, and a short demonstration.
+## Local diagnostic workflow
 
-Implementation language, supported macOS versions, and installation steps will be documented after the compatibility investigation. There is no installable harness release yet.
-
-## Explore the repository
-
-| Resource | Purpose |
-| --- | --- |
-| [Contributing](CONTRIBUTING.md) | Local setup, checks, and pull request workflow |
-| [Repository governance](docs/Repository-Governance.md) | Branch protection, CI, security, and maintainer operations |
-| [Security policy](SECURITY.md) | Private vulnerability reporting and handling sensitive data |
-| [Implementation plan](docs/Implementation-Plan.md) | Repository setup scope and validation record |
-| [MIT license](LICENSE) | Reuse terms for original project work |
-
-## Development
+From the repository root on macOS, with the official companion app mounted or otherwise available:
 
 ```sh
-git clone https://github.com/joshuawyadao/Untapped-MacOS-Harness.git
-cd Untapped-MacOS-Harness
-git config --local core.hooksPath .githooks
-git switch -c feat/describe-your-change
-python3 scripts/check_repository.py
-git diff --check
+python3 -m harness.cli inspect '/path/to/Untapped.gg Companion.app'
+python3 -m harness.cli prepare '/path/to/Untapped.gg Companion.app' /private/tmp/untapped-sts2-session
+python3 -m harness.cli launch /private/tmp/untapped-sts2-session --seconds 15
+python3 -m harness.cli status /private/tmp/untapped-sts2-session
 ```
 
-Git and Python 3.9 or newer are sufficient for the current repository checks. Application build and integration tests will be added with the harness implementation. The required `CI Verify` check currently validates repository hygiene and local documentation links; it does not verify game compatibility.
+`prepare` requires a **new** session path outside the repository and copies only the companion; it does not change the supplied app or the installed game. `launch` is single use per session and has a 1–60 second limit. It uses macOS `sandbox-exec` with local settings/logs, blocks real-home reads and writes outside the session, and permits only loopback networking. There is no unsandboxed fallback. A launch that does not reach `ready` returns a nonzero status. This probe does not launch the game or accept Untapped's terms.
 
-All changes enter `main` through a pull request with passing CI. See [Contributing](CONTRIBUTING.md) for the complete workflow.
+If a real reward event is later captured, manually transcribe the visible cards and normalized positions into a private JSON file, then compare it:
+
+```sh
+python3 -m harness.cli compare-reward /private/tmp/untapped-sts2-session /private/tmp/expected-reward.json --reward-index 0
+```
+
+See [verification](docs/Verification.md) for the exact JSON shape and evidence rules. A matching reward does not establish overlay display or adaptive advice. Live gameplay awaits an explicit game-profile, saves, and Steam Cloud strategy; do not assume a copied game isolates them.
+
+## Project resources
+
+- [Contributing](CONTRIBUTING.md): development checks and PR workflow
+- [Harness architecture](docs/Harness-Architecture.md): copy boundary, patches, isolation, and rollback
+- [Verification](docs/Verification.md): observed results and reward comparison
+- [Repository governance](docs/Repository-Governance.md): CI, branch protection, and maintainer operations
+- [Security policy](SECURITY.md): handling sensitive material
+- [Implementation plan](docs/Implementation-Plan.md): task checklist and validation ledger
 
 ## Ownership and licensing
 
-Created and maintained by [Joshua Yadao](https://github.com/joshuawyadao) as an independent engineering project.
-
-Original project work is licensed under the [MIT License](LICENSE). Untapped.gg and Slay the Spire 2 belong to their respective owners. This project is not affiliated with or endorsed by them, and its license does not cover their software, game assets, or trademarks.
+Created and maintained by [Joshua Yadao](https://github.com/joshuawyadao) as an independent engineering project. Original harness code is covered by the [MIT License](LICENSE). Untapped.gg and Slay the Spire 2 belong to their respective owners. Their software, binaries, assets, account data, and trademarks are not covered by this repository's license. This project is not affiliated with or endorsed by them.

@@ -217,7 +217,7 @@ def status(session):
     terms_seen = log_path.exists() and "[Core] Showing Terms of Service" in log_path.read_text(errors="replace")
     return {
         "static_inspection": "VERIFIED" if (session / "manifest.json").exists() else "UNTESTED",
-        "startup": "READY" if "ready" in names else "BOOTSTRAP_ONLY" if "bootstrap" in names else "NOT_OBSERVED",
+        "startup": "ELECTRON_READY" if "ready" in names else "BOOTSTRAP_ONLY" if "bootstrap" in names else "NOT_OBSERVED",
         "window_detection": "OBSERVED" if "window-detected" in names else "UNTESTED",
         "attachment": "CONNECT_ACKNOWLEDGED" if "reader-connected" in names else "ATTEMPTED" if "attach-attempt" in names else "UNTESTED",
         "state_reading": "REWARD_EVENT_OBSERVED" if "reward" in names else "UNTESTED",
@@ -305,7 +305,7 @@ def main(argv=None):
         else:
             result = compare_reward(load_events(args.session), read_json(args.expected), args.reward_index)
         print(json.dumps(result, indent=2))
-        failed_startup = args.command == "launch" and result.get("startup") != "READY"
+        failed_startup = args.command == "launch" and result.get("startup") != "ELECTRON_READY"
         return 1 if result.get("matches") is False or failed_startup else 0
     except (HarnessError, OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         print(f"Harness stopped: {error}", file=sys.stderr)

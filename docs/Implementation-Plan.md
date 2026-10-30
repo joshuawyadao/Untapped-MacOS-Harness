@@ -9,11 +9,11 @@ Build a reversible, version-pinned native macOS diagnostic harness around Untapp
 ## Action items
 - [x] Read the handoff, pinned inspection record, README, CONTRIBUTING, SECURITY, governance, CI, and repository checks; reproduce static archive findings. No application tests or harness framework exist yet.
 - [x] Create `codex/native-sts2-poc` and checkpoint this resolved plan before implementation.
-- [ ] Implement read-only inspection and fail-closed archive patching with original hashes, exact-match guards, integrity metadata, native binary/fuse observations, and copy-only preparation.
-- [ ] Add an isolated offline launcher with fresh settings/logs, memory-only credential shim, disabled updates/telemetry/login-item/protocol registration, and no real home/save access; preserve terms acceptance as a user action.
-- [ ] Capture only bounded diagnostic events needed for window detection, reader connection, and reward card IDs/upgrade levels/positions; add a strict comparison command against a manually transcribed real reward screen.
-- [ ] Add synthetic tests for malformed/changed archives, narrow patches, copy/source safety, launch isolation, and reward mismatches; run `python3 -m unittest discover -s tests -v`, Node syntax checks, repository hygiene, and `git diff --check`. Extend `CI Verify` for portable behavior tests; vendor code never runs in CI.
-- [ ] Attempt preparation and bounded offline startup on the pinned local artifact when safe; stop at any concrete signing/security/terms gate and record each unverified milestone. Never infer reward success from a visible UI.
+- [x] Implement read-only inspection and fail-closed archive patching with original hashes, exact-match guards, integrity metadata, native binary/fuse observations, and copy-only preparation.
+- [x] Add an isolated offline launcher with fresh settings/logs, memory-only credential shim, disabled updates/telemetry/login-item/protocol registration, and no real home/save access; preserve terms acceptance as a user action.
+- [x] Capture only bounded diagnostic events needed for window detection, reader connection, and reward card IDs/upgrade levels/positions; add a strict comparison command against a manually transcribed real reward screen.
+- [x] Add synthetic tests for malformed/changed archives, narrow patches, copy/source safety, launch isolation, and reward mismatches; run `python3 -m unittest discover -s tests -v`, Node syntax checks, repository hygiene, and `git diff --check`. Extend `CI Verify` for portable behavior tests; vendor code never runs in CI.
+- [x] Attempt preparation and bounded offline startup on the pinned local artifact when safe; stop at any concrete signing/security/terms gate and record each unverified milestone. Never infer reward success from a visible UI.
 - [ ] Update README, CONTRIBUTING, governance, and focused architecture/verification docs with ownership, isolation limits, rollback, actual results, and the explicit game-profile strategy needed before gameplay.
 - [ ] Review staged files for vendor/private data, checkpoint coherent slices, and push this feature branch through save-branch. Do not open or merge a PR.
 
@@ -27,3 +27,14 @@ Build a reversible, version-pinned native macOS diagnostic harness around Untapp
 - Existing `UC_TEST_SANDBOX_DIR`, `UC_TEST_SANDBOX_ID`, and `UC_SKIP_UPDATE_CHECKS` hooks help, but do not alone isolate Keychain, telemetry, protocol handlers, or login items.
 - No gameplay will be started automatically. A copied game does not isolate Steam Cloud or saves. The first runtime attempt can reach only startup/terms without a separately established gameplay/profile strategy.
 - New original harness behavior warrants durable architecture/verification docs and synthetic tests; real captures and vendor files remain outside Git.
+
+## Validation and runtime ledger
+
+- Plan checkpoint: `383ce9e` on `codex/native-sts2-poc`.
+- Twenty synthetic behavior tests pass across ASAR parsing/rewriting/integrity, copy safety, binary pins, credential/bootstrap isolation, reward comparison, connection truthfulness, and process-group cleanup. Bootstrap syntax and whitespace checks pass.
+- Native artifact: archive, native reader, executable, framework hashes and both fuse wires reproduced. Pristine vendor signature verifies outside the Codex sandbox; the same check inside the sandbox misleadingly reports invalid signature, so no signature change was inferred or applied.
+- Preparation succeeded in a new session outside Git. Only two packed JS entries changed; native binaries, Info.plist, installed game, signatures, and entitlements were not edited. The modified resource invalidates the copied bundle seal; no re-signing was performed.
+- OS sandbox probes denied real-home reads, writes outside the session, and remote IP connections; allowed session writes and loopback. These finite probes are evidence for this macOS build, not a complete sandbox audit.
+- First offline launch: 15-second limit reached, no bootstrap/ready/reward event, no stdout, and no companion log. Startup was NOT OBSERVED. UI inspection was unavailable because the Mac was locked; the causal reason for startup failure is unknown. Terms were not accepted and no game was launched. Attachment, traversal, state reading, and overlay remain UNTESTED.
+- Independent review found two correctness issues, now fixed and regression-tested: a resolved `false` reader connection must not emit success, and descendants must be killed even after the probe leader exits. A true connection is labeled CONNECT_ACKNOWLEDGED; it does not prove readable game state.
+- Next runtime action requires an unlocked desktop for observing startup. Any future signing/debugging-access change still requires an exact, separately approved proposal. One real card-reward match remains the acceptance milestone.

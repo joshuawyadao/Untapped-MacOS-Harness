@@ -43,5 +43,15 @@ coverage/
 /tmp/
 /game-data/
 /untapped-data/
+# User-supplied vendor distributions and local diagnostic sessions
+*.app/
+*.asar
+*.dmg
+*.exe
+*.node
+*.run
+*.save
+*.jsonl
+/sessions/
 *.log
 .brooks-lint-history.json

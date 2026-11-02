@@ -201,3 +201,13 @@ The first test-account reader run returned -5 (SIGTRAP), with only native Electr
 No implementation open questions; existing copy06 protected-probe approval applies.
 
 - Prepared comparison: shared private-session validation supports only the existing test home or owned 0700 canonical `/private/tmp/uc-sts2-UID-*` roots. Startup-only requires no Steam/game and provides no attachment target. Three new synthetic cases bring total to 69 passing tests. Diagnostic script verifies/extracts the identical signed archive, runs 45 seconds, and exports exact report/stdout plus inert helper metadata inside/outside policy. Old sessions preserved. Script/snapshot syntax passed; staged copies ready. No vendor comparison executed and no signing/protection change performed.
+
+## Private-temp companion startup observed
+
+The owner-run comparison reached ELECTRON_READY and TERMS_LOGGED with no recognized startup blockers, and hit the45-second bound. The exported report identifies `/private/tmp/uc-sts2-502-hchi62ym`; inert helper checks pass inside/outside policy, all four executables mode0700 after test-account extraction. The owner saw Terms. This establishes startup in that layout, not the precise cause of home-rooted lookup failure or reader compatibility. A clarification about whether the reported untapped.gg page was the companion window or a separate browser is pending; no further native execution occurs while that distinction is unresolved.
+
+- [ ] Promote fresh short private-tmp sessions to the staged reward-observation script (same signed archive, owner/mode guard, policy, PID checks and45-second bound). Preserve earlier home/tmp sessions.
+- [ ] Automatically export the exact observation report, bounded stdout/Core log and whitelisted event data, so failures and any reward snapshot can be inspected without photo transcription. Use existing validated helper/CLI interfaces; shell/embedded Python syntax and69 tests provide verification.
+- [ ] Update runbook/verification/README and save branch. Reward observation still requires owner-controlled game session, paused reward, manual Terms choice, and clarification of window type.
+
+No implementation open questions; window-type clarification is an execution check.

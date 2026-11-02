@@ -35,6 +35,8 @@ This requires the signed copy and rechecks its hashes/signature. Each run create
 
 The November 2 attempt records manual acceptance in its private profile. A new attempt does not inherit that acceptance. After acceptance, vendor startup retries blocked anonymous-token requests; the existing status label `TERMS_LOGGED` does not distinguish accepted Terms from a still-open Terms screen. See the [runtime record](docs/Verification.md#manual-terms-review) for the separate evidence.
 
+Current preparation also patches offline credential acquisition to return authentication unavailable before any credential read or anonymous-token request. This preserves Terms and the existing reader, creates no login/token, and keeps remote networking blocked. The new adaptation still needs a separately approved signed-copy runtime check; the successful manual Terms attempt used the earlier two-entry patch.
+
 If a real reward event is later captured, manually transcribe the visible cards and normalized positions into a private JSON file, then compare it:
 
 ```sh

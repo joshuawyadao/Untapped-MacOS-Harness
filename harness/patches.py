@@ -34,6 +34,14 @@ CORE_PATCHES = [
 ]
 MAIN_PATCHES = [('    Sentry.init({\n      dsn: pkg.sentry.dsn,',
                  '    Sentry.init({\n      enabled: false,\n      dsn: pkg.sentry.dsn,')]
+SERVICES_PATCHES = [
+    ('  async ensureLocalCredentials() {\n    const authDetails = await this.loadLocalCredentials();',
+     '  async ensureLocalCredentials() {\n'
+     '    if (process.env.UNTAPPED_HARNESS_OFFLINE === "1") {\n'
+     '      return { authenticatedCredentials: {}, anonymousCredentials: null };\n'
+     '    }\n'
+     '    const authDetails = await this.loadLocalCredentials();'),
+]
 
 
 def replace_once(text, old, new):
@@ -50,8 +58,11 @@ def patched_entries(archive):
     main = archive.read(MAIN).decode()
     for old, new in MAIN_PATCHES:
         main = replace_once(main, old, new)
+    services = archive.read(SERVICES).decode()
+    for old, new in SERVICES_PATCHES:
+        services = replace_once(services, old, new)
     bootstrap = Path(__file__).with_name("bootstrap.cjs").read_text()
     if not main.startswith('"use strict";\n'):
         raise HarnessError("Main entry lost its strict-mode directive")
     main = '"use strict";\n' + bootstrap + "\n" + main[len('"use strict";\n'):]
-    return {CORE: core.encode(), MAIN: main.encode()}
+    return {CORE: core.encode(), MAIN: main.encode(), SERVICES: services.encode()}

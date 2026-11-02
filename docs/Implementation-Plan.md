@@ -162,3 +162,13 @@ The owner confirmed the windowed retry showed the main menu, allowed fullscreen/
 No implementation open questions remain.
 
 - Preparation result: manual-play is explicit and bounded to 900 seconds; default60 remains. Three new boundary/dispatch/deadline tests bring the suite to62 passing cases. Updated/staged helper-only play script. Copy06's exact original-entitlement signing proposal is ready; all three changed JS entries pass syntax and every other packed entry/fixed payload is unchanged. New signing and long native execution remain unexecuted. Source image detached. Runbook/verification updated; no game or global security change occurred.
+
+## Approved guarded reward experiment
+
+The owner explicitly approved copy06 outer-only signing, the same outer-confined 45-second reader observation, and up to 15 minutes of isolated manual game play. Preserve original entitlements/Hardened Runtime, game bytes, existing remote/home restrictions and target identity guard. No further approval is needed for these exact steps; new game/debugging entitlements remain excluded.
+
+- [ ] Sign/verify copy06; transfer only its app, static manifest and signing receipt (no profiles/Terms/logs) with integrity check.
+- [ ] Prepare test-account reader script: require sts2test, validate one copied-game PID/user/path, invoke guarded launch-outer for45seconds, and bound cleanup. Test script helpers with synthetic data and syntax checks; update runbook/evidence and save branch.
+- [ ] Owner starts the approved manual-play script, reaches a reward without choosing a card, then runs the reader script in a second Terminal. Terms acceptance remains manual; no prompt approval or automatic play. Inspect private evidence before claiming attachment/reward/overlay success.
+
+No implementation open questions. Native observation waits on the owner's reward screen readiness.

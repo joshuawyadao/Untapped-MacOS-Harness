@@ -121,3 +121,14 @@ Static inspection confirms `initializeAfterTos()` awaits two authentication call
 - The owner chose **Plan an isolated test profile first**, rather than observing normal manual gameplay. Complete read-only planning only: inspect installed distribution metadata/argument behavior, companion save versus memory dependencies, and primary Godot/Valve guidance. Do not create an OS account, copy game artifacts, launch a game, inspect saves, or change Steam settings in this pass.
 - Read-only discovery found actual `--force-steam=off --nomods` flags, no verified game-specific save-root override, and process-only reward fields independent of save/history files. A custom save directory by itself would not establish Cloud isolation; a separate OS user does not establish cross-user reader access. Recommend both apps in one dedicated standard test account and graphical session, with fresh data and no Steam initialization, subject to bounded runtime validation.
 - Add [Isolated-Game-Plan.md](Isolated-Game-Plan.md) with the resolved recommendation, ordered setup/launcher-validation/gameplay steps, exact execution gates, stop conditions, and cleanup. Update README, CONTRIBUTING, architecture, and verification to reflect successful offline Core startup and the unexecuted game plan. This slice changes documentation only; the prior 46-test suite remains applicable without new cases or a redundant rerun. Run repository hygiene and whitespace checks, then checkpoint and push the evidence/plan.
+
+## Approved isolated-test implementation
+
+The owner approved isolated account setup and game launch, and will create/log into the standard test account when instructed. This resolves setup/first-boot execution gates; no repeat approval is needed for the planned 60-second confined probe. No new game entitlement/signing change is authorized.
+
+- [ ] Implement a standalone guarded game preparation/launch module and synthetic tests, including ownership, build/hash checks, no-Steam/no-mods command, original-home denial, private writes, bounded cleanup, and refusal outside the test account.
+- [ ] Implement an optional exact target-PID guard before STS2 connection, with executable synthetic tests; preserve startup-only operation without a target. Prepare any changed companion's signing proposal before requesting the distinct signing change.
+- [ ] Update isolated-game plan, README, verification and account runbook; run targeted/full tests, Node syntax, hygiene and whitespace, then save branch.
+- [ ] Have owner create/login to a fresh standard account; perform copying and first game probe only there. Validate private data and no Steam before gameplay.
+
+No implementation open questions remain. Account creation/login is a required manual execution step.

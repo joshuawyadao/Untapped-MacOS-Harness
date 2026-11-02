@@ -94,3 +94,19 @@ Copy07 reached the real native connection attempt, which returned false. The con
 No gameplay, reward screen, Terms acceptance or sign-in is needed. The script signs/launches only three fresh original fixture binaries (two targets and an inspector), queries task ports for its generated same-user targets, reads no target memory, stops all fixtures, and prints a `Diagnostic file` path for sharing. Compilation/signing/probe errors stop the experiment; do not approve any unexpected OS or developer-tools prompt. Send the path or exact error if one occurs.
 
 This operation does not sign, launch or change either game/companion copy, and does not enable any global debugger/protection setting. A target-process entitlement difference in the fixture test supports a future separately approved debug-enabled game copy; it cannot establish that the real reader or reward geometry works.
+
+## Separate debug-game copy proposal
+
+UID502 confirmed the original-fixture entitlement distinction. A new unsigned copy is now prepared at `/private/tmp/untapped-sts2-debug-game-01/SlayTheSpire2.app`, byte/file-mode/symlink matched against the complete original tree pin. Its exact JSON proposal is `/private/tmp/untapped-sts2-debug-game-01-proposal.json`. It proposes outer-only ad-hoc signing, preserving Hardened Runtime and the original four entitlements, adding only `com.apple.security.get-task-allow`. This lets debugging tools acquire this copy's task port while it runs. The installed game, existing isolated game, nested code and global protections remain unchanged.
+
+**Pending approval; do not execute signing or these scripts yet.** The preparation work includes the guarded command for the approved stage:
+
+```sh
+python3 -m harness.game_debug sign /private/tmp/untapped-sts2-debug-game-01 --approve-debug-game-signing
+```
+
+After approval, verify the signed copy and archive only `SlayTheSpire2.app`, `debug-game.json` and `debug-game-signing.json`, with checksum and per-entry transfer checks. Stage original harness sources and the three scripts only then. No profile, saves, Terms or credentials belong in the transfer. The existing live scripts/archives remain unchanged pending this step.
+
+The future test-account workflow is: run `install_debug_game.sh` once (refuses an existing destination), then `play_debug_game.sh` for a 60-second boot check. For the approved reward experiment, `play_debug_game.sh --manual-play` allows up to900 seconds, and `observe_isolated_reward.sh --debug-game` selects only that separately signed copy for the protected45-second observation. Terms are reviewed manually, and the owner supplies the visible cards plus diagnostic path. Never open either copied app directly in Finder.
+
+The destination is `/Users/sts2test/UntappedSTS2DebugGameSession`, distinct from the unchanged earlier game copy. Both use the test account's same existing Godot user data; this does not create another fresh save profile. Normal-account saves remain inaccessible under the existing game policy. The new entitlement does not imply successful state reading or overlay; those remain separate evidence gates.

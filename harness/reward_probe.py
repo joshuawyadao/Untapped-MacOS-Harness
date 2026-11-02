@@ -75,11 +75,16 @@ def _process_inventory():
                           capture_output=True, text=True, check=True, timeout=2).stdout
 
 
-def run(session):
+def run(session, *, debug_game=False):
     _, home, _ = game_launch.test_identity("sts2test", game_launch.PROTECTED_HOME)
     session = _private_session(session, home)
 
-    expected = home / "UntappedSTS2GameSession" / "SlayTheSpire2.app" / game_launch.EXECUTABLE
+    game_session = home / "UntappedSTS2GameSession"
+    if debug_game:
+        from . import game_debug as debug
+        game_session = home / debug.TEST_SESSION
+        debug.verify_launch(game_session, debug._json(game_session, "manifest.json"), home)
+    expected = game_session / "SlayTheSpire2.app" / game_launch.EXECUTABLE
     expected = game_launch.private_path(expected, home)
     if not expected.is_file() or expected.is_symlink():
         raise HarnessError("Copied game executable is missing or redirected")
@@ -104,9 +109,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("companion_session", type=Path)
     parser.add_argument("--startup-only", action="store_true", help="Probe startup with no game or Steam running")
+    parser.add_argument("--debug-game", action="store_true", help="Observe only the verified separate debug game")
     args = parser.parse_args(argv)
+    if args.startup_only and args.debug_game:
+        parser.error("--debug-game requires a live targeted observation")
     try:
-        report = run_startup(args.companion_session) if args.startup_only else run(args.companion_session)
+        report = run_startup(args.companion_session) if args.startup_only else run(args.companion_session, **({"debug_game": True} if args.debug_game else {}))
         print(json.dumps(report, indent=2))
         launch_exit = (report.get("launch") or {}).get("exit_code", 0)
         failed = (report.get("startup") != "ELECTRON_READY"

@@ -1,4 +1,4 @@
-"""Bounded, offline launch of an unchanged STS2 copy in a separate macOS account."""
+"""Bounded offline STS2 launch; debug copies require separate receipt verification."""
 import argparse
 import hashlib
 import grp
@@ -165,7 +165,7 @@ def game_policy(session, home, original):
     ])
 
 
-def launch(session, seconds=60, *, manual_play=False):
+def launch(session, seconds=60, *, manual_play=False, debug_game=False):
     maximum = 900 if manual_play else 60
     if not 1 <= seconds <= maximum:
         raise HarnessError(f"Game launch limit is 1–{maximum} seconds")
@@ -182,7 +182,14 @@ def launch(session, seconds=60, *, manual_play=False):
             or manifest["test_home"] != str(home) or name != manifest["test_user"]):
         raise HarnessError("Game session belongs to a different test identity")
     app = session / "SlayTheSpire2.app"
-    if verified_app(app) != manifest["files"]:
+    debug_metadata = any((session / filename).exists() or (session / filename).is_symlink()
+                         for filename in ("debug-game.json", "debug-game-signing.json"))
+    if debug_game:
+        from . import game_debug
+        game_debug.verify_launch(session, manifest, home)
+    elif debug_metadata or manifest.get("debug_game") or manifest.get("game_signed") or manifest.get("game_modified"):
+        raise HarnessError("Debug-game copy requires explicit --debug-game verification")
+    elif verified_app(app) != manifest["files"]:
         raise HarnessError("Prepared game copy changed")
     if running_conflicts():
         raise HarnessError("Close running Steam and STS2 processes before the isolated probe")
@@ -200,7 +207,7 @@ def launch(session, seconds=60, *, manual_play=False):
     report = {"schema": 1, "attempt": str(attempt), "test_uid": os.getuid(),
               "game_app": str(app), "expected_executable": str(app / EXECUTABLE),
               "seconds_limit": seconds, "steam_requested": False,
-              "manual_play": manual_play, "seconds_maximum": maximum,
+              "manual_play": manual_play, "seconds_maximum": maximum, "debug_game": debug_game,
               "result": "ATTEMPTED", "isolation_verified": False,
               "environment_home": str(home), "home_source": "VERIFIED_TEST_ACCOUNT"}
     write_json(attempt / "report.json", report)
@@ -253,11 +260,13 @@ def main(argv=None):
     run.add_argument("session", type=Path)
     run.add_argument("--seconds", type=int, default=60)
     run.add_argument("--manual-play", action="store_true")
+    run.add_argument("--debug-game", action="store_true", help="Require separate verified debug-game receipt")
     args = parser.parse_args(argv)
     try:
         result = (prepare(args.source, args.session, args.original_home, args.test_user)
                   if args.command == "prepare" else launch(args.session, args.seconds,
-                                                           manual_play=args.manual_play))
+                                                           manual_play=args.manual_play,
+                                                           **({"debug_game": True} if args.debug_game else {})))
         print(json.dumps(result, indent=2))
         return 1 if result.get("unexpected_process") or result.get("exit_code", 0) not in (None, 0) else 0
     except (HarnessError, OSError, ValueError, KeyError, subprocess.SubprocessError) as error:

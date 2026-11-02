@@ -54,6 +54,34 @@ class ProbeDispatchTests(unittest.TestCase):
             inventory.assert_called_once_with(["/bin/ps", "-axo", "pid=,uid=,comm="], capture_output=True, text=True, check=True, timeout=2)
             launch.assert_called_once_with(session, 45, approved=True, target_pid=55, target_game=game)
 
+    def test_debug_reader_uses_only_receipted_separate_game_path(self):
+        from harness import game_debug
+        with tempfile.TemporaryDirectory() as root:
+            home = Path(root).resolve()
+            session = home / "companion"
+            session.mkdir(mode=0o700)
+            game_session = home / game_debug.TEST_SESSION
+            game = game_session / "SlayTheSpire2.app" / reward_probe.game_launch.EXECUTABLE
+            game.parent.mkdir(parents=True)
+            game.touch()
+            listing = f"55 {os.getuid()} {game}\n"
+            with patch.object(reward_probe.game_launch, "test_identity", return_value=("sts2test", home, Path("/protected"))), \
+                 patch.object(game_debug, "_json", return_value={}) as metadata, \
+                 patch.object(game_debug, "verify_launch") as verify, \
+                 patch.object(reward_probe, "_process_inventory", return_value=listing), \
+                 patch.object(reward_probe.cli, "launch_outer", return_value={}) as launch:
+                reward_probe.run(session, debug_game=True)
+                metadata.assert_called_once_with(game_session, "manifest.json")
+                verify.assert_called_once_with(game_session, {}, home)
+                launch.assert_called_once_with(session, 45, approved=True, target_pid=55, target_game=game)
+            with patch.object(reward_probe.game_launch, "test_identity", return_value=("sts2test", home, Path("/protected"))), \
+                 patch.object(game_debug, "_json", return_value={}), \
+                 patch.object(game_debug, "verify_launch", side_effect=HarnessError("receipt mismatch")), \
+                 patch.object(reward_probe.cli, "launch_outer") as launch:
+                with self.assertRaisesRegex(HarnessError, "receipt mismatch"):
+                    reward_probe.run(session, debug_game=True)
+                launch.assert_not_called()
+
     def test_startup_failure_returns_nonzero(self):
         for report in ({"startup": "NOT_OBSERVED", "startup_blockers": [], "launch": {}},
                        {"startup": "ELECTRON_READY", "startup_blockers": ["socket"], "launch": {}},

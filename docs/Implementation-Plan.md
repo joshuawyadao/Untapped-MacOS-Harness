@@ -270,12 +270,14 @@ Prepare a new disposable copy and exact outer-game signing proposal after the UI
 - Out: Executing game signing or launching either app now, modifying either existing game copy or saves, weakening sandbox/Steam/normal-account checks, new companion patches, OS prompt acceptance or global protection changes.
 
 ### Action items
-- [ ] Implement game_debug.py copy/proposal/explicit-sign/receipt/verification/install interfaces with fail-closed tree/path/identity/entitlement checks. Restrict signing changes to outer executable and its resource seal, preserve all other bytes/modes/symlinks and baseline evidence.
-- [ ] Extend existing game launcher and reward helper with explicit debug-copy opt-in, exact separate path and verified receipt; retain default original-copy behavior and all isolation/timeout/Steam/PID guards.
-- [ ] Prepare dedicated install/play/observe scripts for later staging, never enable them before signed-copy verification. No original test profile or Terms is transferred.
-- [ ] Add portable signing/proposal/tampering/receipt and dispatch regressions, run targeted and full tests, syntax/hygiene. Native signing remains mocked; no test executes vendor code.
-- [ ] Prepare the real new unsigned copy and exact JSON signing proposal outside Git, verify pristine source/copy equality and reviewable proposed command/entitlement delta. Do not sign it.
-- [ ] Update README, architecture, runbook and verification with UID502 evidence, copy scope, guard behavior and pending approval; commit/push, then request approval for the exact prepared copy and bounded experiment.
+- [x] Implement game_debug.py copy/proposal/explicit-sign/receipt/verification/install interfaces with fail-closed tree/path/identity/entitlement checks. Restrict signing changes to outer executable and its resource seal, preserve all other bytes/modes/symlinks and baseline evidence.
+- [x] Extend existing game launcher and reward helper with explicit debug-copy opt-in, exact separate path and verified receipt; retain default original-copy behavior and all isolation/timeout/Steam/PID guards.
+- [x] Prepare dedicated install/play/observe scripts for later staging, never enable them before signed-copy verification. No original test profile or Terms is transferred.
+- [x] Add portable signing/proposal/tampering/receipt and dispatch regressions, run targeted and full tests, syntax/hygiene. Native signing remains mocked; no test executes vendor code.
+- [x] Prepare the real new unsigned copy and exact JSON signing proposal outside Git, verify pristine source/copy equality and reviewable proposed command/entitlement delta. Do not sign it.
+- [x] Update README, SECURITY.md, architecture, runbook and verification with UID502 evidence, copy scope, guard behavior and pending approval; commit/push, then request approval for the exact prepared copy and bounded experiment.
 
 ### Open questions
 - None for preparation. Actual signing of the new game copy remains a separate approval boundary.
+
+Preparation result: new unsigned source-matching game copy and exact proposal are ready at /private/tmp/untapped-sts2-debug-game-01; all440 entries match the full original-tree pin. Both architectures' original settings and deep signature verify. Unapproved sign command refuses exit2 with unchanged executable/no receipt. Nine game-debug plus four dispatch regressions bring total to95 passing tests; syntax checks pass. Added SECURITY.md guidance after identifying the new per-copy debugger-access boundary. Scripts are ready in the repository but live staging and any game signing/launch remain pending separate approval; existing transfer/game copy untouched. The test game will keep using UID502's existing test data.

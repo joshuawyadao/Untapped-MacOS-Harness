@@ -167,6 +167,30 @@ class GameLaunchTests(unittest.TestCase):
         self.assertEqual(report["seconds_limit"], 900)
         stop.assert_called_once_with(process)
 
+    def test_debug_metadata_requires_explicit_opt_in_before_spawn(self):
+        game.prepare(self.source, self.session, self.original, "sts2test")
+        (self.session / "debug-game.json").write_text("{}")
+        with mock.patch.object(game.subprocess, "Popen") as spawn:
+            with self.assertRaisesRegex(HarnessError, "explicit --debug-game"):
+                game.launch(self.session, 1)
+            spawn.assert_not_called()
+
+    def test_debug_opt_in_requires_receipt_verification_before_spawn(self):
+        from harness import game_debug
+        game.prepare(self.source, self.session, self.original, "sts2test")
+        with mock.patch.object(game_debug, "verify_launch", side_effect=HarnessError("invalid debug receipt")) as verify, \
+                mock.patch.object(game.subprocess, "Popen") as spawn:
+            with self.assertRaisesRegex(HarnessError, "invalid debug receipt"):
+                game.launch(self.session, 1, debug_game=True)
+            verify.assert_called_once()
+            spawn.assert_not_called()
+
+    def test_debug_cli_passes_explicit_flag(self):
+        with mock.patch.object(game, "launch", return_value={"result": "ATTEMPTED"}) as launch:
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(game.main(["launch", str(self.session), "--debug-game"]), 0)
+            launch.assert_called_once_with(self.session, 60, manual_play=False, debug_game=True)
+
     def test_cli_manual_play_requires_explicit_flag(self):
         with mock.patch.object(game, "launch", return_value={"result": "ATTEMPTED"}) as launch:
             with redirect_stdout(io.StringIO()):

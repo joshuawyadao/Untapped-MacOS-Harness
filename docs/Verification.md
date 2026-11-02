@@ -2,19 +2,19 @@
 
 This record distinguishes static inspection, startup, game detection, reader attachment, state reading, and overlay display. Each requires separate evidence. The pinned user-supplied companion was `3.12.3-latest` with `app.asar` SHA-256 `ca3a2e6a6f728b2d635abfc70a5434d4107438b8d801a650357989e8442d798c`.
 
-| Milestone | October 30, 2026 result | Evidence or next check |
+| Milestone | Result through November 2, 2026 | Evidence or next check |
 | --- | --- | --- |
 | Static inspection | Verified | Exact archive hash, guarded STS2 gates, bundled overlay/reader, and both Electron fuse wires `10110001` reproduced. |
 | Source and preparation | Verified | Source signature valid outside the Codex sandbox; a copy-only patched session was prepared. Signature checks inside the Codex sandbox were misleading, so that environment is not used to judge vendor validity. |
 | Offline policy | Smoke-tested | Real-home read, outside write, and remote IP socket denied; session write and loopback allowed. |
 | Companion signing | **Verified after owner approval** | Only the outer disposable companion was re-signed ad hoc. Deep strict verification, both original entitlement sets, and fixed framework/native/ASAR hashes passed. |
-| Companion startup | **Core/Terms logged in protected run** | After separately approved single-layer startup, the private log records Core creating/showing its main window and Showing Terms of Service. Inventory observed the app running. Visual inspection timed out, so visible screen contents remain unconfirmed. |
+| Companion startup | **Manual Terms acceptance recorded; full initialization pending** | In the November 2 protected window, the owner accepted Terms. Private settings and logs agree. Offline anonymous-token requests retried until the 45-second limit; no Fully initialized milestone was logged. |
 | Native game window detection | Untested | Requires a `window-detected` event from the copied companion. |
 | Reader attachment | Untested | Requires `attach-attempt`, then `reader-connected` after vendor `connect()` reports success. The `status` label is `CONNECT_ACKNOWLEDGED`: native connection and runtime wrapper setup were acknowledged, but later game-context traversal remains unproved. Window detection alone is insufficient. |
 | Reward state | Untested | Requires a real `reward` event with card IDs, upgrades, and normalized positions matching the visible game screen. |
 | Overlay and recommendations | Untested | Need visual overlay evidence and separate advice validation; neither follows from a reward event. |
 
-The initial preparation made no signing change; the outer signature was later changed only with explicit owner approval. No entitlement was added. During the protected runs no game was launched, no save was read, no terms were accepted, and no account login or run upload was authorized or observed. The separate extra-launch incident below has unknown native profile effects. Forty-three synthetic tests passed, including Node VM execution of the original bootstrap against stubs, ten mocked signing tests, six startup-diagnostic tests, and seven approved outer-launch tests. Vendor code and native modules were not executed in that suite. The CI test job checks portable harness behavior and repository hygiene, not macOS game compatibility.
+The initial preparation made no signing change; the outer signature was later changed only with explicit owner approval. No entitlement was added. During the protected runs no game was launched and no save was read. The owner manually accepted Terms on November 2; no account login or run upload was authorized or observed. Post-Terms startup attempted anonymous-token acquisition, which failed under the offline policy. The separate extra-launch incident below has unknown native profile effects. Forty-three synthetic tests passed, including Node VM execution of the original bootstrap against stubs, ten mocked signing tests, six startup-diagnostic tests, and seven approved outer-launch tests. Vendor code and native modules were not executed in that suite. The CI test job checks portable harness behavior and repository hygiene, not macOS game compatibility.
 
 Before approved signing, the locked desktop prevented UI inspection but was not the startup cause. The unlocked inventory still showed no companion window. A process sample contained only `_dyld_start`, a 96 KiB footprint, and no loaded-image listing; a minimal Electron run-as-Node probe also stalled then. The OS log explicitly identified Gatekeeper rejection and assessments identified an invalid resource seal. After approved signing, the same runtime diagnostic succeeds. Nested helpers/frameworks verified. No OS warning was approved or bypassed.
 
@@ -60,7 +60,17 @@ The protected attempt logged `[Core] Showing Terms of Service`, but the CUA app-
 
 This extra instance was outside the protected runner. The compiled bootstrap would reject missing harness environment before importing vendor Sentry/Core code, but native Electron/Chromium initializes earlier. Default browser cache/preferences or native-helper activity therefore cannot be ruled out. No evidence establishes account access or uploads. The normal profile was not inspected or deleted, and no claim is made that it remained untouched. No game was launched or terms accepted.
 
-Do not use app-opening or bundle-ID selection APIs to inspect bounded probes. Use the CLI supervisor, non-launching inventory, and manual interaction. Manual visual review and any acceptance of Untapped's Terms are required before progressing beyond startup. The approved sandbox mode does not authorize accepting terms or starting gameplay.
+Do not use app-opening or bundle-ID selection APIs to inspect bounded probes. Use the CLI supervisor, non-launching inventory, and manual interaction. Terms acceptance remains the owner's action; the sandbox approval alone does not authorize accepting terms or starting gameplay.
+
+## Manual Terms review
+
+On November 2, the owner confirmed readiness for manual review. The existing `launch-outer` CLI reverified the same signed disposable copy and ran it for 45 seconds with a fresh private profile and unchanged outer restrictions. The owner accepted Terms in that window: `profile/config.json` records `acceptedTOS=true`, and the vendor log records Terms of Service have been accepted/continuing initialization.
+
+Evidence is retained privately at `/private/tmp/untapped-native-sts2-poc-04/outer-attempt-mn7n35o2`. This is the only attempt known to record acceptance. The CLI always creates a fresh profile; repeating it does not inherit acceptance. Do not seed acceptance into another profile or inspect the normal companion profile to bypass this distinction.
+
+After acceptance, vendor startup repeatedly attempted anonymous upload-token acquisition, which failed with `getaddrinfo ENOTFOUND` under the offline policy. Core logged Loaded all accounts, but not Fully initialized before timeout. Events contain only bootstrap and ready. The status report therefore still says `TERMS_LOGGED`; that coarse label does not undo the separate acceptance evidence or establish full initialization. No game detection, attachment, reward, overlay, or recommendation success follows from this run.
+
+The process-group runner reached its limit and exited successfully; the exact-copy process check found no remaining processes. No app-opening observation API was used. No installed game, saves, normal companion settings, remote network permission, or signing configuration was changed during this attempt. Further work must preserve the offline boundary and establish the game-profile/save strategy before gameplay.
 
 ## Commands and private evidence
 

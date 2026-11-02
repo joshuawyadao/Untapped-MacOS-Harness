@@ -16,7 +16,7 @@ Build a reversible, version-pinned native macOS diagnostic harness around Untapp
 - [x] Attempt preparation and bounded offline startup on the pinned local artifact when safe; stop at any concrete signing/security/terms gate and record each unverified milestone. Never infer reward success from a visible UI.
 - [x] Update README, CONTRIBUTING, governance, and focused architecture/verification docs with ownership, isolation limits, rollback, actual results, and the explicit game-profile strategy needed before gameplay.
 - [x] Review staged files for vendor/private data, checkpoint coherent slices, and push this feature branch through save-branch. Do not open or merge a PR.
-- [ ] Demonstrate one correctly detected real card-reward screen and visually check the existing overlay. Blocked on manual Terms review/acceptance and an agreed gameplay/profile strategy after protected startup reached Terms in logs; no compatibility success is claimed.
+- [ ] Demonstrate one correctly detected real card-reward screen and visually check the existing overlay. Manual Terms acceptance is now recorded in one private attempt. Full offline initialization and an agreed gameplay/profile strategy remain pending; no compatibility success is claimed.
 - [x] Prepare a reviewable, opt-in outer-companion ad-hoc signing command and session-bound receipt guard, with synthetic tests. Do not execute signing until the owner explicitly approves the exact per-copy change. Preserve the five original entitlements, Hardened Runtime, nested code, and all game/OS protections.
 
 ## Open questions
@@ -82,3 +82,22 @@ Build a reversible, version-pinned native macOS diagnostic harness around Untapp
 - Updated README, CONTRIBUTING, SECURITY, architecture, and verification with the repeatable CLI, protected Terms milestone, unresolved visual/manual Terms step, and the corrected extra-launch incident. No normal-profile data was inspected/deleted; native cache effects from the extra launch remain unknown. A user-readiness question for manual Terms review is pending; no additional live probe is launched just to inspect UI.
 - Final review identified a diagnostic gap: an early ready event followed by a nonzero process exit must return failure even without a recognized log string. Add that regression before saving the approved launcher.
 - Final review fix: nonzero process exits now fail the launch CLI even after an early ready event; a synthetic regression covers both launch modes and distinguishes a bounded timeout. All 43 tests pass. The approved private profile records acceptedTOS=false. Normal-profile contents were not read.
+
+## Manual Terms review on November 2, 2026
+
+- The owner confirmed readiness for manual review. Ran the existing `launch-outer` command on the same signed copy with the approved 45-second limit, a fresh private attempt, and unchanged outer restrictions. No app-opening UI API was used.
+- The owner accepted Terms in the window. The private attempt `outer-attempt-mn7n35o2` records `acceptedTOS=true`, and its log records Terms accepted/continuing initialization. This state belongs only to that private profile; another `launch-outer` invocation creates a fresh profile and does not preserve it.
+- After acceptance, anonymous upload-token requests failed with `ENOTFOUND` and retried under the offline policy. Core logged Loaded all accounts, but not Fully initialized before timeout. No detection, attachment, or reward event was emitted; overlay behavior remains unverified. Do not enable remote networking or fabricate credentials to advance initialization.
+- The runner reached its 45-second limit and cleaned up. A subsequent exact-copy process check found none running. The installed game was not launched, and no game/save or normal companion-profile data was read.
+- Update the current README, architecture, and verification status with this result. These evidence-only documentation changes do not change executable behavior or require new automated tests; verify repository hygiene and whitespace. Inspect the pinned post-Terms startup path read-only before proposing a next experiment.
+
+## Offline credential-acquisition adaptation
+
+Static inspection confirms `initializeAfterTos()` awaits two authentication calls and onboarding before enabling STS2. Each can acquire an anonymous token with 14 seconds of retry backoff; the nominal account timeout starts after the authentication awaits. Native reader construction has no account requirement. The recorded offline failures are expected network confinement, not evidence that authentication succeeded or that the reader is incompatible.
+
+- [ ] Checkpoint the runtime evidence and this resolved follow-up plan before changing executable code.
+- [ ] Add one exact guarded Services-chunk patch: when `UNTAPPED_HARNESS_OFFLINE=1`, `ensureLocalCredentials()` returns empty authenticated credentials and null anonymous credentials before credential reads or token requests. Preserve its ordinary path, Terms flow, account feature gates, reader implementation, and outer network denial; never invent a credential or authenticated account.
+- [ ] Add `tests/test_offline_auth.py` with executable synthetic method tests for unavailable authentication, no credential reads/requests/writes, repeated callers, and unchanged non-offline behavior. Check anchor rejection and Services archive integration. Vendor code must not enter the test suite.
+- [ ] Reapply current patches to the pinned archive privately, check all three changed JS entries and their syntax, and confirm all other packed entries and native payloads remain unchanged. Preparation is reversible; do not sign or launch a newly modified copy under the earlier exact-copy signing approval.
+- [ ] Update README, architecture, and verification with the adaptation and its untested native status; run targeted/new tests, full portable suite, Node syntax, hygiene, and whitespace. Checkpoint and push this slice.
+- [ ] Prepare the exact companion-only signing proposal for a fresh disposable copy if the pinned source is still available; obtain explicit approval before executing its signing change. Further live startup and real-game/save strategy remain separate execution gates.

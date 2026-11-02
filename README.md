@@ -2,7 +2,7 @@
 
 An unofficial, experimental harness for investigating whether the **existing Untapped.gg companion** can work with native macOS Slay the Spire 2.
 
-**Status: diagnostic proof of concept; protected startup reaches Terms in logs.** Owner-approved companion-only signing and a bounded outer-sandbox launch now start Core and log its Terms screen. Manual visual review/acceptance is pending. Game attachment, reward reading, and overlay display remain **unverified**.
+**Status: diagnostic proof of concept; manual Terms acceptance recorded.** The owner accepted Terms during an approved 45-second protected launch. Offline anonymous-token retries continued until timeout; full initialization, game attachment, reward reading, and overlay display remain **unverified**.
 
 ## What this repository provides
 
@@ -32,6 +32,8 @@ python3 -m harness.cli launch-outer /private/tmp/untapped-sts2-session --seconds
 ```
 
 This requires the signed copy and rechecks its hashes/signature. Each run creates a new private `outer-attempt-*` profile and logs, retaining the outer home/write/network restrictions and allowing Unix sockets only inside that session. It prints `attempt_dir`; pass that path to `status` to inspect the run. Never open the copied app directly in Finder or through an automation API that can launch it: native Electron initialization precedes the JavaScript guard. Observe using non-launching inventory or manual interaction. Terms acceptance remains the user's decision.
+
+The November 2 attempt records manual acceptance in its private profile. A new attempt does not inherit that acceptance. After acceptance, vendor startup retries blocked anonymous-token requests; the existing status label `TERMS_LOGGED` does not distinguish accepted Terms from a still-open Terms screen. See the [runtime record](docs/Verification.md#manual-terms-review) for the separate evidence.
 
 If a real reward event is later captured, manually transcribe the visible cards and normalized positions into a private JSON file, then compare it:
 

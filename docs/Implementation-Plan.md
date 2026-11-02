@@ -226,3 +226,13 @@ The owner-run reward diagnostic records Core initialized and window-detected, th
 No implementation open questions. No game entitlement, global protection or policy relaxation is proposed.
 
 Implementation: original libproc helper, private compiler preparation, hash/file-checked bootstrap dispatch and targeted-launch build are complete. All 75 tests pass, including native own-process compilation/metadata. The production helper also passed an unchanged-policy inert target probe. Fresh copy07 and exact signing proposal are prepared without signing or vendor execution. Original5 entitlements and Hardened Runtime are retained in the proposal. Live transfer refresh and archive07 creation are deliberately deferred until signing approval; existing copy06 transfer is intact. Actual attachment/reward/overlay remain untested.
+
+## Approved copy07 signing and protected retry
+
+The owner explicitly approved copy07 outer-only signing and another 45-second protected observation, retaining the five original entitlements, Hardened Runtime and outer sandbox. The already-approved isolated manual-play allowance remains 900 seconds; game bytes/signing and global protections remain unchanged.
+
+- [ ] Execute the existing reviewed sign-copy command and verify both entitlement sets, deep signature and pinned nested/archive bytes.
+- [ ] Stage app/manifest/receipt-only companion07 archive with checksum and refresh original harness sources/scripts without profiles, Terms, logs or credentials. Verify transferred contents and source syntax.
+- [ ] Record results in verification/runbook, save the branch, and provide the manual test-account commands. Actual reader/reward/overlay evidence awaits the owner-run probe.
+
+No open questions; approval applies to this exact copy and bounded experiment. No executable source changes are planned in this slice, so existing 75 passing tests remain applicable; use actual signing/archive integrity verification and repository checks.

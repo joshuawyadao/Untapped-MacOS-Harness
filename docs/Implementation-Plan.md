@@ -238,3 +238,23 @@ The owner explicitly approved copy07 outer-only signing and another 45-second pr
 No open questions; approval applies to this exact copy and bounded experiment. No executable source changes are planned in this slice, so existing 75 passing tests remain applicable; use actual signing/archive integrity verification and repository checks.
 
 Approved execution: copy07 outer-only signing succeeded; deep strict verification, both original entitlement sets, Hardened Runtime and nested/archive pins passed. Signed executable SHA-256 `6bfc801a5aece768b08c643c88759405b08ab8e4663a3e7b53841d09cb6ecb78`. Staged companion07 archive contains exactly app/manifest/receipt (333 entries), every archived file/symlink matches the signed source, checksum verified. Original helper sources and observer/startup scripts match repository bytes and pass syntax checks. No fresh vendor execution occurred in this staging step; the owner must run the observer in UID502's graphical account. Prior 75 passing behavior tests remain applicable; no source/test changes were needed for signing/staging.
+
+## Controlled original-process attachment diagnostic
+
+Build a minimal original target/inspector pair to distinguish target debugger entitlement from outer-policy restrictions after copy07's native connect returned false.
+
+### Scope
+- In: Fresh private temporary original-code fixtures, game-equivalent four entitlements/Hardened Runtime, one target differing only by get-task-allow, inspector with the companion's five entitlements, bounded same-user task-port acquisition inside/outside the unchanged outer policy, explicit result classification and cleanup.
+- Out: Game/companion launch or signing changes, arbitrary PID attachment, memory reads/writes, OS prompt acceptance, global protection changes, or claiming vendor compatibility from dummy success.
+
+### Action items
+- [ ] Add original C target (ready signal and bounded lifetime) and inspector (validate exact same-user fixture path/PID, acquire/deallocate task port only, return bounded structured result).
+- [ ] Add Python build/sign/verify and bounded matrix runner in a fresh private tmp root; keep native execution opt-in and prevent arbitrary input targets. Fail on build/signature/readiness/timeout anomalies, verify target liveness and clean up every target group.
+- [ ] Add portable regression tests for classification, failure handling and command/policy construction; keep native signing/probing out of CI. Review false-positive interpretation and prompt/cleanup boundaries.
+- [ ] Run the controlled matrix locally using only original fixtures, retaining exact return codes and unchanged-policy hash; distinguish denial, timeout and inconclusive controls. Never approve a prompt.
+- [ ] Update README, architecture, runbook and verification with result/limits, run full tests/syntax/hygiene, then commit and push the feature branch. Prepare any further game-copy proposal only if the evidence supports it, without executing it.
+
+### Open questions
+- None. The owner authorized the controlled original-process diagnostic. Signing any game copy remains a separate decision.
+
+Discovery: copy07 observed window and attach-attempt, but core log reports native connect false; no state/reward events. Original game is ad-hoc Hardened Runtime with four entitlements and lacks get-task-allow. The native reader imports task_for_pid and memory-read functions. A narrow OS log query produced no denial messages and does not identify the failure cause. Existing 75 tests pass; fresh native experiment is necessary because synthetic tests cannot establish OS task-port behavior.

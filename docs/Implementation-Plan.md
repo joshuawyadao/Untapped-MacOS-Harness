@@ -148,3 +148,5 @@ The owner ran the test-account first boot and saw no menu. Exported diagnostics 
 - [ ] Add explicit windowed mode, 1280x720 size, and on-screen position to the same bounded probe; preserve sandbox, account checks, game hashes/signatures, and 60-second bound. Extend the existing command test and run full tests.
 - [ ] Stage an account-owned helper refresh/retry script that reuses the existing private game session without re-extracting or overwriting the game/data. Update runbook/verification; validate syntax/hygiene, commit and push.
 - [ ] Owner runs the retry in sts2test and confirms actual visible UI. Visibility, actual file confinement/cleanup and reader compatibility remain separate pending checks. No open implementation questions.
+
+- Visibility probe prepared: explicit windowed/always-on-top, 1280x720 at 80,80; existing command regression updated, all 59 tests and retry-script syntax pass. Added repeatable helper-only refresh/retry script and documented the logged menu milestones separately from visible UI. Same confinement, game hashes/signatures and 60-second budget retained. No native retry was run from the normal account.

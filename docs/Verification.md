@@ -144,3 +144,9 @@ These IDs are synthetic and do not assert actual game identifiers. Run `python3 
 ## Isolated launcher preparation
 
 Owner approval now covers isolated setup and the planned first game launch. Implementation and transfer staging are ready; account creation/login and the native run have not been completed. See [the runbook](Test-Account-Runbook.md). The normal-account CLI refusal was exercised, and dummy-file/socket policy probes passed private writes versus denied original-home reads, outside writes, and remote connections. All 59 portable tests pass. No native game was launched or signed, and no save/profile was imported. The new target guard is implemented in source but has not been packaged/signed into a companion copy. The previously verified offline startup belongs to copy05's earlier patch set.
+
+## First native game probe: menu initialization logged, visibility pending
+
+The owner ran the account script in sts2test. The photo report shows the pinned copy prepared with game_modified=false and the 60-second limit reached, with isolation_verified=false. The owner saw no menu. A deliberate filtered log export confirmed Steam initialization skipped; user data directory `./SlayTheSpire2` (relative to the confined session cwd); intended no-Steam/no-mods arguments; and both main-menu essential/complete load milestones. Shader-cache creation failed, but did not prevent those later log milestones. Shutdown static-string errors do not independently establish a startup failure.
+
+The next approved bounded retry requests explicit windowed mode, position/size, and always-on-top. All 59 tests pass, including the updated launch-command check; shell syntax passes. Actual UI visibility, cleanup confirmation, and full isolation verification remain pending. No game signature, entitlement, network rule, or 60-second limit changed.

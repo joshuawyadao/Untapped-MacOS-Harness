@@ -97,6 +97,7 @@ class GameLaunchTests(unittest.TestCase):
         stop.assert_called_once_with(process)
         args, options = spawn.call_args
         self.assertEqual(args[0][-2:], ["--force-steam=off", "--nomods"])
+        self.assertEqual(args[0][-8:-2], ["--windowed", "--always-on-top", "--resolution", "1280x720", "--position", "80,80"])
         self.assertEqual(options["env"].keys(), {"PATH", "LANG", "TMPDIR"})
         self.assertTrue(options["start_new_session"])
         policy = next(self.session.glob("game-attempt-*/offline.sb")).read_text()

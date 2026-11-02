@@ -190,7 +190,8 @@ def launch(session, seconds):
     policy = attempt / "offline.sb"
     policy.write_text(game_policy(session, home, original))
     command = ["/usr/bin/sandbox-exec", "-f", str(policy), str(app / EXECUTABLE),
-               "--force-steam=off", "--nomods"]
+               "--windowed", "--always-on-top", "--resolution", "1280x720",
+               "--position", "80,80", "--force-steam=off", "--nomods"]
     environment = {"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "en_US.UTF-8",
                    "TMPDIR": str(attempt / "temp")}
     report = {"schema": 1, "attempt": str(attempt), "test_uid": os.getuid(),

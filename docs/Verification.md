@@ -158,3 +158,9 @@ The owner reported that the windowed retry showed the main page, allowed fullscr
 An opt-in manual-play limit of 900 seconds is now implemented; default probes remain capped at 60. All 62 synthetic tests pass, including invalid-boundary, CLI-dispatch, and long-mode timeout cleanup coverage. No long native run occurred.
 
 Fresh copy06 is prepared from the pinned pristine companion, with the target identity guard included. Exactly three packed JS entries differ; all pass Node syntax checks. Every other packed entry and fixed executable/framework/native reader/Info.plist hash is unchanged. Patched ASAR SHA-256: `e07df4f66c5918f11c9e8907a67783ae46c300ae8eda63ba3b9da5f0307d49c9`. Its private signing proposal verifies both original entitlement sets and proposes outer-only ad-hoc signing with Hardened Runtime retained. Signing and launch have not occurred. The source image was detached after preparation.
+
+## Approved copy06 signing and reward-test staging
+
+The owner explicitly approved copy06 signing, the protected 45-second reader probe and 15-minute manual-play step. Copy06 outer-only ad-hoc signing succeeded; deep verification and both original five-entitlement sets passed, Hardened Runtime retained. Its signed executable hash is `4e4a9e38726ca8fa160a68879e0db279d7fc95c363b95fd1cf8f0be3115b2ac1`. No nested/game code was re-signed and no entitlement was added.
+
+A profile-free signed transfer and test-account observation helper are staged. Four new synthetic tests bring the suite to 66 passing cases. The helper checks standard account, private session, sole exact copied PID/user/path and Steam absence before dispatching the guarded 45-second launch. Native copy06/game-reader observation remains pending on the owner's paused reward screen; successful signing/preparation is not attachment or reward evidence.

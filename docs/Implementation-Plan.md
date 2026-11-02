@@ -172,3 +172,6 @@ The owner explicitly approved copy06 outer-only signing, the same outer-confined
 - [ ] Owner starts the approved manual-play script, reaches a reward without choosing a card, then runs the reader script in a second Terminal. Terms acceptance remains manual; no prompt approval or automatic play. Inspect private evidence before claiming attachment/reward/overlay success.
 
 No implementation open questions. Native observation waits on the owner's reward screen readiness.
+
+- Execution preparation complete: approved copy06 outer-only signing succeeded, deep strict verification and both five-entitlement sets passed. Signed executable SHA-256 `4e4a9e38726ca8fa160a68879e0db279d7fc95c363b95fd1cf8f0be3115b2ac1`. App/static manifest/receipt archive and SHA check staged without profiles/Terms/logs.
+- Added `harness/reward_probe.py`, four synthetic tests in `tests/test_reward_probe.py`, and the test-account observation script. It requires one exact same-user copied game, rejects Steam/ambiguous targets, and invokes the approved 45-second outer launcher. All 66 tests pass. Runbook updated and scripts staged; native observation waits for the owner's paused reward screen. No game signing, entitlement, or global protection change occurred.

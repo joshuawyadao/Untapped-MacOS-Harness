@@ -44,9 +44,11 @@
     const raw = process.env.UNTAPPED_HARNESS_TARGET_PID;
     const rawUid = process.env.UNTAPPED_HARNESS_TARGET_UID;
     const executable = process.env.UNTAPPED_HARNESS_TARGET_EXECUTABLE;
+    const expectedProbeHash = process.env.UNTAPPED_HARNESS_IDENTITY_SHA256;
     if (typeof raw !== "string" || !/^[1-9][0-9]*$/.test(raw) ||
         typeof rawUid !== "string" || !/^[1-9][0-9]*$/.test(rawUid) ||
-        typeof executable !== "string" || !path.isAbsolute(executable)) {
+        typeof executable !== "string" || !path.isAbsolute(executable) ||
+        typeof expectedProbeHash !== "string" || !/^[a-f0-9]{64}$/.test(expectedProbeHash)) {
       throw new Error("Complete harness target identity required before STS2 reader construction");
     }
     const expected = Number(raw);
@@ -56,8 +58,18 @@
         expectedUid !== process.getuid()) {
       throw new Error("Harness STS2 target PID mismatch");
     }
+    const probe = path.join(profile, "target-identity");
+    const info = fs.lstatSync(probe);
+    if (!info.isFile() || info.uid !== process.getuid() || info.nlink !== 1 ||
+        (info.mode & 0o7777) !== 0o700) {
+      throw new Error("Harness identity helper is not a private owned regular executable");
+    }
+    const { createHash } = require("node:crypto");
+    if (createHash("sha256").update(fs.readFileSync(probe)).digest("hex") !== expectedProbeHash) {
+      throw new Error("Harness identity helper changed before target verification");
+    }
     const { execFileSync } = require("node:child_process");
-    const row = execFileSync("/bin/ps", ["-p", String(pid), "-o", "uid=,comm="], {
+    const row = execFileSync(probe, [String(pid)], {
       encoding: "utf8", timeout: 2000, maxBuffer: 1024,
     }).trim();
     const identity = /^([0-9]+)\s+(.+)$/.exec(row);

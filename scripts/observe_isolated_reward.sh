@@ -6,14 +6,22 @@ if [ "$(id -un)" != "sts2test" ]; then
 fi
 transfer=/private/tmp/untapped-sts2-transfer-01
 test_code="$HOME/UntappedSTS2Harness"
-if [ ! -d "$test_code/harness" ] || [ -L "$test_code/harness/reward_probe.py" ]; then
+if [ ! -d "$test_code/harness" ] || [ -L "$test_code" ] || [ -L "$test_code/harness" ]; then
   echo 'Expected private test setup missing or redirected; stop for review.' >&2
   exit 2
 fi
 umask 077
 cd "$transfer"
-shasum -a 256 -c companion06.sha256
-cp "$transfer/harness/reward_probe.py" "$test_code/harness/reward_probe.py"
+shasum -a 256 -c companion07.sha256
+for module in cli.py reward_probe.py process_identity.py target_identity.c; do
+  if [ -L "$test_code/harness/$module" ] || [ -L "$transfer/harness/$module" ] || [ ! -f "$transfer/harness/$module" ]; then
+    echo 'Harness source missing or redirected; stop for review.' >&2
+    exit 2
+  fi
+done
+for module in cli.py reward_probe.py process_identity.py target_identity.c; do
+  cp "$transfer/harness/$module" "$test_code/harness/$module"
+done
 cd "$test_code"
 probe_python=/opt/homebrew/bin/python3
 if [ ! -x "$probe_python" ]; then probe_python=/usr/bin/python3; fi
@@ -26,7 +34,7 @@ expected = home/'UntappedSTS2GameSession/SlayTheSpire2.app'/game_launch.EXECUTAB
 # Fail before extracting if the owner is not already at the intended live game.
 reward_probe.select_target(reward_probe._process_inventory(), expected, os.getuid())
 session=Path(tempfile.mkdtemp(prefix=f'uc-sts2-{os.getuid()}-',dir='/private/tmp'))
-subprocess.run(['/usr/bin/tar','-xf','/private/tmp/untapped-sts2-transfer-01/companion06.tar','-C',str(session)],check=True)
+subprocess.run(['/usr/bin/tar','-xf','/private/tmp/untapped-sts2-transfer-01/companion07.tar','-C',str(session)],check=True)
 (session/'profile').mkdir(mode=0o700)
 report=reward_probe.run(session)
 print(json.dumps(report,indent=2))

@@ -16,6 +16,7 @@ from .asar import Archive, HarnessError, sha256
 from .patches import (ASAR_SHA256, VERSION, OVERLAY, RUNTIME, SCRY, SCRY_SHA256,
                       EXECUTABLE_SHA256, FRAMEWORK_SHA256, patched_entries)
 from .signing import (signing_proposal, sign_copy, expected_executable_hash, verify_signed_copy)
+from .process_identity import prepare_identity_probe
 
 ROOT = Path(__file__).resolve().parents[1]
 FUSE_SENTINEL = b"dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX"
@@ -235,6 +236,9 @@ def launch_outer(session, seconds, approved=False, target_pid=None, target_game=
     profile = attempt / "profile"
     profile.mkdir(mode=0o700)
     (profile / "temp").mkdir(mode=0o700)
+    if target_environment:
+        probe = prepare_identity_probe(profile)
+        target_environment["UNTAPPED_HARNESS_IDENTITY_SHA256"] = probe["sha256"]
     (session / "t").mkdir(mode=0o700, exist_ok=True)
     write_json(attempt / "manifest.json", {
         **manifest, "prepared_session": str(session),

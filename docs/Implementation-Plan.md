@@ -204,10 +204,12 @@ No implementation open questions; existing copy06 protected-probe approval appli
 
 ## Private-temp companion startup observed
 
-The owner-run comparison reached ELECTRON_READY and TERMS_LOGGED with no recognized startup blockers, and hit the45-second bound. The exported report identifies `/private/tmp/uc-sts2-502-hchi62ym`; inert helper checks pass inside/outside policy, all four executables mode0700 after test-account extraction. The owner saw Terms. This establishes startup in that layout, not the precise cause of home-rooted lookup failure or reader compatibility. A clarification about whether the reported untapped.gg page was the companion window or a separate browser is pending; no further native execution occurs while that distinction is unresolved.
+The owner-run comparison reached ELECTRON_READY and TERMS_LOGGED with no recognized startup blockers, and hit the 45-second bound. The exported report identifies `/private/tmp/uc-sts2-502-hchi62ym`; inert helper checks pass inside/outside policy, all four executables mode 0700 after test-account extraction. The owner saw Terms. This establishes startup in that layout, not the precise cause of home-rooted lookup failure or reader compatibility. A clarification about whether the reported untapped.gg page was the companion window or a separate browser is pending; no further native execution occurs while that distinction is unresolved.
 
-- [ ] Promote fresh short private-tmp sessions to the staged reward-observation script (same signed archive, owner/mode guard, policy, PID checks and45-second bound). Preserve earlier home/tmp sessions.
+- [ ] Promote fresh short private-tmp sessions to the staged reward-observation script (same signed archive, owner/mode guard, policy, PID checks and 45-second bound). Preserve earlier home/tmp sessions.
 - [ ] Automatically export the exact observation report, bounded stdout/Core log and whitelisted event data, so failures and any reward snapshot can be inspected without photo transcription. Use existing validated helper/CLI interfaces; shell/embedded Python syntax and69 tests provide verification.
 - [ ] Update runbook/verification/README and save branch. Reward observation still requires owner-controlled game session, paused reward, manual Terms choice, and clarification of window type.
 
 No implementation open questions; window-type clarification is an execution check.
+
+- Window clarification resolved: the owner saw the Untapped companion window. Short private-tmp startup is confirmed by readiness/Terms and bounded completion; inert helper checks passed inside/outside policy. Updated the observation script to fresh private tmp roots plus exact report/event/bounded-log export, using existing validated interfaces. All 69 tests and script/embedded-Python syntax pass. Staged script updated; actual reward observation awaits owner-controlled game/reward readiness. No app bytes, signature, entitlement, or policy change.

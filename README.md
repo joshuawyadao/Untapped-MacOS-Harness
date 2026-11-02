@@ -2,7 +2,7 @@
 
 An unofficial, experimental harness for investigating whether the **existing Untapped.gg companion** can work with native macOS Slay the Spire 2.
 
-**Status: offline Core startup and native game-window detection verified; reader attachment failed.** Copy07 passed the target guard but its native connection returned false before any state was read. Controlled original-process tests in both accounts distinguish the target's `get-task-allow` entitlement. A separate unsigned game copy and exact signing proposal are prepared; actual game-copy signing, successful attachment, reward matching and overlay verification remain pending. The installed game and normal saves are unchanged.
+**Status: offline Core startup and native game-window detection verified; reader attachment failed.** Copy07 passed the target guard but its native connection returned false before any state was read. Controlled original-process tests in both accounts distinguish the target's `get-task-allow` entitlement. The separately approved debug-enabled game copy is signed and its transfer verified; test-account boot, successful attachment, reward matching and overlay verification remain pending. The installed game and normal saves are unchanged.
 
 ## What this repository provides
 
@@ -76,6 +76,6 @@ Copy07 passed the identity guard but native `connect` returned false before any 
 
 ## Separate game-copy signing proposal
 
-`harness.game_debug` prepares only a fresh copy matching the complete original tree pin and produces an outer-only ad-hoc signing proposal with the original four game entitlements plus `com.apple.security.get-task-allow`, retaining Hardened Runtime. Signing requires separate owner approval and `--approve-debug-game-signing`; it has not been executed. The prepared target is `/private/tmp/untapped-sts2-debug-game-01/SlayTheSpire2.app`.
+`harness.game_debug` prepares only a fresh copy matching the complete original tree pin and produces an outer-only ad-hoc signing proposal with the original four game entitlements plus `com.apple.security.get-task-allow`, retaining Hardened Runtime. Signing requires separate owner approval and `--approve-debug-game-signing`; that exact operation is now approved, executed and verified. The prepared target is `/private/tmp/untapped-sts2-debug-game-01/SlayTheSpire2.app`.
 
 The future guarded test uses a distinct `UntappedSTS2DebugGameSession` in `sts2test`, with a verified signing receipt and explicit `--debug-game` selection for launch and reader observation. It shares that account's existing test game data; it does not copy or access normal-account saves. See the [review scope and pending workflow](docs/Test-Account-Runbook.md#separate-debug-game-copy-proposal).

@@ -150,3 +150,13 @@ The owner ran the test-account first boot and saw no menu. Exported diagnostics 
 - [ ] Owner runs the retry in sts2test and confirms actual visible UI. Visibility, actual file confinement/cleanup and reader compatibility remain separate pending checks. No open implementation questions.
 
 - Visibility probe prepared: explicit windowed/always-on-top, 1280x720 at 80,80; existing command regression updated, all 59 tests and retry-script syntax pass. Added repeatable helper-only refresh/retry script and documented the logged menu milestones separately from visible UI. Same confinement, game hashes/signatures and 60-second budget retained. No native retry was run from the normal account.
+
+## Fresh visible game and reward-test preparation
+
+The owner confirmed the windowed retry showed the main menu, allowed fullscreen/settings/back navigation, then closed, and appeared to contain fresh game data. The prior launcher report reached its timer limit; the new close is consistent with the same 60-second supervisor, not independently proved to be a crash. No Steam or imported progress was reported; exported first-boot logs establish Steam skipped and private relative data root. Full cleanup/reader compatibility remain separate checks.
+
+- [ ] Add an explicitly selected manual-play mode with a maximum 900-second bound; preserve the default maximum 60-second first-boot mode and all isolation/hash/process checks. Test refusal outside limits and correct bounded manual dispatch. No long native run until the owner agrees the prepared manual-play step.
+- [ ] Prepare the current guarded companion from the pinned source as fresh copy06, verify changed JS syntax, and produce its exact original-entitlement outer-only signing proposal without executing it.
+- [ ] Update runbook/verification, stage a helper-only manual-play script, validate and save. Ask for the new concrete companion signing decision and agreed bounded manual play only after these artifacts are ready. Existing setup/first-boot approval persists. No new game signing/entitlements authorized.
+
+No implementation open questions remain.

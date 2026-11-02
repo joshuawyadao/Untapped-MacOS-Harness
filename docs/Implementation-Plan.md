@@ -248,13 +248,15 @@ Build a minimal original target/inspector pair to distinguish target debugger en
 - Out: Game/companion launch or signing changes, arbitrary PID attachment, memory reads/writes, OS prompt acceptance, global protection changes, or claiming vendor compatibility from dummy success.
 
 ### Action items
-- [ ] Add original C target (ready signal and bounded lifetime) and inspector (validate exact same-user fixture path/PID, acquire/deallocate task port only, return bounded structured result).
-- [ ] Add Python build/sign/verify and bounded matrix runner in a fresh private tmp root; keep native execution opt-in and prevent arbitrary input targets. Fail on build/signature/readiness/timeout anomalies, verify target liveness and clean up every target group.
-- [ ] Add portable regression tests for classification, failure handling and command/policy construction; keep native signing/probing out of CI. Review false-positive interpretation and prompt/cleanup boundaries.
-- [ ] Run the controlled matrix locally using only original fixtures, retaining exact return codes and unchanged-policy hash; distinguish denial, timeout and inconclusive controls. Never approve a prompt.
-- [ ] Update README, architecture, runbook and verification with result/limits, run full tests/syntax/hygiene, then commit and push the feature branch. Prepare any further game-copy proposal only if the evidence supports it, without executing it.
+- [x] Add original C target (ready signal and bounded lifetime) and inspector (validate exact same-user fixture path/PID, acquire/deallocate task port only, return bounded structured result).
+- [x] Add Python build/sign/verify and bounded matrix runner in a fresh private tmp root; keep native execution opt-in and prevent arbitrary input targets. Fail on build/signature/readiness/timeout anomalies, verify target liveness and clean up every target group.
+- [x] Add portable regression tests for classification, failure handling and command/policy construction; keep native signing/probing out of CI. Review false-positive interpretation and prompt/cleanup boundaries.
+- [x] Run the controlled matrix locally using only original fixtures, retaining exact return codes and unchanged-policy hash; distinguish denial, timeout and inconclusive controls. Never approve a prompt.
+- [x] Update README, architecture, runbook and verification with result/limits, run full tests/syntax/hygiene, then commit and push the feature branch. Prepare any further game-copy proposal only if the evidence supports it, without executing it.
 
 ### Open questions
 - None. The owner authorized the controlled original-process diagnostic. Signing any game copy remains a separate decision.
 
 Discovery: copy07 observed window and attach-attempt, but core log reports native connect false; no state/reward events. Original game is ad-hoc Hardened Runtime with four entitlements and lacks get-task-allow. The native reader imports task_for_pid and memory-read functions. A narrow OS log query produced no denial messages and does not identify the failure cause. Existing 75 tests pass; fresh native experiment is necessary because synthetic tests cannot establish OS task-port behavior.
+
+Result: original C fixtures and opt-in Python runner are implemented. Native matrices in UID501 reproduced denied code5 without get-task-allow and acquired code0 with it, both outside/inside the unchanged companion policy. All targets stopped, no memory read/write and no game/companion change. Seven new portable tests bring the full suite to82 passing; native fixture runs remain separate from CI. A standard-account diagnostic script and matching original sources are staged with syntax/byte verification. Next runtime evidence requires the owner running that script in UID502; no gameplay retry or game signing is requested in this slice. Updated README, architecture, runbook and verification describe exact findings and limits.

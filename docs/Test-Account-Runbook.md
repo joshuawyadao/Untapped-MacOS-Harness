@@ -82,3 +82,15 @@ Copy06 reached Core initialization and detected the window, but our guard's `/bi
 The updated observation/startup scripts expect `companion07.tar` and its checksum and refresh the four original helper sources. Copy07 signing and live transfer staging are now complete following explicit owner approval. The archive checksum and all archived files/symlinks were verified; the source/script refresh matches the repository. Copy07's exact outer-only signing proposal retains the five original entitlements and Hardened Runtime. That exact signing scope was approved and executed; the transfer contains app/manifest/receipt and original harness sources without any profile, Terms, logs or credentials. Existing copy06 transfer remains available pending that decision.
 
 After that preparation, the already-approved manual-play step can be used to reach another reward. Keep choices visible, run the protected 45-second observer in the same test account, review Terms manually, and provide the exported diagnostic path and card image. Do not infer attachment from window detection. Game signing and debugger-entitlement changes remain excluded.
+
+## Original-process attachment diagnostic
+
+Copy07 reached the real native connection attempt, which returned false. The controlled original-fixture matrix ran twice in UID501: target access was denied without get-task-allow and allowed with it, inside/outside the existing outer policy. Repeat in the standard `sts2test` graphical account to check that account's authorization context before proposing game signing:
+
+```sh
+/bin/sh /private/tmp/untapped-sts2-transfer-01/diagnose_attachment_access.sh
+```
+
+No gameplay, reward screen, Terms acceptance or sign-in is needed. The script signs/launches only three fresh original fixture binaries (two targets and an inspector), queries task ports for its generated same-user targets, reads no target memory, stops all fixtures, and prints a `Diagnostic file` path for sharing. Compilation/signing/probe errors stop the experiment; do not approve any unexpected OS or developer-tools prompt. Send the path or exact error if one occurs.
+
+This operation does not sign, launch or change either game/companion copy, and does not enable any global debugger/protection setting. A target-process entitlement difference in the fixture test supports a future separately approved debug-enabled game copy; it cannot establish that the real reader or reward geometry works.

@@ -198,3 +198,20 @@ Copy07 archive comparison confirms exactly the intended three packed entries dif
 ## Approved copy07 signing and transfer
 
 The owner approved copy07 outer-only signing and the protected 45-second retry. Signing succeeded and deep strict verification, both original entitlement sets, Hardened Runtime and fixed nested/archive pins passed. Signed executable SHA-256: `6bfc801a5aece768b08c643c88759405b08ab8e4663a3e7b53841d09cb6ecb78`. The app/manifest/receipt-only 333-entry transfer archive matches the signed source byte-for-byte for files and symlink targets; SHA-256 `685c5c967bd5ab7a857a2eaa8ed525bc96ebbe9b52043b56afd3a6bf19efac36`. Original helper sources and observer/startup scripts were refreshed and syntax-checked. No profile, Terms, logs or credentials were transferred. No companion/game launch was executed during staging; reader/reward/overlay remain awaiting the owner-run observation.
+
+## Copy07 native failure and controlled task-port matrix
+
+The owner's latest reward observation passed the new identity guard, detected the exact game and recorded attach-attempt. Core logged `ScryRuntime.connect` followed by `Failed to connect to process` and `connect: false`. No connection acknowledgement or state/reward snapshot followed. The card photo shows Haze, Ricochet and Infinite Blades; those names are visual evidence only, not reader output or a verified reward comparison. OS log queries in the attachment-time interval produced no matching denial record. The native reader imports `task_for_pid` and memory-read functions; the game's original ad-hoc Hardened Runtime entitlements lack get-task-allow.
+
+Ranked hypotheses before testing: target entitlement blocks task-port acquisition; outer confinement blocks it even for an entitled target; or the vendor reader/build has a separate failure. The original-fixture experiment tests the first two at the task-port boundary without executing vendor code. Apple documents [debugger/get-task-allow interaction](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.cs.debugger).
+
+Native command, executed twice on this Mac in UID501: `python3 -m harness.attachment_diagnostic --run-original-fixtures`. Both runs completed with `TARGET_ENTITLEMENT_DISTINGUISHES_FIXTURES` and `targets_stopped: true`. The second run uses identical target signing identifiers and rechecks process start metadata/returned port PID. Results:
+
+| Target get-task-allow | Outside outer policy | Inside unchanged outer policy |
+| --- | --- | --- |
+| Absent | denied, kernel return5 | denied, kernel return5 |
+| True | acquired, kernel return0 | acquired, kernel return0 |
+
+No target memory was read/written; only acquired task ports were deallocated. No game/companion files or global protections changed and no prompt was accepted. The second private report is `/private/tmp/untapped-attachment-diagnostic-0qe0grje/report.json`; exact policy SHA-256 `c2c44a105ae5c8c698c27ec98b5b76cd522fde8c03a99e4a2762c17103661e84` includes run-specific paths. The native fixtures/report remain outside Git.
+
+This is evidence of an entitlement distinction for original test processes, not proof of the actual reader's failure cause. UID502 authorization context, the game's own sandbox, real memory reads/traversal and overlay are not reproduced. The staged test-account script repeats the same comparison without gameplay; any game-copy entitlement/signing change still needs a separate concrete proposal and approval. Seven portable regression tests cover classification, incomplete/invalid matrices, original-only commands, signature settings, dispatch, identity failures and multi-target cleanup. All 82 tests pass; native fixture execution is manual and not run in CI.

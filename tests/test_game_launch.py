@@ -90,7 +90,8 @@ class GameLaunchTests(unittest.TestCase):
         game.prepare(self.source, self.session, self.original, "sts2test")
         process = mock.Mock(pid=1234)
         process.wait.side_effect = subprocess.TimeoutExpired("game", 1)
-        with mock.patch.object(game, "running_conflicts", return_value=[]), \
+        with mock.patch.dict(os.environ, {"HOME": str(self.original), "SteamAppId": "untrusted", "DYLD_INSERT_LIBRARIES": "untrusted"}), \
+                mock.patch.object(game, "running_conflicts", return_value=[]), \
                 mock.patch.object(game.subprocess, "Popen", return_value=process) as spawn, \
                 mock.patch.object(game, "stop_probe") as stop, \
                 mock.patch.object(game.time, "monotonic", side_effect=[0, 0, 2]):
@@ -100,13 +101,16 @@ class GameLaunchTests(unittest.TestCase):
         args, options = spawn.call_args
         self.assertEqual(args[0][-2:], ["--force-steam=off", "--nomods"])
         self.assertEqual(args[0][-8:-2], ["--windowed", "--always-on-top", "--resolution", "1280x720", "--position", "80,80"])
-        self.assertEqual(options["env"].keys(), {"PATH", "LANG", "TMPDIR"})
+        self.assertEqual(options["env"]["HOME"], str(self.home))
+        self.assertEqual(options["env"].keys(), {"PATH", "LANG", "TMPDIR", "HOME"})
         self.assertTrue(options["start_new_session"])
         policy = next(self.session.glob("game-attempt-*/offline.sb")).read_text()
         self.assertIn("(deny network*)", policy)
         self.assertIn(str(self.original), policy)
         self.assertIn(str(self.home), policy)
         self.assertFalse(report["isolation_verified"])
+        self.assertEqual(report["environment_home"], str(self.home))
+        self.assertEqual(report["home_source"], "VERIFIED_TEST_ACCOUNT")
 
     def test_monitor_error_still_stops_supervised_group(self):
         game.prepare(self.source, self.session, self.original, "sts2test")

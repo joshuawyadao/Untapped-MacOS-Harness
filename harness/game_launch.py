@@ -193,13 +193,16 @@ def launch(session, seconds=60, *, manual_play=False):
     command = ["/usr/bin/sandbox-exec", "-f", str(policy), str(app / EXECUTABLE),
                "--windowed", "--always-on-top", "--resolution", "1280x720",
                "--position", "80,80", "--force-steam=off", "--nomods"]
+    # Preserve normal HOME semantics for the actual verified test OS account.
+    # Never inherit the caller's HOME or substitute an arbitrary fake home.
     environment = {"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "en_US.UTF-8",
-                   "TMPDIR": str(attempt / "temp")}
+                   "HOME": str(home), "TMPDIR": str(attempt / "temp")}
     report = {"schema": 1, "attempt": str(attempt), "test_uid": os.getuid(),
               "game_app": str(app), "expected_executable": str(app / EXECUTABLE),
               "seconds_limit": seconds, "steam_requested": False,
               "manual_play": manual_play, "seconds_maximum": maximum,
-              "result": "ATTEMPTED", "isolation_verified": False}
+              "result": "ATTEMPTED", "isolation_verified": False,
+              "environment_home": str(home), "home_source": "VERIFIED_TEST_ACCOUNT"}
     write_json(attempt / "report.json", report)
     with (attempt / "stdout.log").open("xb") as output:
         process = subprocess.Popen(command, cwd=session, env=environment, stdout=output,

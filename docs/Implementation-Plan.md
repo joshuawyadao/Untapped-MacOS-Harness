@@ -186,3 +186,5 @@ The manual-play attempt returned -10 (SIGBUS). Its exported stdout ends during e
 - [ ] Owner performs a60-second controlled test before resuming15-minute play. Check actual data path, shader-cache warning and native stability. SIGBUS resolution remains unverified.
 
 No implementation open questions. No new security/access change or game signing is involved.
+
+- Home correction implemented: the launch regression failed on missing HOME, then passed with the verified test home despite a deliberately unsafe inherited HOME/Steam/preload environment. All 66 tests pass. Added a helper-only 60-second diagnostic script which exports its exact report and bounded, volume-filtered log automatically. Runbook/architecture/verification updated, old relative data preserved, no native retry run. SIGBUS causality and resolution remain unverified pending owner comparison.

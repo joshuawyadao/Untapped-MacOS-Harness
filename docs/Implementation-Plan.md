@@ -191,7 +191,7 @@ No implementation open questions. No new security/access change or game signing 
 
 ## Companion helper-discovery comparison
 
-The first test-account reader run returned -5 (SIGTRAP), with only native Electron FATAL Unable to find helper app and no bootstrap/ready/attachment evidence. A read-only transfer audit found all333 archive entries, all141 file hashes/modes and14 internal symlinks match source, including all four helpers. A compiled inert Foundation bundle lookup under the home-deny/session-allow policy passed both confined/unconfined; this does not reproduce the actual vendor failure. No matching targeted system-log denial was found. Root cause remains unconfirmed.
+The first test-account reader run returned -5 (SIGTRAP), with only native Electron FATAL Unable to find helper app and no bootstrap/ready/attachment evidence. A read-only transfer audit found all 333 archive entries, all141 file hashes/modes and14 internal symlinks match source, including all four helpers. A compiled inert Foundation bundle lookup under the home-deny/session-allow policy passed both confined/unconfined; this does not reproduce the actual vendor failure. No matching targeted system-log denial was found. Root cause remains unconfirmed.
 
 - [ ] Compare the same signed copy06 bytes in a short private /private/tmp/uc-sts2-UID-* session, with owner/mode/symlink/path guards, fresh settings and unchanged outer restrictions. Earlier successful companion startup used private tmp sessions; this is a layout diagnostic, not a proved fix. No signing/game/entitlement change.
 - [ ] Extend reward helper to permit only private owned sessions in that constrained temp namespace as well as its existing home path, and provide a startup-only45-second diagnostic requiring no running game/Steam. Add meaningful path/identity/mode/dispatch tests; missing target still cannot attach.
@@ -199,3 +199,5 @@ The first test-account reader run returned -5 (SIGTRAP), with only native Electr
 - [ ] Owner executes the diagnostic without restarting the game. Actual helper discovery/visible startup and later native attachment remain unverified.
 
 No implementation open questions; existing copy06 protected-probe approval applies.
+
+- Prepared comparison: shared private-session validation supports only the existing test home or owned 0700 canonical `/private/tmp/uc-sts2-UID-*` roots. Startup-only requires no Steam/game and provides no attachment target. Three new synthetic cases bring total to 69 passing tests. Diagnostic script verifies/extracts the identical signed archive, runs 45 seconds, and exports exact report/stdout plus inert helper metadata inside/outside policy. Old sessions preserved. Script/snapshot syntax passed; staged copies ready. No vendor comparison executed and no signing/protection change performed.

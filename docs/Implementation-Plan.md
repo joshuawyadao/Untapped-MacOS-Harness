@@ -281,3 +281,13 @@ Prepare a new disposable copy and exact outer-game signing proposal after the UI
 - None for preparation. Actual signing of the new game copy remains a separate approval boundary.
 
 Preparation result: new unsigned source-matching game copy and exact proposal are ready at /private/tmp/untapped-sts2-debug-game-01; all440 entries match the full original-tree pin. Both architectures' original settings and deep signature verify. Unapproved sign command refuses exit2 with unchanged executable/no receipt. Nine game-debug plus four dispatch regressions bring total to95 passing tests; syntax checks pass. Added SECURITY.md guidance after identifying the new per-copy debugger-access boundary. Scripts are ready in the repository but live staging and any game signing/launch remain pending separate approval; existing transfer/game copy untouched. The test game will keep using UID502's existing test data.
+
+## Approved debug-game signing and bounded test staging
+
+The owner explicitly approved signing `/private/tmp/untapped-sts2-debug-game-01/SlayTheSpire2.app` with the reviewed outer-only command, preserving original four entitlements and Hardened Runtime and adding only get-task-allow. Approval covers the 60-second boot check, up to900 seconds owner-controlled play and a protected45-second reader observation. It does not authorize OS prompt acceptance, normal save access, global protection changes or nested signing.
+
+- [ ] Execute the reviewed sign command, verify both architectures/settings/deep signature, allowed signing-only diff and unchanged installed source.
+- [ ] Archive only app/baseline/receipt with per-entry and checksum verification; refresh original source/scripts in the transfer without profiles, saves, Terms or credentials.
+- [ ] Record signed-copy/staging evidence and runbook status, validate syntax/hygiene and save the branch; provide the install/60-second boot commands for the standard test account. Actual game/reader evidence awaits owner-run tests.
+
+No open questions. Existing95 passing behavior tests cover this implementation; this slice uses actual signing/tree/archive verification and script/repository checks, without new executable source changes.

@@ -213,3 +213,14 @@ The owner-run comparison reached ELECTRON_READY and TERMS_LOGGED with no recogni
 No implementation open questions; window-type clarification is an execution check.
 
 - Window clarification resolved: the owner saw the Untapped companion window. Short private-tmp startup is confirmed by readiness/Terms and bounded completion; inert helper checks passed inside/outside policy. Updated the observation script to fresh private tmp roots plus exact report/event/bounded-log export, using existing validated interfaces. All 69 tests and script/embedded-Python syntax pass. Staged script updated; actual reward observation awaits owner-controlled game/reward readiness. No app bytes, signature, entitlement, or policy change.
+
+## Guard execution failure and unprivileged identity helper
+
+The owner-run reward diagnostic records Core initialized and window-detected, then our target guard throws spawnSync /bin/ps EPERM before any native reader construction/connection. This is not evidence of game attachment entitlement failure. /bin/ps is mode4755. A bounded same-policy reproduction denies its execution; a byte-identical non-setuid private copy is killed by OS validation and was discarded without re-signing or bypass. An original compiled libproc metadata probe succeeds under the identical policy, returning only the calling user's target UID/executable. No vendor code executed in these probes.
+
+- [ ] Add original Darwin C identity helper and a stdlib compiler/preparation module with clean environment, private owned0700 output, source/binary hash record and failure checks. Use public proc_pidinfo/proc_pidpath, refuse different users, validate canonical positive PID and compare process start metadata before/after to reduce PID reuse races. Test construction/failure and native own-process metadata without vendor code.
+- [ ] Update CLI targeted probes to build this helper in the fresh profile before launching. Update bootstrap to validate private helper ownership/mode/hash and call it instead of /bin/ps. Preserve PID/user/path matching, outer policy and guard-before-reader. Extend executable JS guard and CLI regression coverage; startup-only remains usable.
+- [ ] Prepare fresh companion copy07 from pinned source, validate exact JS changes, native pins and syntax, and produce the same original-entitlement outer-only signing proposal. Do not execute new signing before the owner approves this exact changed copy.
+- [ ] Update runbook/architecture/verification/README and staged harness sources; run all tests, native dummy policy check, syntax/hygiene; commit/push. Actual reader connection remains untested until a future approved signed-copy observation.
+
+No implementation open questions. No game entitlement, global protection or policy relaxation is proposed.

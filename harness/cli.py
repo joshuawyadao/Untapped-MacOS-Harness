@@ -212,10 +212,22 @@ def launch(session, seconds):
     return status(session)
 
 
-def launch_outer(session, seconds, approved=False):
+def launch_outer(session, seconds, approved=False, target_pid=None, target_game=None):
     """Fresh-profile retry with only the outer sandbox, after explicit approval."""
     if not approved:
         raise HarnessError("Explicit owner approval required for Chromium --no-sandbox")
+    target_environment = {}
+    if target_pid is not None or target_game is not None:
+        if type(target_pid) is not int or target_pid <= 0 or target_game is None:
+            raise HarnessError("Provide both a positive target PID and its copied executable")
+        executable = Path(target_game).resolve(strict=True)
+        row = subprocess.run(["/bin/ps", "-p", str(target_pid), "-o", "uid=,comm="],
+                             capture_output=True, text=True, check=True, timeout=2).stdout.strip().split(None, 1)
+        if len(row) != 2 or row[0] != str(os.getuid()) or row[1] != str(executable):
+            raise HarnessError("Target PID, executable, or user differs from the requested game")
+        target_environment = {"UNTAPPED_HARNESS_TARGET_PID": str(target_pid),
+                              "UNTAPPED_HARNESS_TARGET_EXECUTABLE": str(executable),
+                              "UNTAPPED_HARNESS_TARGET_UID": str(os.getuid())}
     session, manifest, app = _validate_launch_copy(session)
     if not (session / "signing.json").is_file():
         raise HarnessError("Outer-only startup requires the verified signed disposable copy")
@@ -232,6 +244,7 @@ def launch_outer(session, seconds, approved=False):
     policy.write_text(sandbox_profile(session, Path.home().resolve())
                       + '\n(allow network* (subpath ' + json.dumps(str(session)) + '))\n')
     environment = launch_environment(session)
+    environment.update(target_environment)
     environment["UC_TEST_SANDBOX_DIR"] = str(profile)
     environment["TMPDIR"] = str(profile / "temp")
     command = ["/usr/bin/sandbox-exec", "-f", str(policy),
@@ -361,6 +374,8 @@ def main(argv=None):
     outer.add_argument("session", type=Path)
     outer.add_argument("--seconds", type=int, default=45, choices=range(1, 61), metavar="1..60")
     outer.add_argument("--approve-outer-sandbox-only", action="store_true")
+    outer.add_argument("--target-pid", type=int)
+    outer.add_argument("--target-game", type=Path, help="Exact copied game executable for the target PID")
     report = sub.add_parser("status")
     report.add_argument("session", type=Path)
     compare = sub.add_parser("compare-reward")
@@ -380,7 +395,11 @@ def main(argv=None):
         elif args.command == "launch":
             result = launch(args.session, args.seconds)
         elif args.command == "launch-outer":
-            result = launch_outer(args.session, args.seconds, approved=args.approve_outer_sandbox_only)
+            if args.target_pid is None and args.target_game is None:
+                result = launch_outer(args.session, args.seconds, approved=args.approve_outer_sandbox_only)
+            else:
+                result = launch_outer(args.session, args.seconds, approved=args.approve_outer_sandbox_only,
+                                      target_pid=args.target_pid, target_game=args.target_game)
         elif args.command == "status":
             result = status(args.session)
         else:

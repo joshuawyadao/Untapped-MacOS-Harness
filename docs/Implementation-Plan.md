@@ -132,3 +132,11 @@ The owner approved isolated account setup and game launch, and will create/log i
 - [ ] Have owner create/login to a fresh standard account; perform copying and first game probe only there. Validate private data and no Steam before gameplay.
 
 No implementation open questions remain. Account creation/login is a required manual execution step.
+
+### Isolated launcher implementation result
+
+- Added `harness/game_launch.py` and eight synthetic tests in `tests/test_game_launch.py`: pinned build and complete file/mode/symlink manifests, unchanged signatures, standard-account ownership checks, Steam/game conflict monitoring, private policy, and 60-second process-group cleanup. Normal-account preparation refused before source access. Native execution remains blocked on manual test-account login.
+- Added STS2 pre-construction PID/user/executable verification in bootstrap and guarded Core patch, with two executable synthetic tests; CLI target preflight has three additional tests in `tests/test_target_launch.py`. Rechecks reduce target substitution risk; a residual race remains between identity inspection and native connection. The changed companion has not been packaged/signed/launched.
+- All 59 tests pass; Node and account-script syntax pass. Dummy OS-policy probes allow private writes and deny original-home reads, outside writes, and remote sockets. Initial probe could not import Python modules from its protected inherited cwd; using the actual planned private cwd passed. These finite probes do not verify native game data paths.
+- Staged a game-only tar and original harness sources at `/private/tmp/untapped-sts2-transfer-01`, with a SHA-256 transfer check and manual test-account script. No saves, Steam settings, private profiles, credentials, or Git data are included. Added `docs/Test-Account-Runbook.md`; original game and normal saves/settings were not modified. User was directed to MacBook System Settings (not app settings) to create a Standard account.
+- Account setup/game launch are already approved. Next required action is owner creation/login to `sts2test`, followed by the staged Terminal script there. No further setup/first-boot approval is needed. Actual Steam absence, data paths, game window, cleanup, attachment, reward, and overlay remain unverified.

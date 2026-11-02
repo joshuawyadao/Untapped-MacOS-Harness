@@ -140,3 +140,7 @@ A later real screen can be transcribed into a private JSON file, with visible ca
 ```
 
 These IDs are synthetic and do not assert actual game identifiers. Run `python3 -m harness.cli compare-reward /private/tmp/untapped-sts2-session /private/tmp/expected-reward.json --reward-index 0`, choosing the zero-based reward event to inspect. The tool sorts cards by `cx`, then `cy`, requires exact count/ID/upgrade level, and allows at most `0.03` absolute difference in each normalized center/size coordinate. It also requires preceding bootstrap, ready, window, attach-attempt, and reader-connected events. A comparison can validate the one-screen reader milestone; overlay positioning, tier lists, statistics, and adaptive recommendations need their own checks.
+
+## Isolated launcher preparation
+
+Owner approval now covers isolated setup and the planned first game launch. Implementation and transfer staging are ready; account creation/login and the native run have not been completed. See [the runbook](Test-Account-Runbook.md). The normal-account CLI refusal was exercised, and dummy-file/socket policy probes passed private writes versus denied original-home reads, outside writes, and remote connections. All 59 portable tests pass. No native game was launched or signed, and no save/profile was imported. The new target guard is implemented in source but has not been packaged/signed into a companion copy. The previously verified offline startup belongs to copy05's earlier patch set.

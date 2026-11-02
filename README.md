@@ -57,3 +57,9 @@ See [verification](docs/Verification.md) for the exact JSON shape and evidence r
 ## Ownership and licensing
 
 Created and maintained by [Joshua Yadao](https://github.com/joshuawyadao) as an independent engineering project. Original harness code is covered by the [MIT License](LICENSE). Untapped.gg and Slay the Spire 2 belong to their respective owners. Their software, binaries, assets, account data, and trademarks are not covered by this repository's license. This project is not affiliated with or endorsed by them.
+
+## Isolated game first boot
+
+The approved test setup uses the [test-account runbook](docs/Test-Account-Runbook.md). `python3 -m harness.game_launch` prepares and launches only an unchanged pinned game copy in a separate standard macOS account. It refuses normal-account operation, checks copy hashes/signatures, blocks remote networking and normal-home access, and bounds the first probe to 60 seconds. Its report deliberately does not claim verified isolation. The prepared game-only transfer and manual script are outside Git.
+
+For later reader observation, `launch-outer --target-pid PID --target-game '/absolute/copied/game/executable'` validates user/path and supplies the target guard. New preparations reject STS2 attachment without this verified identity; startup-only probes still work. The changed companion requires a fresh signing proposal before use; the existing signed copy05 does not contain this guard.

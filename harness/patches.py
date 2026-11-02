@@ -31,6 +31,9 @@ CORE_PATCHES = [
      '      global.__untappedHarnessReward(visibleItems);\n      this.state.setVisibleItems(visibleItems);'),
     ('      const wInfo = native.getWindowInfo(targetWindowOwnerName, partialBundlePath);\n      this.currentPid = wInfo.pid;',
      '      const wInfo = native.getWindowInfo(targetWindowOwnerName, partialBundlePath);\n      if (targetWindowOwnerName === "Slay the Spire 2" && wInfo.exists) global.__untappedHarnessEvent("window-detected");\n      this.currentPid = wInfo.pid;'),
+    ('      this.disposeScry();\n      this._scry = new GameScryInstance({ pid, franchise });',
+     '      if (franchise === "STS2") global.__untappedHarnessAssertTargetPid(pid);\n'
+     '      this.disposeScry();\n      this._scry = new GameScryInstance({ pid, franchise });'),
 ]
 MAIN_PATCHES = [('    Sentry.init({\n      dsn: pkg.sentry.dsn,',
                  '    Sentry.init({\n      enabled: false,\n      dsn: pkg.sentry.dsn,')]

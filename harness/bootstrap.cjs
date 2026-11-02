@@ -40,6 +40,31 @@
     seen.add(event);
     fs.appendFileSync(events, JSON.stringify({ event, time: new Date().toISOString() }) + "\n", { mode: 0o600 });
   };
+  global.__untappedHarnessAssertTargetPid = (pid) => {
+    const raw = process.env.UNTAPPED_HARNESS_TARGET_PID;
+    const rawUid = process.env.UNTAPPED_HARNESS_TARGET_UID;
+    const executable = process.env.UNTAPPED_HARNESS_TARGET_EXECUTABLE;
+    if (typeof raw !== "string" || !/^[1-9][0-9]*$/.test(raw) ||
+        typeof rawUid !== "string" || !/^[1-9][0-9]*$/.test(rawUid) ||
+        typeof executable !== "string" || !path.isAbsolute(executable)) {
+      throw new Error("Complete harness target identity required before STS2 reader construction");
+    }
+    const expected = Number(raw);
+    const expectedUid = Number(rawUid);
+    if (!Number.isSafeInteger(expected) || !Number.isSafeInteger(pid) || pid <= 0 || pid !== expected ||
+        !Number.isSafeInteger(expectedUid) || typeof process.getuid !== "function" ||
+        expectedUid !== process.getuid()) {
+      throw new Error("Harness STS2 target PID mismatch");
+    }
+    const { execFileSync } = require("node:child_process");
+    const row = execFileSync("/bin/ps", ["-p", String(pid), "-o", "uid=,comm="], {
+      encoding: "utf8", timeout: 2000, maxBuffer: 1024,
+    }).trim();
+    const identity = /^([0-9]+)\s+(.+)$/.exec(row);
+    if (!identity || Number(identity[1]) !== expectedUid || identity[2] !== executable) {
+      throw new Error("Harness STS2 target process changed before reader construction");
+    }
+  };
   global.__untappedHarnessReward = (items) => {
     if (items?.source !== "cardReward" || !Array.isArray(items.cards) || rewards >= 100) return;
     const cards = items.cards.slice(0, 20).map(({ id, upgradeLevel, cx, cy, width, height }) => ({ id, upgradeLevel, cx, cy, width, height }));

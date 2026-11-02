@@ -231,8 +231,10 @@ Implementation: original libproc helper, private compiler preparation, hash/file
 
 The owner explicitly approved copy07 outer-only signing and another 45-second protected observation, retaining the five original entitlements, Hardened Runtime and outer sandbox. The already-approved isolated manual-play allowance remains 900 seconds; game bytes/signing and global protections remain unchanged.
 
-- [ ] Execute the existing reviewed sign-copy command and verify both entitlement sets, deep signature and pinned nested/archive bytes.
-- [ ] Stage app/manifest/receipt-only companion07 archive with checksum and refresh original harness sources/scripts without profiles, Terms, logs or credentials. Verify transferred contents and source syntax.
-- [ ] Record results in verification/runbook, save the branch, and provide the manual test-account commands. Actual reader/reward/overlay evidence awaits the owner-run probe.
+- [x] Execute the existing reviewed sign-copy command and verify both entitlement sets, deep signature and pinned nested/archive bytes.
+- [x] Stage app/manifest/receipt-only companion07 archive with checksum and refresh original harness sources/scripts without profiles, Terms, logs or credentials. Verify transferred contents and source syntax.
+- [x] Record results in verification/runbook, save the branch, and provide the manual test-account commands. Actual reader/reward/overlay evidence awaits the owner-run probe.
 
 No open questions; approval applies to this exact copy and bounded experiment. No executable source changes are planned in this slice, so existing 75 passing tests remain applicable; use actual signing/archive integrity verification and repository checks.
+
+Approved execution: copy07 outer-only signing succeeded; deep strict verification, both original entitlement sets, Hardened Runtime and nested/archive pins passed. Signed executable SHA-256 `6bfc801a5aece768b08c643c88759405b08ab8e4663a3e7b53841d09cb6ecb78`. Staged companion07 archive contains exactly app/manifest/receipt (333 entries), every archived file/symlink matches the signed source, checksum verified. Original helper sources and observer/startup scripts match repository bytes and pass syntax checks. No fresh vendor execution occurred in this staging step; the owner must run the observer in UID502's graphical account. Prior 75 passing behavior tests remain applicable; no source/test changes were needed for signing/staging.

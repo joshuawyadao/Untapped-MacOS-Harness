@@ -29,3 +29,11 @@ The updated launcher requests a 1280x720 window at 80,80 with always-on-top usin
 ```
 
 This refreshes only the account-owned original Python launcher helper and reuses the existing private session/data; it does not re-extract or modify the game. A new game-attempt directory preserves prior logs. Stay at the initial menu, leave prompts untouched, and report whether a visible window appears. Do not use the original setup script again: it intentionally refuses existing directories.
+
+## Prepared reward-test step
+
+The owner confirmed visible menu/settings/fullscreen navigation and fresh-looking data on the windowed retry. The timed shutdown is consistent with the 60-second supervisor; no crash was independently established. This confirms usable UI, not reader access.
+
+A manual-play step is prepared but has not run. Once the owner agrees the bounded play step, `scripts/play_isolated_game.sh` (staged under `/private/tmp/untapped-sts2-transfer-01/`) refreshes only the original Python helper and runs the existing private game session with `--seconds 900 --manual-play`. The default remains 60 seconds. Both modes keep account, copy, signature, process-conflict and confinement checks. The owner controls play and pauses at one reward screen; the game is closed by its supervisor at the limit. No test account/profile is re-created.
+
+The target-guarded companion is prepared privately as copy06, patched ASAR SHA-256 `e07df4f66c5918f11c9e8907a67783ae46c300ae8eda63ba3b9da5f0307d49c9`. Its exact `signing-proposal.json` preserves the five original entitlements and Hardened Runtime, with outer-only ad-hoc signing. It is unsigned/unlaunched. This changed copy requires the separate signing decision before transfer/observation. When ready, a 45-second companion observation must run in the same test-account session, pinning the actual copied-game PID/user/executable. Manual Terms acceptance remains required. No game signing or debugging entitlement change is included.

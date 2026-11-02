@@ -145,9 +145,9 @@ No implementation open questions remain. Account creation/login is a required ma
 
 The owner ran the test-account first boot and saw no menu. Exported diagnostics confirm `./SlayTheSpire2` as the data root (relative to the private session cwd), Steam initialization skipped, intended no-Steam/no-mods arguments, and both essential/complete main-menu load milestones. The shader-cache error did not prevent these milestones. Shutdown static-string errors alone do not establish a startup failure.
 
-- [ ] Add explicit windowed mode, 1280x720 size, and on-screen position to the same bounded probe; preserve sandbox, account checks, game hashes/signatures, and 60-second bound. Extend the existing command test and run full tests.
-- [ ] Stage an account-owned helper refresh/retry script that reuses the existing private game session without re-extracting or overwriting the game/data. Update runbook/verification; validate syntax/hygiene, commit and push.
-- [ ] Owner runs the retry in sts2test and confirms actual visible UI. Visibility, actual file confinement/cleanup and reader compatibility remain separate pending checks. No open implementation questions.
+- [x] Add explicit windowed mode, 1280x720 size, and on-screen position to the same bounded probe; preserve sandbox, account checks, game hashes/signatures, and 60-second bound. Extend the existing command test and run full tests.
+- [x] Stage an account-owned helper refresh/retry script that reuses the existing private game session without re-extracting or overwriting the game/data. Update runbook/verification; validate syntax/hygiene, commit and push.
+- [x] Owner runs the retry in sts2test and confirms actual visible UI. Visibility, actual file confinement/cleanup and reader compatibility remain separate pending checks. No open implementation questions.
 
 - Visibility probe prepared: explicit windowed/always-on-top, 1280x720 at 80,80; existing command regression updated, all 59 tests and retry-script syntax pass. Added repeatable helper-only refresh/retry script and documented the logged menu milestones separately from visible UI. Same confinement, game hashes/signatures and 60-second budget retained. No native retry was run from the normal account.
 
@@ -155,8 +155,10 @@ The owner ran the test-account first boot and saw no menu. Exported diagnostics 
 
 The owner confirmed the windowed retry showed the main menu, allowed fullscreen/settings/back navigation, then closed, and appeared to contain fresh game data. The prior launcher report reached its timer limit; the new close is consistent with the same 60-second supervisor, not independently proved to be a crash. No Steam or imported progress was reported; exported first-boot logs establish Steam skipped and private relative data root. Full cleanup/reader compatibility remain separate checks.
 
-- [ ] Add an explicitly selected manual-play mode with a maximum 900-second bound; preserve the default maximum 60-second first-boot mode and all isolation/hash/process checks. Test refusal outside limits and correct bounded manual dispatch. No long native run until the owner agrees the prepared manual-play step.
-- [ ] Prepare the current guarded companion from the pinned source as fresh copy06, verify changed JS syntax, and produce its exact original-entitlement outer-only signing proposal without executing it.
+- [x] Add an explicitly selected manual-play mode with a maximum 900-second bound; preserve the default maximum 60-second first-boot mode and all isolation/hash/process checks. Test refusal outside limits and correct bounded manual dispatch. No long native run until the owner agrees the prepared manual-play step.
+- [x] Prepare the current guarded companion from the pinned source as fresh copy06, verify changed JS syntax, and produce its exact original-entitlement outer-only signing proposal without executing it.
 - [ ] Update runbook/verification, stage a helper-only manual-play script, validate and save. Ask for the new concrete companion signing decision and agreed bounded manual play only after these artifacts are ready. Existing setup/first-boot approval persists. No new game signing/entitlements authorized.
 
 No implementation open questions remain.
+
+- Preparation result: manual-play is explicit and bounded to 900 seconds; default60 remains. Three new boundary/dispatch/deadline tests bring the suite to62 passing cases. Updated/staged helper-only play script. Copy06's exact original-entitlement signing proposal is ready; all three changed JS entries pass syntax and every other packed entry/fixed payload is unchanged. New signing and long native execution remain unexecuted. Source image detached. Runbook/verification updated; no game or global security change occurred.

@@ -1,9 +1,11 @@
 """Synthetic game-copy and bounded-launch checks; no game executable runs."""
 import json
+import io
 import os
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -136,6 +138,43 @@ class GameLaunchTests(unittest.TestCase):
         manifest.symlink_to(outside)
         with self.assertRaisesRegex(HarnessError, "redirected"):
             game.launch(self.session, 1)
+
+    def test_manual_play_limits_are_checked_before_session_access(self):
+        absent = self.home / "absent"
+        for seconds, manual, maximum in ((0, False, 60), (-1, True, 900),
+                                          (61, False, 60), (901, True, 900)):
+            with self.subTest(seconds=seconds, manual=manual):
+                with self.assertRaisesRegex(HarnessError, f"1–{maximum}"):
+                    game.launch(absent, seconds, manual_play=manual)
+        self.assertFalse(absent.exists())
+
+    def test_manual_play_900_seconds_still_cleans_up_at_deadline(self):
+        game.prepare(self.source, self.session, self.original, "sts2test")
+        process = mock.Mock(pid=1234)
+        process.wait.side_effect = subprocess.TimeoutExpired("game", 1)
+        with mock.patch.object(game, "running_conflicts", return_value=[]), \
+                mock.patch.object(game.subprocess, "Popen", return_value=process), \
+                mock.patch.object(game, "stop_probe") as stop, \
+                mock.patch.object(game.time, "monotonic", side_effect=[0, 0, 901]):
+            report = game.launch(self.session, 900, manual_play=True)
+        self.assertTrue(report["time_limit_reached"])
+        self.assertTrue(report["manual_play"])
+        self.assertEqual(report["seconds_maximum"], 900)
+        self.assertEqual(report["seconds_limit"], 900)
+        stop.assert_called_once_with(process)
+
+    def test_cli_manual_play_requires_explicit_flag(self):
+        with mock.patch.object(game, "launch", return_value={"result": "ATTEMPTED"}) as launch:
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(game.main(["launch", str(self.session), "--seconds", "900", "--manual-play"]), 0)
+            launch.assert_called_once_with(self.session, 900, manual_play=True)
+        with mock.patch.object(game, "launch", return_value={"result": "ATTEMPTED"}) as launch:
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(game.main(["launch", str(self.session)]), 0)
+            launch.assert_called_once_with(self.session, 60, manual_play=False)
+        with redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(game.main(["launch", str(self.session), "--seconds", "900"]), 2)
+        self.assertIn("1–60 seconds", errors.getvalue())
 
 
 if __name__ == "__main__":

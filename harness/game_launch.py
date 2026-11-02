@@ -165,9 +165,10 @@ def game_policy(session, home, original):
     ])
 
 
-def launch(session, seconds):
-    if not 1 <= seconds <= 60:
-        raise HarnessError("Game launch limit is 1–60 seconds")
+def launch(session, seconds=60, *, manual_play=False):
+    maximum = 900 if manual_play else 60
+    if not 1 <= seconds <= maximum:
+        raise HarnessError(f"Game launch limit is 1–{maximum} seconds")
     session = Path(session).absolute()
     # Refuse a redirected manifest before opening it, even on a first launch.
     if session.is_symlink() or session.resolve() != session or (session / "manifest.json").is_symlink():
@@ -197,6 +198,7 @@ def launch(session, seconds):
     report = {"schema": 1, "attempt": str(attempt), "test_uid": os.getuid(),
               "game_app": str(app), "expected_executable": str(app / EXECUTABLE),
               "seconds_limit": seconds, "steam_requested": False,
+              "manual_play": manual_play, "seconds_maximum": maximum,
               "result": "ATTEMPTED", "isolation_verified": False}
     write_json(attempt / "report.json", report)
     with (attempt / "stdout.log").open("xb") as output:
@@ -247,10 +249,12 @@ def main(argv=None):
     run = sub.add_parser("launch")
     run.add_argument("session", type=Path)
     run.add_argument("--seconds", type=int, default=60)
+    run.add_argument("--manual-play", action="store_true")
     args = parser.parse_args(argv)
     try:
         result = (prepare(args.source, args.session, args.original_home, args.test_user)
-                  if args.command == "prepare" else launch(args.session, args.seconds))
+                  if args.command == "prepare" else launch(args.session, args.seconds,
+                                                           manual_play=args.manual_play))
         print(json.dumps(result, indent=2))
         return 1 if result.get("unexpected_process") or result.get("exit_code", 0) not in (None, 0) else 0
     except (HarnessError, OSError, ValueError, KeyError, subprocess.SubprocessError) as error:

@@ -188,3 +188,14 @@ The manual-play attempt returned -10 (SIGBUS). Its exported stdout ends during e
 No implementation open questions. No new security/access change or game signing is involved.
 
 - Home correction implemented: the launch regression failed on missing HOME, then passed with the verified test home despite a deliberately unsafe inherited HOME/Steam/preload environment. All 66 tests pass. Added a helper-only 60-second diagnostic script which exports its exact report and bounded, volume-filtered log automatically. Runbook/architecture/verification updated, old relative data preserved, no native retry run. SIGBUS causality and resolution remain unverified pending owner comparison.
+
+## Companion helper-discovery comparison
+
+The first test-account reader run returned -5 (SIGTRAP), with only native Electron FATAL Unable to find helper app and no bootstrap/ready/attachment evidence. A read-only transfer audit found all333 archive entries, all141 file hashes/modes and14 internal symlinks match source, including all four helpers. A compiled inert Foundation bundle lookup under the home-deny/session-allow policy passed both confined/unconfined; this does not reproduce the actual vendor failure. No matching targeted system-log denial was found. Root cause remains unconfirmed.
+
+- [ ] Compare the same signed copy06 bytes in a short private /private/tmp/uc-sts2-UID-* session, with owner/mode/symlink/path guards, fresh settings and unchanged outer restrictions. Earlier successful companion startup used private tmp sessions; this is a layout diagnostic, not a proved fix. No signing/game/entitlement change.
+- [ ] Extend reward helper to permit only private owned sessions in that constrained temp namespace as well as its existing home path, and provide a startup-only45-second diagnostic requiring no running game/Steam. Add meaningful path/identity/mode/dispatch tests; missing target still cannot attach.
+- [ ] Stage a one-command test-account diagnostic which verifies/extracts the existing signed archive into a new0700 root and exports exact attempt report/stdout. Preserve old data/profiles. Update runbook/verification, full tests and syntax/hygiene, checkpoint/push.
+- [ ] Owner executes the diagnostic without restarting the game. Actual helper discovery/visible startup and later native attachment remain unverified.
+
+No implementation open questions; existing copy06 protected-probe approval applies.

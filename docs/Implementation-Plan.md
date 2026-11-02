@@ -175,3 +175,14 @@ No implementation open questions. Native observation waits on the owner's reward
 
 - Execution preparation complete: approved copy06 outer-only signing succeeded, deep strict verification and both five-entitlement sets passed. Signed executable SHA-256 `4e4a9e38726ca8fa160a68879e0db279d7fc95c363b95fd1cf8f0be3115b2ac1`. App/static manifest/receipt archive and SHA check staged without profiles/Terms/logs.
 - Added `harness/reward_probe.py`, four synthetic tests in `tests/test_reward_probe.py`, and the test-account observation script. It requires one exact same-user copied game, rejects Steam/ambiguous targets, and invokes the approved 45-second outer launcher. All 66 tests pass. Runbook updated and scripts staged; native observation waits for the owner's paused reward screen. No game signing, entitlement, or global protection change occurred.
+
+## Verified test-account home correction
+
+The manual-play attempt returned -10 (SIGBUS). Its exported stdout ends during early asset/localization loading, with no useful native stack; the owner found no matching Apple crash report. Do not attribute SIGBUS to shader caching without a successful comparison run. Independent defect: the constructed environment omits HOME. Godot4.5.1 macOS get_config_path/get_cache_path read HOME and otherwise fall back to a relative path, consistent with blank HOME and `./SlayTheSpire2` in the exported log.
+
+- [ ] Extend the existing executable-launch regression to require HOME from the validated pwd test-account home, even if parent HOME points at the normal account; reject inherited Steam/preload credentials. Observe failure before the correction.
+- [ ] Restore normal HOME semantics only in the game child environment, using the already verified actual sts2test home (not an arbitrary redirected home and not a shell HOME assignment). Preserve sandbox, game bytes/signatures, target checks and bounds. Record that source in report.
+- [ ] Update runbook, architecture and verification with the newly expected test-account user-data root; preserve prior relative test data without migration/deletion. Stage the existing60-second helper retry, run focused/full tests, shell syntax/hygiene and save branch.
+- [ ] Owner performs a60-second controlled test before resuming15-minute play. Check actual data path, shader-cache warning and native stability. SIGBUS resolution remains unverified.
+
+No implementation open questions. No new security/access change or game signing is involved.

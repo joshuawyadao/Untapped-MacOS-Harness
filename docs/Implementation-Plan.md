@@ -260,3 +260,22 @@ Build a minimal original target/inspector pair to distinguish target debugger en
 Discovery: copy07 observed window and attach-attempt, but core log reports native connect false; no state/reward events. Original game is ad-hoc Hardened Runtime with four entitlements and lacks get-task-allow. The native reader imports task_for_pid and memory-read functions. A narrow OS log query produced no denial messages and does not identify the failure cause. Existing 75 tests pass; fresh native experiment is necessary because synthetic tests cannot establish OS task-port behavior.
 
 Result: original C fixtures and opt-in Python runner are implemented. Native matrices in UID501 reproduced denied code5 without get-task-allow and acquired code0 with it, both outside/inside the unchanged companion policy. All targets stopped, no memory read/write and no game/companion change. Seven new portable tests bring the full suite to82 passing; native fixture runs remain separate from CI. A standard-account diagnostic script and matching original sources are staged with syntax/byte verification. Next runtime evidence requires the owner running that script in UID502; no gameplay retry or game signing is requested in this slice. Updated README, architecture, runbook and verification describe exact findings and limits.
+
+## Separate debug-enabled game-copy proposal
+
+Prepare a new disposable copy and exact outer-game signing proposal after the UID502 original-fixture matrix also denied code5 without get-task-allow and acquired code0 with it, both inside/outside policy. Signing and runtime remain excluded until separately approved.
+
+### Scope
+- In: Copy-only preparation from the verified installed pinned game; exact original four entitlements plus get-task-allow; outer-only ad-hoc proposal retaining Hardened Runtime; source/tree/signature checks; explicit signing API/receipt for later approval; isolated test-account installation and launcher/reader guards for the distinct debug game path; portable tests and documentation.
+- Out: Executing game signing or launching either app now, modifying either existing game copy or saves, weakening sandbox/Steam/normal-account checks, new companion patches, OS prompt acceptance or global protection changes.
+
+### Action items
+- [ ] Implement game_debug.py copy/proposal/explicit-sign/receipt/verification/install interfaces with fail-closed tree/path/identity/entitlement checks. Restrict signing changes to outer executable and its resource seal, preserve all other bytes/modes/symlinks and baseline evidence.
+- [ ] Extend existing game launcher and reward helper with explicit debug-copy opt-in, exact separate path and verified receipt; retain default original-copy behavior and all isolation/timeout/Steam/PID guards.
+- [ ] Prepare dedicated install/play/observe scripts for later staging, never enable them before signed-copy verification. No original test profile or Terms is transferred.
+- [ ] Add portable signing/proposal/tampering/receipt and dispatch regressions, run targeted and full tests, syntax/hygiene. Native signing remains mocked; no test executes vendor code.
+- [ ] Prepare the real new unsigned copy and exact JSON signing proposal outside Git, verify pristine source/copy equality and reviewable proposed command/entitlement delta. Do not sign it.
+- [ ] Update README, architecture, runbook and verification with UID502 evidence, copy scope, guard behavior and pending approval; commit/push, then request approval for the exact prepared copy and bounded experiment.
+
+### Open questions
+- None for preparation. Actual signing of the new game copy remains a separate approval boundary.

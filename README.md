@@ -2,7 +2,7 @@
 
 An unofficial, experimental harness for investigating whether the **existing Untapped.gg companion** can work with native macOS Slay the Spire 2.
 
-**Status: diagnostic proof of concept; manual Terms acceptance recorded.** The owner accepted Terms during an approved 45-second protected launch. Offline anonymous-token retries continued until timeout; full initialization, game attachment, reward reading, and overlay display remain **unverified**.
+**Status: diagnostic proof of concept; protected copy05 reaches Terms.** The owner accepted Terms in an earlier private profile. The newly signed copy includes the offline credential guard, but its fresh profile has no acceptance recorded. Full initialization, game attachment, reward reading, and overlay display remain **unverified**.
 
 ## What this repository provides
 
@@ -35,7 +35,7 @@ This requires the signed copy and rechecks its hashes/signature. Each run create
 
 The November 2 attempt records manual acceptance in its private profile. A new attempt does not inherit that acceptance. After acceptance, vendor startup retries blocked anonymous-token requests; the existing status label `TERMS_LOGGED` does not distinguish accepted Terms from a still-open Terms screen. See the [runtime record](docs/Verification.md#manual-terms-review) for the separate evidence.
 
-Current preparation also patches offline credential acquisition to return authentication unavailable before any credential read or anonymous-token request. This preserves Terms and the existing reader, creates no login/token, and keeps remote networking blocked. The new adaptation still needs a separately approved signed-copy runtime check; the successful manual Terms attempt used the earlier two-entry patch.
+Current preparation also patches offline credential acquisition to return authentication unavailable before any credential read or anonymous-token request. This preserves Terms and the existing reader, creates no login/token, and keeps remote networking blocked. Copy05 was separately approved, signed, and launched for 45 seconds; it remained at Terms. The adaptation's post-Terms native behavior is still untested. The successful manual Terms attempt used the earlier two-entry patch.
 
 If a real reward event is later captured, manually transcribe the visible cards and normalized positions into a private JSON file, then compare it:
 

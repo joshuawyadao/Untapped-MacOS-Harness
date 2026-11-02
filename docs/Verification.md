@@ -7,8 +7,8 @@ This record distinguishes static inspection, startup, game detection, reader att
 | Static inspection | Verified | Exact archive hash, guarded STS2 gates, bundled overlay/reader, and both Electron fuse wires `10110001` reproduced. |
 | Source and preparation | Verified | Source signature valid outside the Codex sandbox; a copy-only patched session was prepared. Signature checks inside the Codex sandbox were misleading, so that environment is not used to judge vendor validity. |
 | Offline policy | Smoke-tested | Real-home read, outside write, and remote IP socket denied; session write and loopback allowed. |
-| Companion signing | **Verified after owner approval** | Only the outer disposable companion was re-signed ad hoc. Deep strict verification, both original entitlement sets, and fixed framework/native/ASAR hashes passed. |
-| Companion startup | **Manual Terms acceptance recorded; full initialization pending** | In the November 2 protected window, the owner accepted Terms. Private settings and logs agree. Offline anonymous-token requests retried until the 45-second limit; no Fully initialized milestone was logged. |
+| Companion signing | **Verified after owner approval** | The owner separately approved outer-only ad-hoc signing for copy04 and copy05. Deep strict verification, both original entitlement sets, and fixed framework/native/ASAR hashes passed. |
+| Companion startup | **Copy05 reaches Terms; full initialization pending** | Copy04's private attempt records manual acceptance and offline token retries. The new copy05 contains the offline credential guard, but its fresh private attempt recorded no acceptance before the 45-second limit. No Fully initialized milestone was logged in either run. |
 | Native game window detection | Untested | Requires a `window-detected` event from the copied companion. |
 | Reader attachment | Untested | Requires `attach-attempt`, then `reader-connected` after vendor `connect()` reports success. The `status` label is `CONNECT_ACKNOWLEDGED`: native connection and runtime wrapper setup were acknowledged, but later game-context traversal remains unproved. Window detection alone is insufficient. |
 | Reward state | Untested | Requires a real `reward` event with card IDs, upgrades, and normalized positions matching the visible game screen. |
@@ -20,7 +20,7 @@ Before approved signing, the locked desktop prevented UI inspection but was not 
 
 ## Companion-only signing
 
-The owner approved re-signing **only the outer companion bundle** in one fresh disposable session. Execution succeeded, retaining Hardened Runtime and its five existing true entitlements: debugger, JIT, unsigned executable memory, DYLD environment variables, and disabled library validation. Add no entitlement, including `get-task-allow`. Do not sign the game or recursively sign nested code.
+The owner approved re-signing **only the outer companion bundle** in copy04, then separately approved the same operation for copy05 after the offline credential adaptation. Both executions succeeded, retaining Hardened Runtime and the five existing true entitlements: debugger, JIT, unsigned executable memory, DYLD environment variables, and disabled library validation. Add no entitlement, including `get-task-allow`. Do not sign the game or recursively sign nested code.
 
 The reviewable command produced by `signing-proposal` has this form:
 
@@ -82,7 +82,15 @@ Preparation now adds a guarded Services-chunk change: `ensureLocalCredentials()`
 
 A fresh unsigned copy is prepared at `/private/tmp/untapped-native-sts2-poc-05/Companion.app`. Full packed-entry comparison found exactly three changed entries; their JavaScript syntax checks passed. Every other packed entry, executable, framework, native reader, and Info.plist is unchanged. The source ASAR hash remains pinned; the new patched ASAR hash is `e102b9c5c4369e4d995a7d5ebf1e06a4f81aa042f12172d729e0886c373d3e4f`. No profile or accepted-Terms state was copied into it, and the read-only source disk image was detached after preparation.
 
-The exact outer-only signing proposal is private at `/private/tmp/untapped-native-sts2-poc-05/signing-proposal.json`, with the same five original entitlements verified on both architectures and Hardened Runtime retained in the proposed command. It has not been signed or launched. Approval for the earlier copy does not execute this new proposal. A protected runtime check of this adaptation remains pending; synthetic tests and syntax checks do not establish native compatibility.
+The exact outer-only signing proposal is private at `/private/tmp/untapped-native-sts2-poc-05/signing-proposal.json`, with the same five original entitlements verified on both architectures and Hardened Runtime retained in the proposed command. At the proposal checkpoint this copy was unsigned/unlaunched; the owner subsequently approved and executed it as recorded below. Synthetic tests and syntax checks do not establish native compatibility.
+
+## Approved copy05 execution
+
+The owner explicitly approved copy05's signing proposal and another 45-second protected startup. Outer-only signing succeeded; deep strict verification, both original entitlement sets, and fixed native/framework/ASAR hashes passed. Its private `signing.json` records signed executable SHA-256 `daffa1ea0eb5fbb20eb7035f43a5d9224787feef3c566b2dbd7826cc353c866e`. No new entitlement, nested signing, game change, or global protection change was included.
+
+The supervised run created `/private/tmp/untapped-native-sts2-poc-05/outer-attempt-jft7ntme`. It recorded bootstrap and Electron ready and logged Showing Terms of Service. The fresh private config had no `acceptedTOS` value after the run, and no accepted-Terms log, full initialization, detection, attachment, or reward event was recorded. Earlier manual acceptance belongs to copy04's separate private profile. The offline credential branch therefore still lacks a post-Terms native runtime check; absence of token retries while Terms was pending does not validate it.
+
+The runner reached its 45-second limit, cleaned up its process group, and an exact-copy process check found no remaining copy05 processes. No app-opening inspection API was used. A user readiness/window-visibility question is pending before another manual Terms window; signing and the same protected mode for this copy are already approved. The 46-test suite was previously passing; this execution changes private artifacts and documentation only, so no new test case or repeated suite run is needed.
 
 ## Commands and private evidence
 

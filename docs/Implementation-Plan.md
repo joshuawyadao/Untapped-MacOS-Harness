@@ -140,3 +140,11 @@ No implementation open questions remain. Account creation/login is a required ma
 - All 59 tests pass; Node and account-script syntax pass. Dummy OS-policy probes allow private writes and deny original-home reads, outside writes, and remote sockets. Initial probe could not import Python modules from its protected inherited cwd; using the actual planned private cwd passed. These finite probes do not verify native game data paths.
 - Staged a game-only tar and original harness sources at `/private/tmp/untapped-sts2-transfer-01`, with a SHA-256 transfer check and manual test-account script. No saves, Steam settings, private profiles, credentials, or Git data are included. Added `docs/Test-Account-Runbook.md`; original game and normal saves/settings were not modified. User was directed to MacBook System Settings (not app settings) to create a Standard account.
 - Account setup/game launch are already approved. Next required action is owner creation/login to `sts2test`, followed by the staged Terminal script there. No further setup/first-boot approval is needed. Actual Steam absence, data paths, game window, cleanup, attachment, reward, and overlay remain unverified.
+
+## Window visibility diagnosis
+
+The owner ran the test-account first boot and saw no menu. Exported diagnostics confirm `./SlayTheSpire2` as the data root (relative to the private session cwd), Steam initialization skipped, intended no-Steam/no-mods arguments, and both essential/complete main-menu load milestones. The shader-cache error did not prevent these milestones. Shutdown static-string errors alone do not establish a startup failure.
+
+- [ ] Add explicit windowed mode, 1280x720 size, and on-screen position to the same bounded probe; preserve sandbox, account checks, game hashes/signatures, and 60-second bound. Extend the existing command test and run full tests.
+- [ ] Stage an account-owned helper refresh/retry script that reuses the existing private game session without re-extracting or overwriting the game/data. Update runbook/verification; validate syntax/hygiene, commit and push.
+- [ ] Owner runs the retry in sts2test and confirms actual visible UI. Visibility, actual file confinement/cleanup and reader compatibility remain separate pending checks. No open implementation questions.

@@ -42,4 +42,6 @@ Keep proprietary companion/game apps and modified distributions, real saves, acc
 
 Do not start live gameplay until a game-profile, saves, and Steam Cloud strategy is established. A copied app alone does not isolate them. The harness leaves terms acceptance to the user. Default preparation and launch do not change signing or debugging entitlements; optional companion-only `sign-copy` requires explicit owner approval of the [specific proposal](docs/Verification.md#companion-only-signing). Do not disable system protections globally.
 
+The owner requested an [isolated game-profile plan](docs/Isolated-Game-Plan.md). It recommends a dedicated standard test account with both apps in the same graphical session and the game's statically verified no-Steam path. This plan has not been executed and does not authorize account creation, game launch, Steam changes, or game signing.
+
 For bounded UI probes, launch exclusively through the CLI supervisor. Do not use a bundle-ID app-opening API to inspect a process that may exit during the call; it can relaunch the copy outside confinement. The bootstrap guard is not a substitute for the outer sandbox. Use non-launching inventory and manual Terms review.

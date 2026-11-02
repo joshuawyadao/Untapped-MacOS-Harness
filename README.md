@@ -2,7 +2,7 @@
 
 An unofficial, experimental harness for investigating whether the **existing Untapped.gg companion** can work with native macOS Slay the Spire 2.
 
-**Status: diagnostic proof of concept; protected copy05 reaches Terms.** The owner accepted Terms in an earlier private profile. The newly signed copy includes the offline credential guard, but its fresh profile has no acceptance recorded. Full initialization, game attachment, reward reading, and overlay display remain **unverified**.
+**Status: offline Core startup verified; game reader untested.** After manual Terms acceptance, protected copy05 logs Fully initialized without anonymous-token retries. Game detection, attachment, reward reading, and overlay display remain **unverified**. The owner chose an [isolated game-profile plan](docs/Isolated-Game-Plan.md) before any game launch; that setup has not been executed.
 
 ## What this repository provides
 
@@ -33,9 +33,9 @@ python3 -m harness.cli launch-outer /private/tmp/untapped-sts2-session --seconds
 
 This requires the signed copy and rechecks its hashes/signature. Each run creates a new private `outer-attempt-*` profile and logs, retaining the outer home/write/network restrictions and allowing Unix sockets only inside that session. It prints `attempt_dir`; pass that path to `status` to inspect the run. Never open the copied app directly in Finder or through an automation API that can launch it: native Electron initialization precedes the JavaScript guard. Observe using non-launching inventory or manual interaction. Terms acceptance remains the user's decision.
 
-The November 2 attempt records manual acceptance in its private profile. A new attempt does not inherit that acceptance. After acceptance, vendor startup retries blocked anonymous-token requests; the existing status label `TERMS_LOGGED` does not distinguish accepted Terms from a still-open Terms screen. See the [runtime record](docs/Verification.md#manual-terms-review) for the separate evidence.
+November 2 attempts record manual acceptance in separate private profiles. A new attempt does not inherit acceptance. The earlier copy04 stalled on anonymous-token retries; the latest copy05 reaches `CORE_INITIALIZED_LOGGED`. The coarser `TERMS_LOGGED` status alone does not distinguish accepted Terms from a still-open Terms screen. See the [runtime record](docs/Verification.md#successful-offline-core-initialization) for separate evidence.
 
-Current preparation also patches offline credential acquisition to return authentication unavailable before any credential read or anonymous-token request. This preserves Terms and the existing reader, creates no login/token, and keeps remote networking blocked. Copy05 was separately approved, signed, and launched for 45 seconds; it remained at Terms. The adaptation's post-Terms native behavior is still untested. The successful manual Terms attempt used the earlier two-entry patch.
+Current preparation also patches offline credential acquisition to return authentication unavailable before any credential read or anonymous-token request. This preserves Terms and the existing reader, creates no login/token, and keeps remote networking blocked. Copy05 was separately approved, signed, and launched in bounded protected attempts; the latest manual acceptance proceeds to logged Core initialization. Other vendor metrics requests still fail under the offline policy, so the outer restrictions remain necessary.
 
 If a real reward event is later captured, manually transcribe the visible cards and normalized positions into a private JSON file, then compare it:
 

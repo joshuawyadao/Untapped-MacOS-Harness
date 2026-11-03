@@ -112,6 +112,7 @@ def prepare(app, destination):
         "schema": 1, "patched_asar_sha256": sha256(patched_bytes),
         "controlled_access_version": 1, "controlled_preflight_version": 1, "reward_scale_capture": True,
         "sts2_store_compat_version": 1, "sts2_macos_settings_ui": True,
+        "main_steam_guard_version": 1,
         "controlled_gateway_sha256": sha256((ROOT / "harness/gateway.py").read_bytes()),
         "controlled_network_sha256": sha256((ROOT / "harness/controlled_network.cjs").read_bytes()),
         "patched_entries": sorted(replacements), "vendor_bundle_seal": "INVALIDATED_BY_RESOURCE_PATCH",

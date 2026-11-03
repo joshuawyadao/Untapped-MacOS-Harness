@@ -58,12 +58,29 @@ SERVICES_PATCHES = [
 CONTROLLED = 'process.env.UNTAPPED_HARNESS_CONTROLLED_ACCESS === "1"'
 CORE_PATCHES.extend([
     ('      this.state.settings.set(curr);\n      this.processWatcher.update();',
+     '      try { global.__untappedHarnessAssertSteamSettings(curr); }\n'
+     '      finally { if (!global.__untappedHarnessCanShowSts2Overlay()) void this.overlay.hide(); }\n'
      '      this.state.settings.set(curr);\n'
      '      if (curr && typeof curr === "object") global.__untappedHarnessEvent("settings-read");\n'
      '      this.processWatcher.update();'),
     ('    index.ipcHandle(`${routerPath}.overlayReady`, async () => {\n      this.isWindowReady = true;',
      '    index.ipcHandle(`${routerPath}.overlayReady`, async () => {\n      this.isWindowReady = true;\n'
      '      if (routerPath === "sts2") global.__untappedHarnessEvent("overlay-ready");'),
+    ('  async show() {\n    if (!this.isEnabled()) {',
+     '  async show() {\n'
+     '    if (this.routerPath === "sts2" && !global.__untappedHarnessCanShowSts2Overlay()) {\n'
+     '      await this.hide();\n      return null;\n    }\n'
+     '    if (!this.isEnabled()) {'),
+    ('      if (!this.isEnabled() || !this.processWatcher.windowOnScreen) {\n        return null;\n      }',
+     '      if (!this.isEnabled() || !this.processWatcher.windowOnScreen ||\n'
+     '          this.routerPath === "sts2" && !global.__untappedHarnessCanShowSts2Overlay()) {\n'
+     '        await this.hide();\n        return null;\n      }'),
+    ('      if (!overlay.isVisible()) {\n        overlay.showInactive();\n      }\n'
+     '      if (process.platform === "win32") {\n        this.moveAboveGame(overlay);',
+     '      if (this.routerPath === "sts2" && !global.__untappedHarnessCanShowSts2Overlay()) {\n'
+     '        await this.hide();\n        return null;\n      }\n'
+     '      if (!overlay.isVisible()) {\n        overlay.showInactive();\n      }\n'
+     '      if (process.platform === "win32") {\n        this.moveAboveGame(overlay);'),
     ('      index.decayGpuCrashCount();\n      this.emit("show");',
      '      index.decayGpuCrashCount();\n'
      '      if (this.routerPath === "sts2") global.__untappedHarnessEvent("overlay-show");\n'

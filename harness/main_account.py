@@ -218,9 +218,9 @@ def inspect_readiness(game_app, data_root, uid):
             "save_contents_read": False, "network_requests_made": False,
             "files_written": False, "signing_performed": False,
             "credentials_persisted": False,
-            "blockers": ["MAIN_LAUNCHER_NOT_PREPARED", "STEAM_GAME_ATTACHMENT_UNVERIFIED",
-                         "SAVE_WRITE_POLICY_NOT_REVIEWED", "LONG_SESSION_NOT_VALIDATED",
-                         "PERSISTENT_PREFERENCES_NOT_DESIGNED", "TIER_VALUES_UNRESOLVED"]}
+            "blockers": ["MAIN_LAUNCH_REQUIRES_SEPARATE_ACTIVATION", "STEAM_GAME_ATTACHMENT_UNVERIFIED",
+                         "LIVE_SAVE_CLOUD_BEHAVIOR_UNVERIFIED", "LIVE_LONG_SESSION_UNVERIFIED",
+                         "TIER_VALUES_UNRESOLVED"]}
 
 
 def main(argv=None):

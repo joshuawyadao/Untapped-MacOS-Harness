@@ -56,9 +56,28 @@
   const seen = new Set();
   let rewards = 0;
   global.__untappedHarnessEvent = (event) => {
-    if (!["bootstrap", "ready", "window-detected", "attach-attempt", "reader-connected", "manual-sign-in-ready", "authenticated", "settings-read", "overlay-ready", "overlay-show"].includes(event) || seen.has(event)) return;
+    if (!["bootstrap", "ready", "window-detected", "attach-attempt", "reader-connected", "manual-sign-in-ready", "authenticated", "settings-read", "overlay-ready", "overlay-show", "main-steam-verified", "main-steam-mismatch"].includes(event) || seen.has(event)) return;
     seen.add(event);
     fs.appendFileSync(events, JSON.stringify({ event, time: new Date().toISOString() }) + "\n", { mode: 0o600 });
+  };
+  global.__untappedHarnessMainSteamVerified = false;
+  global.__untappedHarnessCanShowSts2Overlay = () =>
+    process.env.UNTAPPED_HARNESS_MAIN_ACCOUNT !== "1" || global.__untappedHarnessMainSteamVerified;
+  global.__untappedHarnessAssertSteamSettings = (settings) => {
+    if (process.env.UNTAPPED_HARNESS_MAIN_ACCOUNT !== "1") return;
+    global.__untappedHarnessMainSteamVerified = false;
+    if (settings === null) return;
+    const expectedId = process.env.UNTAPPED_HARNESS_EXPECTED_STEAM_ID;
+    const expectedProfile = process.env.UNTAPPED_HARNESS_EXPECTED_PROFILE;
+    if (!controlled || !/^[1-9][0-9]{0,19}$/.test(expectedId || "") ||
+        !/^(0|[1-9][0-9]?)$/.test(expectedProfile || "") ||
+        !settings || settings.steamUserId !== expectedId ||
+        !Number.isInteger(settings.currentProfile) || settings.currentProfile !== Number(expectedProfile)) {
+      global.__untappedHarnessEvent("main-steam-mismatch");
+      throw new Error("Main harness Steam account or profile mismatch");
+    }
+    global.__untappedHarnessMainSteamVerified = true;
+    global.__untappedHarnessEvent("main-steam-verified");
   };
   global.__untappedHarnessAssertTargetPid = (pid) => {
     const raw = process.env.UNTAPPED_HARNESS_TARGET_PID;

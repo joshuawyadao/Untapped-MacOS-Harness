@@ -15,7 +15,8 @@ from .asar import HarnessError, sha256
 from .gateway import COMPANION_USER_AGENT, Gateway
 
 EVENTS = {"bootstrap", "ready", "window-detected", "attach-attempt", "reader-connected",
-          "reward", "manual-sign-in-ready", "authenticated", "settings-read", "overlay-ready", "overlay-show"}
+          "reward", "manual-sign-in-ready", "authenticated", "settings-read", "overlay-ready", "overlay-show",
+          "main-steam-verified", "main-steam-mismatch"}
 ROUTES = {"oauth_token", "accounts_account", "sts2_exchange", "sts2_account", "sts2_features",
           "tier_resolve", "public_json", "commentary_events", "denied", "error", "unknown"}
 ERROR_KINDS = {"TLS_CERTIFICATE_ERROR", "TLS_PROTOCOL_ERROR", "DNS_ERROR", "TIMEOUT",

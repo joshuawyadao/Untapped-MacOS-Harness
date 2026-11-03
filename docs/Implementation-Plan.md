@@ -312,3 +312,20 @@ The owner-run installer stopped before installation with signed-tree mismatch. A
 - None. This corrects original transfer code without changing vendor bytes or signature scope.
 
 Result: exact installer extraction reproduced427 permission-only mismatches in the unchanged real archive (all bytes/entries matched). Added private bounded exact-mode extractor and wired installer; the new inert regression failed before -xpf and passes afterward. Three new tests bring total to98 passing. Fixed real extraction under umask077 passed all440 signed entries plus native deep signature/entitlement/receipt verification; no re-signing or vendor execution. Staged only original helper/installer fix with parity/syntax checks; failed UID502 extraction preserved. Updated architecture, verification and runbook. Owner must retry installation in UID502, then run the already-approved60-second boot check.
+
+## Record first native reward read without overstating overlay or geometry
+
+Reconcile the owner-run debug-game observation with its exported events and card photo; retain separate evidence gates for identities/upgrades, scaled geometry and vendor overlay.
+
+### Scope
+- In: Read-only captured-event comparison and pinned-source geometry/login-gate tracing; current README/verification/runbook/architecture status and remaining gaps.
+- Out: New signing/launches, network or account changes, bypassing vendor login gates, treating cropped photos or reader output as independent geometry ground truth.
+
+### Action items
+- [ ] Verify ordered bootstrap/ready/detection/attach/connect/reward evidence and compare photo names, visible upgrade status and ordering with captured IDs.
+- [ ] Trace native coordinates and overlay rendering/account gates; record lost scale fields and avoid a tautological compare-reward pass.
+- [ ] Record successful test-account install/menu confirmation, successful real reward traversal, owner's corrected no-overlay observation, offline-data/settings errors and exact remaining limitations.
+- [ ] Update canonical status/verification/runbook/architecture, run documentation hygiene/whitespace, commit/push. No tests need changing for this evidence-only slice; existing98 behavior tests remain applicable and do not prove native overlay compatibility.
+
+### Open questions
+- None for evidence reconciliation. Future scale-capture instrumentation needs a fresh companion proposal before signing; any network/account experiment needs a separately reviewed plan. Neither is executed here.

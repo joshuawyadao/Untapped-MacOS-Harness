@@ -41,10 +41,38 @@ SERVICES_PATCHES = [
     ('  async ensureLocalCredentials() {\n    const authDetails = await this.loadLocalCredentials();',
      '  async ensureLocalCredentials() {\n'
      '    if (process.env.UNTAPPED_HARNESS_OFFLINE === "1") {\n'
+     '      if (process.env.UNTAPPED_HARNESS_CONTROLLED_ACCESS === "1") {\n'
+     '        const { authenticatedCredentials } = await this.loadLocalCredentials();\n'
+     '        return { authenticatedCredentials, anonymousCredentials: null };\n'
+     '      }\n'
      '      return { authenticatedCredentials: {}, anonymousCredentials: null };\n'
      '    }\n'
      '    const authDetails = await this.loadLocalCredentials();'),
 ]
+
+CONTROLLED = 'process.env.UNTAPPED_HARNESS_CONTROLLED_ACCESS === "1"'
+CORE_PATCHES.extend([
+    ('    this.logWatcher.on("runComplete", this.onRunComplete.bind(this));',
+     '    if (!(' + CONTROLLED + ')) this.logWatcher.on("runComplete", this.onRunComplete.bind(this));'),
+    ('  maybeStartLogWatcher() {', '  maybeStartLogWatcher() {\n    if (' + CONTROLLED + ') return;'),
+    ('  maybeUploadHistoricRuns() {', '  maybeUploadHistoricRuns() {\n    if (' + CONTROLLED + ') return;'),
+    ('async function uploadRun(descriptor, uploadToken, ...entries) {',
+     'async function uploadRun(descriptor, uploadToken, ...entries) {\n  if (' + CONTROLLED + ') throw new Error("Controlled harness blocks run uploads");'),
+    ('async function uploadHistoricRun(descriptor, uploadToken, runJson) {',
+     'async function uploadHistoricRun(descriptor, uploadToken, runJson) {\n  if (' + CONTROLLED + ') throw new Error("Controlled harness blocks historic uploads");'),
+])
+SERVICES_PATCHES.extend([
+    ('      await this.ensureLocalCredentials().then(\n        (localCredentials) => this.ensureUploadToken("MTGA", email, localCredentials.authenticatedCredentials[email])\n      );',
+     '      if (!(' + CONTROLLED + ')) await this.ensureLocalCredentials().then(\n        (localCredentials) => this.ensureUploadToken("MTGA", email, localCredentials.authenticatedCredentials[email])\n      );'),
+    ('      this.emit("authorizationWorkflowComplete", error);',
+     '      if (' + CONTROLLED + ' && error === null) global.__untappedHarnessEvent("authenticated");\n      this.emit("authorizationWorkflowComplete", error);'),
+    ('  static async init(clientAnalyticsToken) {',
+     '  static async init(clientAnalyticsToken) {\n    if (' + CONTROLLED + ') return;'),
+    ('  static async sendInflux(measurement, data = {}, tags = {}) {',
+     '  static async sendInflux(measurement, data = {}, tags = {}) {\n    if (' + CONTROLLED + ') return;'),
+    ('  static sendMixpanel(event, params) {',
+     '  static sendMixpanel(event, params) {\n    if (' + CONTROLLED + ') return;'),
+])
 
 
 def replace_once(text, old, new):

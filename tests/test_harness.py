@@ -221,7 +221,7 @@ class BootstrapTests(unittest.TestCase):
               first.globals.__untappedHarnessEvent('reader-connected');
               const allCards = Array.from({ length: 22 }, (_, i) => ({
                 id: 'ID' + i, upgradeLevel: 0, cx: 0.2, cy: 0.5,
-                width: 0.1, height: 0.2, accountToken: 'must not appear',
+                width: 0.1, height: 0.2, scaleX: 0.8, scaleY: 0.9, accountToken: 'must not appear',
               }));
               first.globals.__untappedHarnessReward({ source: 'merchant', cards: allCards });
               for (let i = 0; i < 101; i++) {
@@ -229,6 +229,8 @@ class BootstrapTests(unittest.TestCase):
               }
               assert.equal(lines.filter((event) => event.event === 'reward').length, 100);
               assert.equal(lines.find((event) => event.event === 'reward').cards.length, 20);
+              assert.equal(lines.find((event) => event.event === 'reward').cards[0].scaleX, 0.8);
+              assert.equal(lines.find((event) => event.event === 'reward').cards[0].scaleY, 0.9);
               assert.equal(lines.some((event) => event.event === 'unapproved-event'), false);
               assert.equal(lines.filter((event) => event.event === 'reader-connected').length, 1);
               assert.equal(JSON.stringify(lines).includes('must not appear'), false);
@@ -325,6 +327,20 @@ class RewardTests(unittest.TestCase):
         self.assertTrue(result["matches"])
         self.assertEqual(result["overlay"], "UNTESTED_REQUIRES_VISUAL_CHECK")
         self.assertEqual(result["recommendations"], "UNTESTED")
+
+    def test_rendered_comparison_requires_scales_and_uses_scaled_bounds(self):
+        cards = [{**card("A", 0.3), "scaleX": 0.5, "scaleY": 0.5}]
+        expected = {"geometry_space": "rendered-hitbox", "cards": [{**card("A", 0.3), "width": 0.06, "height": 0.1}]}
+        result = cli.compare_reward(reward_events(cards), expected, 0)
+        self.assertTrue(result["matches"])
+        self.assertEqual(result["geometry_verification"], "SCALED_HITBOX_COMPARISON")
+        with self.assertRaisesRegex(HarnessError, "scale evidence"):
+            cli.compare_reward(reward_events([card("A", 0.3)]), expected, 0)
+        for value in (0, float("nan"), True, 20):
+            with self.subTest(value=value), self.assertRaises(HarnessError):
+                cli.validate_cards([{**cards[0], "scaleX": value}])
+        legacy = cli.compare_reward(reward_events(), {"cards": [card("A", 0.3), card("B", 0.7, 1)]}, 0)
+        self.assertEqual(legacy["geometry_verification"], "RAW_ONLY_INCOMPLETE")
 
     def test_each_meaningful_mismatch_fails(self):
         cases = {

@@ -13,7 +13,7 @@ from harness import patches
 class TargetGuardTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("node"), "Node is required for bootstrap execution")
     def test_target_identity_blocks_reader_construction_before_native_connection(self):
-        core_old, core_new = patches.CORE_PATCHES[-1]
+        core_old, core_new = next(pair for pair in patches.CORE_PATCHES if "new GameScryInstance" in pair[0])
         self.assertIn("new GameScryInstance", core_new)
         self.assertLess(core_new.index("__untappedHarnessAssertTargetPid"),
                         core_new.index("new GameScryInstance"))

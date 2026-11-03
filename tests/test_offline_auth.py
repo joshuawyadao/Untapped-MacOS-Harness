@@ -23,6 +23,23 @@ SERVICES_SOURCE = """class AuthenticationManager {
 """
 
 
+SERVICES_SOURCE += """
+class ExtraServicesFixture {
+  async unrelatedUpload(email) {
+      await this.ensureLocalCredentials().then(
+        (localCredentials) => this.ensureUploadToken("MTGA", email, localCredentials.authenticatedCredentials[email])
+      );
+  }
+  finish(error) {
+      this.emit("authorizationWorkflowComplete", error);
+  }
+  static async init(clientAnalyticsToken) { return 'original'; }
+  static async sendInflux(measurement, data = {}, tags = {}) { return 'original'; }
+  static sendMixpanel(event, params) { return 'original'; }
+}
+"""
+
+
 def fixture_archive(services=SERVICES_SOURCE):
     core = "\n".join(old for old, _ in patches.CORE_PATCHES) + "\nTERMS_REMAIN_USER_CONTROLLED\n"
     main = '"use strict";\n' + "\n".join(old for old, _ in patches.MAIN_PATCHES)

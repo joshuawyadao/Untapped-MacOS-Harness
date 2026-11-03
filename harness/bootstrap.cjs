@@ -13,6 +13,7 @@
     fs.mkdirSync(destination, { recursive: true, mode: 0o700 });
     electron.app.setPath(key, destination);
   }
+  const controlled = process.env.UNTAPPED_HARNESS_CONTROLLED_ACCESS === "1";
   // Do not access the macOS Keychain, including an existing Untapped service.
   const credentials = new Map();
   const credentialKey = (service, account) => JSON.stringify([service, account]);
@@ -20,23 +21,42 @@
     getPassword: async (service, account) => credentials.get(credentialKey(service, account)) ?? null,
     setPassword: async (service, account, password) => { credentials.set(credentialKey(service, account), password); },
     deletePassword: async (service, account) => credentials.delete(credentialKey(service, account)),
-    findCredentials: async () => [],
+    findCredentials: async (service) => controlled ? [...credentials.entries()].flatMap(([key, password]) => {
+      const [storedService, account] = JSON.parse(key);
+      return storedService === service ? [{ account, password }] : [];
+    }) : [],
     findPassword: async () => null,
   };
   const originalLoad = Module._load;
+  let network = null;
+  if (controlled) {
+    const helper = path.join(profile, "controlled-network.cjs");
+    const info = fs.lstatSync(helper);
+    const expected = process.env.UNTAPPED_HARNESS_NETWORK_SHA256;
+    if (!info.isFile() || info.uid !== process.getuid() || info.nlink !== 1 ||
+        (info.mode & 0o7777) !== 0o600 || !/^[a-f0-9]{64}$/.test(expected || "") ||
+        require("node:crypto").createHash("sha256").update(fs.readFileSync(helper)).digest("hex") !== expected) {
+      throw new Error("Controlled network helper is missing or changed");
+    }
+    network = require(helper).install({ electron, fs, path, profile,
+      gatewayUrl: process.env.UNTAPPED_HARNESS_GATEWAY_URL,
+      gatewayKey: process.env.UNTAPPED_HARNESS_GATEWAY_KEY, originalLoad,
+      event: (name) => global.__untappedHarnessEvent(name) });
+  }
   Module._load = function (request, parent, isMain) {
     if (request === "keytar") return memoryKeytar;
+    if (network && request === "node-fetch") return network.loadFetch(parent, isMain);
     return originalLoad.call(this, request, parent, isMain);
   };
   // No browser handoff, protocol registration, or login-item changes even via UI.
-  electron.shell.openExternal = async () => { throw new Error("Offline harness blocks external links"); };
+  if (!controlled) electron.shell.openExternal = async () => { throw new Error("Offline harness blocks external links"); };
   electron.app.setLoginItemSettings = () => {};
   electron.app.setAsDefaultProtocolClient = () => false;
   const events = path.join(profile, "events.jsonl");
   const seen = new Set();
   let rewards = 0;
   global.__untappedHarnessEvent = (event) => {
-    if (!["bootstrap", "ready", "window-detected", "attach-attempt", "reader-connected"].includes(event) || seen.has(event)) return;
+    if (!["bootstrap", "ready", "window-detected", "attach-attempt", "reader-connected", "manual-sign-in-ready", "authenticated"].includes(event) || seen.has(event)) return;
     seen.add(event);
     fs.appendFileSync(events, JSON.stringify({ event, time: new Date().toISOString() }) + "\n", { mode: 0o600 });
   };
@@ -79,7 +99,7 @@
   };
   global.__untappedHarnessReward = (items) => {
     if (items?.source !== "cardReward" || !Array.isArray(items.cards) || rewards >= 100) return;
-    const cards = items.cards.slice(0, 20).map(({ id, upgradeLevel, cx, cy, width, height }) => ({ id, upgradeLevel, cx, cy, width, height }));
+    const cards = items.cards.slice(0, 20).map(({ id, upgradeLevel, cx, cy, width, height, scaleX, scaleY }) => ({ id, upgradeLevel, cx, cy, width, height, scaleX, scaleY }));
     fs.appendFileSync(events, JSON.stringify({ event: "reward", time: new Date().toISOString(), cards }) + "\n", { mode: 0o600 });
     rewards++;
   };

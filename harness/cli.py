@@ -10,6 +10,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 from .asar import Archive, HarnessError, sha256
@@ -108,6 +109,7 @@ def prepare(app, destination):
     (destination / "profile").mkdir(mode=0o700)
     report.update({
         "schema": 1, "patched_asar_sha256": sha256(patched_bytes),
+        "controlled_access_version": 1, "reward_scale_capture": True,
         "patched_entries": sorted(replacements), "vendor_bundle_seal": "INVALIDATED_BY_RESOURCE_PATCH",
         "signing_changed": False, "game_modified": False,
         "startup": "UNTESTED", "attachment": "UNTESTED", "state_reading": "UNTESTED",
@@ -213,10 +215,13 @@ def launch(session, seconds):
     return status(session)
 
 
-def launch_outer(session, seconds, approved=False, target_pid=None, target_game=None):
+def launch_outer(session, seconds, approved=False, target_pid=None, target_game=None, *, _controlled=None):
     """Fresh-profile retry with only the outer sandbox, after explicit approval."""
     if not approved:
         raise HarnessError("Explicit owner approval required for Chromium --no-sandbox")
+    maximum = 300 if _controlled is not None else 60
+    if type(seconds) is not int or not 1 <= seconds <= maximum:
+        raise HarnessError(f"Companion launch limit is 1–{maximum} seconds")
     target_environment = {}
     if target_pid is not None or target_game is not None:
         if type(target_pid) is not int or target_pid <= 0 or target_game is None:
@@ -249,6 +254,18 @@ def launch_outer(session, seconds, approved=False, target_pid=None, target_game=
                       + '\n(allow network* (subpath ' + json.dumps(str(session)) + '))\n')
     environment = launch_environment(session)
     environment.update(target_environment)
+    if _controlled is not None:
+        if manifest.get("controlled_access_version") != 1:
+            raise HarnessError("This companion lacks the controlled-access preparation")
+        helper = profile / "controlled-network.cjs"
+        helper.write_bytes((ROOT / "harness/controlled_network.cjs").read_bytes())
+        helper.chmod(0o600)
+        environment.update({"UNTAPPED_HARNESS_CONTROLLED_ACCESS": "1",
+                            "UNTAPPED_HARNESS_GATEWAY_URL": _controlled.url,
+                            "UNTAPPED_HARNESS_GATEWAY_KEY": _controlled.key,
+                            "UNTAPPED_HARNESS_NETWORK_SHA256": sha256(helper.read_bytes())})
+        print("Manual sign-in URL will be written privately to: " + str(profile / "manual-sign-in-url.txt"), flush=True)
+        print("Use the companion Sign In button, then read that file in another Terminal and open its URL manually. Do not share the URL or raw logs.", flush=True)
     environment["UC_TEST_SANDBOX_DIR"] = str(profile)
     environment["TMPDIR"] = str(profile / "temp")
     command = ["/usr/bin/sandbox-exec", "-f", str(policy),
@@ -257,12 +274,33 @@ def launch_outer(session, seconds, approved=False, target_pid=None, target_game=
     result = {"startup": "ATTEMPTED", "seconds_limit": seconds,
               "chromium_sandbox": False, "outer_sandbox_retained": True,
               "network": "LOOPBACK_AND_SESSION_UNIX", "fresh_profile": True}
+    if _controlled is not None:
+        result.update({"network": "LOCAL_ALLOWLIST_GATEWAY", "manual_oauth": True,
+                       "raw_logs_private": True, "post_auth_limit": 45})
     write_json(attempt / "launch.json", result)
     with (attempt / "stdout.log").open("xb") as output:
         process = subprocess.Popen(command, cwd=session, env=environment,
                                    stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
         try:
-            result["exit_code"] = process.wait(timeout=seconds)
+            if _controlled is None:
+                result["exit_code"] = process.wait(timeout=seconds)
+            else:
+                deadline = time.monotonic() + seconds
+                authenticated = False
+                while process.poll() is None:
+                    if not authenticated and any(event.get("event") == "authenticated" for event in load_events(attempt)):
+                        authenticated = True
+                        result["authenticated_event_observed"] = True
+                        deadline = min(deadline, time.monotonic() + 45)
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        result["time_limit_reached"] = True
+                        break
+                    try:
+                        result["exit_code"] = process.wait(timeout=min(0.5, remaining))
+                        break
+                    except subprocess.TimeoutExpired:
+                        pass
         except subprocess.TimeoutExpired:
             result["time_limit_reached"] = True
         finally:
@@ -307,6 +345,8 @@ def status(session):
         "overlay": "UNTESTED_REQUIRES_VISUAL_CHECK",
         "reward_comparison": "UNTESTED_USE_COMPARE_REWARD",
         "terms_screen_logged": terms_seen,
+        "settings_property_error": "CloudSaveStore" in log_text and "No such property" in log_text,
+        "public_data_cache_missing": "No cache." in log_text,
         "launch": read_json(session / "launch.json") if (session / "launch.json").exists() else None,
     }
 
@@ -326,6 +366,11 @@ def validate_cards(cards):
                 raise HarnessError("Reward geometry must be finite normalized coordinates")
         if card["width"] <= 0 or card["height"] <= 0:
             raise HarnessError("Reward card dimensions must be positive")
+        if "scaleX" in card or "scaleY" in card:
+            for key in ("scaleX", "scaleY"):
+                value = card.get(key)
+                if type(value) not in (int, float) or not math.isfinite(value) or not 0 < abs(value) <= 16:
+                    raise HarnessError("Reward scale requires a finite nonzero scaleX/scaleY pair")
     return sorted(cards, key=lambda card: (card["cx"], card["cy"]))
 
 
@@ -343,6 +388,14 @@ def compare_reward(events, expected, reward_index):
         raise HarnessError("Reward lacks preceding startup/detection/connection evidence")
     actual = validate_cards(reward.get("cards"))
     wanted = validate_cards(expected.get("cards"))
+    space = expected.get("geometry_space", "legacy-raw")
+    if space not in ("legacy-raw", "rendered-hitbox"):
+        raise HarnessError("Unknown reward geometry space")
+    if space == "rendered-hitbox":
+        if any("scaleX" not in card or "scaleY" not in card for card in actual):
+            raise HarnessError("Rendered comparison requires native scale evidence; legacy capture is incomplete")
+        actual = [{**card, "width": card["width"] * abs(card["scaleX"]),
+                   "height": card["height"] * abs(card["scaleY"])} for card in actual]
     differences = []
     if len(actual) != len(wanted):
         differences.append("card count")
@@ -354,7 +407,8 @@ def compare_reward(events, expected, reward_index):
             if abs(left[key] - right[key]) > 0.03:
                 differences.append(f"card {i}: {key}")
     return {"reward_index": reward_index, "matches": not differences, "differences": differences,
-            "overlay": "UNTESTED_REQUIRES_VISUAL_CHECK", "recommendations": "UNTESTED"}
+            "overlay": "UNTESTED_REQUIRES_VISUAL_CHECK", "recommendations": "UNTESTED",
+            "geometry_verification": "SCALED_HITBOX_COMPARISON" if space == "rendered-hitbox" else "RAW_ONLY_INCOMPLETE"}
 
 
 def main(argv=None):

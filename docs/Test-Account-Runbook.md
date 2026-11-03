@@ -1,6 +1,6 @@
 # Test account and first boot
 
-The owner approved isolated setup and the confined 60-second first game probe. The owner has completed a first boot and confirmed fresh visible game UI; native reader/reward verification remains pending. The game-only transfer archive contains no saves, Steam settings, credentials, or companion profile.
+The owner approved isolated setup and the confined60-second first game probe, completed first boot and confirmed fresh game UI. The later approved debug-game observation established native detection/connection and reward IDs/upgrades/order; scaled geometry and visible overlay remain unverified. The game-only transfer archive contains no saves, Steam settings, credentials or companion profile.
 
 1. In the MacBook's **Apple menu → System Settings → Users & Groups → Add User**, create a **Standard** account named `sts2test`. Choose the password privately. Stay in the normal account until preparation checks finish.
 2. Quit normal STS2 and Steam yourself. When instructed, log out or switch into `sts2test`. Skip Apple Account sign-in and do not open/sign into Steam. Both test apps must ultimately run in this account's graphical session.
@@ -125,21 +125,21 @@ Full geometry is still incomplete: current capture omits native scaleX/scaleY, a
 
 The vendor reward UI is statically login-gated, and public-data fetching has no cache under the retained offline policy. Full UI work needs a separately reviewed isolated account/data plan; do not sign in, enable networking, approve prompts or bypass gates as part of this completed observation. Settings/property-read errors also need separate compatibility investigation. Existing signing approvals do not authorize those new account/network actions.
 
-## Controlled sign-in revision08b (retry failed; diagnose transport next)
+## Controlled sign-in revision08c (preflight and useful failure evidence)
 
 The owner approved the original [controlled-access plan](Controlled-Access-Plan.md) and copy08 signing/access proposals. Its first login-only attempt failed at upstream token HTTP403. Read-only saved-error inspection was unclassified. A two-request comparison then isolated header-dependent behavior: Python's default received403, and the original companion's User-Agent received the expected unauthenticated401. No account credentials were sent during that comparison.
 
-Review revision08b in the access plan before retrying. It sets only the fixed original User-Agent at the gateway; routes, bodies, credential scope and app confinement are unchanged. The signed app/receipt are identical to copy08, with no new signing. A fresh revised manifest pins the new gateway hash, and verified companion08b.tar plus current helpers are staged. The launcher now selects this revised archive; old archives remain preserved. Authentication success after this correction is still unverified.
+Revision08b restored the fixed original User-Agent without changing signed app/receipt or route/credential/confinement scope. Its archive and original metadata remain preserved. The current launcher selects08c, described below; successful authentication is still unverified.
 
-The owner has now run08b, with a generic gateway exception502 and no authenticated event. Use the fixed-data diagnostic below before another real login attempt. The login command remains documented for later use; it is not the current next step.
+The owner ran08b and received generic gateway error502. The standalone fixed-data check then returned normal401 JSON for both routes in sts2test, so it did not reproduce that exception. Revision08c now adds those checks through the actual gateway before opening the app, plus safe stage/category/timing on a real failure. Its signed app/receipt are identical; no signing or route expansion occurs. Review the [08c scope](Controlled-Access-Plan.md) before starting this next attempt.
 
-To initiate the reviewed bounded retry in the standard sts2test account, close Steam and every game copy, then run:
+In the standard sts2test account, close Steam and every game copy, then run the reviewed08c launcher:
 
 ```sh
 /bin/sh /private/tmp/untapped-sts2-transfer-01/controlled_sign_in.sh
 ```
 
-This first probe is login-only. A later `--observe-debug-game` mode can observe only the existing verified debug game. The attempt is at most300 seconds and at most45 seconds after genuine sign-in succeeds.
+The launcher validates the signed copy, then makes at most two fixed-data checks through its gateway. If either fails, it writes a Diagnostic file and opens no companion. If both pass, it opens the login-only companion. Validation/preflight time comes out of the300-second budget; the45-second post-auth limit remains. A later `--observe-debug-game` mode still targets only the verified debug game.
 
 The companion does not open a browser: its sign-in control writes a private manual-sign-in URL file. Terminal now prints a complete `After Sign In, run in another Terminal: cat …` command containing only that new file's location. Click Log in, then run the printed cat command in a second test-account Terminal and open its URL yourself in that account's browser; finish credentials/consent manually. Use the fresh path/URL from this attempt. Do not share that URL, raw logs/settings or callback material. The new Diagnostic file export contains only safe harness status/events/cards and route counters. Existing raw-log observation exports must not be used after authentication.
 
@@ -155,7 +155,7 @@ The first probe's safe export records one upstream oauth_token403, no authentica
 
 This check has completed: UNCLASSIFIED_TOKEN_ERROR, with no recognized HTML/security/OAuth markers and no truncated logs. There is no need to repeat it for this attempt. For any later use, send only its printed `Diagnostic file: /private/tmp/sts2test-auth-error.…json` path. This original helper reads two bounded saved logs privately and exports fixed error categories/booleans only. It opens no browser/app and makes no network requests. It does not modify the saved attempt, gateway, adapter or signed copy08. An unclassified result is valid evidence; do not paste raw errors.
 
-## Check transport in sts2test without signing in (current next step)
+## Standalone transport check in sts2test (completed)
 
 In the existing sts2test Terminal, run:
 
@@ -166,3 +166,5 @@ In the existing sts2test Terminal, run:
 This uses the launcher's Python interpreter and at most two reviewed HTTPS requests: an account GET without credentials, then a token POST with fixed nonexistent client/code/verifier data. It stops after the first transport exception. It opens no app/browser or saved login files and sends no real account credentials. TLS/proxy/redirect and request limits are unchanged.
 
 Send only `Diagnostic file: /private/tmp/sts2test-transport.…json`. The output contains fixed network/error categories and CA/runtime booleans, excluding raw responses/errors, environment values and CA paths. Normal401/invalid-client responses here simply show that transport completed; they are not successful authentication. No real OAuth retry is needed for this check.
+
+The owner completed this check as lawr_85r: both routes returned normal401 JSON. Do not repeat it for this case; the current next command is the08c controlled launcher above. Its new Diagnostic file includes separate preflight/app counters and fixed failure stages/categories/timing, preserving raw errors and account data privately.

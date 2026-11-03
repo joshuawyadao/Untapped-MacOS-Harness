@@ -22,3 +22,22 @@ Implement a main-account launcher for the owner's existing Steam progress, with 
 Implementation checkpoint: plan bac00d4 precedes the code. Focused backup/preferences/orchestration/native-guard tests pass; the first integrated full suite passed217 tests before the final main-proposal timing regression. Independent review findings are fixed and regression-covered: positive verification before overlay display, immediate mismatch hiding, helper-group cleanup after leader exit/interruption, source revalidation after Steam opens, descriptor-anchored profile I/O and fixed-stage failure diagnostics. Prepared unsigned copies and exact access/signing proposal exist in the dedicated main workspace; no real save contents/backup, signing or vendor launch has run. Full native/archive verification, final docs/tests and save remain before activation review.
 
 Final preparation evidence: all218 tests and syntax/hygiene/link/whitespace checks pass. All440 copied game entries equal the installed source; all15099 companion entries compare with exactly five packed changes and329 otherwise unchanged app entries. Main companion ASAR2daf620993d64105d37d45ce2ad3fca38bdd3ba9d13d12614438bf7408af455c. Private identity values do not appear in the public proposal; game/companion/activation receipts are absent and backups/runs/preferences empty. The source image is detached. No real progress contents, backup, native launch, signing or remote request ran. Independent review has no remaining blocking finding. README/security/architecture/migration/runbook/verification now describe the exact implementation and pending activation, normal game permissions, backup/Cloud semantics and owner normal-quit policy. Save-branch final documentation checkpoint/push follows; activation approval is the remaining owner decision, not a claim of live compatibility.
+
+
+## Approved copied-app activation
+
+The owner explicitly approved the prepared copied-game get-task-allow signing, copied-companion signing and first backed-up main-account run with normal Steam/Cloud access on November3,2026. Reuse that approval without requesting it again. Perform signing/validation now; actual backup/game launch remains owner-initiated in an interactive normal-account Terminal after factual Cloud/account confirmations.
+
+### Scope
+- In: Execute the exact prepared activate command, verify both copied apps, receipts/proposal binding and original installed-game preservation, update activation status/docs and save the branch, provide the exact start command and normal exit instructions.
+- Out: Automatically starting Steam/game/companion, asserting Cloud freshness or logged-in Steam identity, accepting Terms/sign-in, save restore or expanding the reviewed access scope.
+
+### Action items
+- [x] Re-read exact proposal, unsigned verification record and current receipts; no backup/run or activation receipt exists.
+- [ ] Checkpoint the resolved approval/activation plan before the local operation.
+- [ ] Activate with --approve-main-copy-signing; verify game and companion signatures/entitlements, full trees/payloads, proposal-hash receipt and unchanged installed source.
+- [ ] Record completed activation and unchanged progress/empty live directories in migration/security/readiness/verification docs; run appropriate syntax/hygiene/doc checks. Existing218 tests remain applicable unless source changes.
+- [ ] Commit/push and give the normal-account interactive start command with owner-controlled Steam/Cloud confirmations. No additional approval is needed for the reviewed scope.
+
+### Open questions
+- None for signing activation. Live Steam initialization, profile match, Cloud/save behavior and actual tier values require the owner's first run; the launcher itself prompts after its verified backup.

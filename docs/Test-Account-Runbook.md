@@ -125,9 +125,9 @@ Full geometry is still incomplete: current capture omits native scaleX/scaleY, a
 
 The vendor reward UI is statically login-gated, and public-data fetching has no cache under the retained offline policy. Full UI work needs a separately reviewed isolated account/data plan; do not sign in, enable networking, approve prompts or bypass gates as part of this completed observation. Settings/property-read errors also need separate compatibility investigation. Existing signing approvals do not authorize those new account/network actions.
 
-## Approved controlled sign-in probe (ready for owner)
+## Approved controlled sign-in probe (first attempt failed)
 
-The owner approved the [controlled-access plan](Controlled-Access-Plan.md) and exact private copy08 signing/access proposals. Outer-only signing and deep signature/entitlement/payload checks pass. The signed profile-free archive, checksum and original launcher/helpers are staged; exact-mode extraction was verified. No live OAuth request or copy08 application launch has been made.
+The owner approved the [controlled-access plan](Controlled-Access-Plan.md) and exact private copy08 signing/access proposals. Outer-only signing and deep signature/entitlement/payload checks pass. The signed profile-free archive, checksum and original launcher/helpers are staged; exact-mode extraction was verified. The first live probe subsequently failed at token HTTP403; the read-only follow-up below is the current next step.
 
 In the standard sts2test account, close Steam and every game copy, then run:
 
@@ -140,3 +140,13 @@ This first probe is login-only. A later `--observe-debug-game` mode can observe 
 The companion does not open a browser: its sign-in control writes a private manual-sign-in URL file and the supervisor prints that file's location. Read it in a second test-account Terminal and open the URL yourself in that account's browser; finish credentials/consent manually. Do not share that URL, raw logs/settings or callback material. The new Diagnostic file export contains only safe harness status/events/cards and route counters. Existing raw-log observation exports must not be used after authentication.
 
 Account/token and public JSON/commentary/tier routes are permitted by the approved gateway; stats/predictions, history/uploads, telemetry and artwork are blocked. The vendor consent scope is companion:full-access even though companion traffic is filtered; browser website traffic is outside that filter. The separate settings-property error can still block overlay target resolution, so successful login/data loading is not proof that the overlay appears. Send only the printed sanitized Diagnostic file path after this run; retain a failed/timed-out result for review before another attempt.
+
+## Read the saved token HTTP403 without sharing raw logs
+
+The first probe's safe export records one upstream oauth_token403, no authenticated event, no local allowlist rejection and complete cleanup. In the same sts2test account, run this read-only command against that saved attempt:
+
+```sh
+/bin/sh /private/tmp/untapped-sts2-transfer-01/classify_sign_in_error.sh /private/tmp/uc-sts2-502-b6hogsud/outer-attempt-64jcgjm3
+```
+
+Send only the printed `Diagnostic file: /private/tmp/sts2test-auth-error.…json` path. This original helper reads two bounded saved logs privately and exports fixed error categories/booleans only. It opens no browser/app and makes no network requests. It does not modify the saved attempt, gateway, adapter or signed copy08. An unclassified result is valid evidence; do not paste raw errors or retry login to fill the gap.

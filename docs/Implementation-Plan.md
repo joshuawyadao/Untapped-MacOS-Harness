@@ -394,13 +394,15 @@ Read only bounded saved authentication-error text inside the owner's private tes
 
 ### Action items
 - [x] Replay the sanitized first result: one oauth_token HTTP403, no denied route, no authenticated event, clean gateway drain and companion exit0. This proves the request passed local validation; it does not distinguish a vendor OAuth response from an upstream access/security response.
-- [ ] Checkpoint this resolved plan before implementation.
-- [ ] Add fixed-category classification of only bounded token-grant error bodies and original OAuth milestones, with no unrecognized output strings. Keep all raw input private.
-- [ ] Add an owner-run wrapper restricted to the existing owned private controlled-attempt namespace; do not execute the app or make network requests.
-- [ ] Add synthetic tests for challenge/HTML/OAuth markers, ignored unrelated text, secret exclusion, bounds, ownership/link/path rejection and generic CLI failures. Run focused/full tests, shell syntax and repository checks.
-- [ ] Update Controlled-Access-Plan.md, Test-Account-Runbook.md, Verification.md, README and SECURITY.md; stage the original classifier/wrapper with parity, commit/push and give the owner one read-only command.
+- [x] Checkpoint this resolved plan before implementation (`e3ac1a5`).
+- [x] Add fixed-category classification of only bounded token-grant error bodies and original OAuth milestones, with no unrecognized output strings. Keep all raw input private.
+- [x] Add an owner-run wrapper restricted to the existing owned private controlled-attempt namespace; do not execute the app or make network requests.
+- [x] Add synthetic tests for challenge/HTML/OAuth markers, ignored unrelated text, secret exclusion, bounds, ownership/link/path rejection and generic CLI failures. Run focused/full tests, shell syntax and repository checks.
+- [x] Update Controlled-Access-Plan.md, Test-Account-Runbook.md, Verification.md, README and SECURITY.md; stage the original classifier/wrapper with parity and save through save-branch. Give the owner the read-only command.
 
 ### Open questions
 - None for this diagnostic implementation. The saved private error must be classified by UID502 before choosing a transport or vendor-authentication fix. No new live probe is part of this slice.
 
 Evidence: /private/tmp/sts2test-controlled.7a7o1dnx.json records bootstrap, ready and manual-sign-in-ready, followed by oauth_token403 once. No account/public-data route was reached. Settings/cache false flags in this login-only run do not prove game-settings or public-data compatibility. The browser and companion displayed authentication failure. Ranked diagnostic branches are an upstream HTML/security rejection, a structured OAuth protocol rejection, or another unclassified403; the local allowlist-rejection hypothesis is contradicted by the route counter. The next read-only probe distinguishes these branches without guessing the cause.
+
+Implementation result: the saved-error classifier and standard-account wrapper are staged with exact byte parity. Seven focused tests and the complete133-test suite pass; shell syntax, staged import/help, helper-policy hash binding, documentation links/hygiene and whitespace pass. Source logs are read-only; no network/vendor process, signed-payload change or gateway/adapter change occurred. The owner must run the saved-error command in UID502 and provide only its sanitized Diagnostic file path before the upstream403 can be explained or a concrete fix selected.

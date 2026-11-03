@@ -116,3 +116,11 @@ Signed transfer is ready as `debug-game01.tar` with verified checksum. In `sts2t
 ## Retry after transfer permission mismatch
 
 The first debug-game install stopped during source verification because tar extraction under private umask077 changed archived file modes. The fixed installer preserves those recorded modes with tar -xpf inside a private0700 root, retaining the full receipt/signature guard. The signed archive and signing approval are unchanged. Re-run the same `install_debug_game.sh` command; it creates a fresh extraction and preserves the failed one. Only after installation succeeds, run `play_debug_game.sh` for the approved60-second boot check. An existing debug-game destination still causes a refusal rather than overwrite.
+
+## First debug-copy reward result and remaining evidence
+
+Installation and the60-second menu check succeeded, followed by a real native reader connection and reward event in the approved manual-play/45-second observation. Haze, Ricochet and Infinite Blades match the photo, all upgrade level0 and in the correct order. The owner clarified that no overlay appeared on the game screen. Do not repeat an identical run merely to reconfirm those IDs.
+
+Full geometry is still incomplete: current capture omits native scaleX/scaleY, and the phone photo crops the game viewport. A future scale-complete companion preparation/signing proposal and full-viewport digital screenshot are needed for an independent rendered-bounds comparison. Use the game content area, not desktop or title-bar coordinates. Never use the captured reader values as their own expected answer.
+
+The vendor reward UI is statically login-gated, and public-data fetching has no cache under the retained offline policy. Full UI work needs a separately reviewed isolated account/data plan; do not sign in, enable networking, approve prompts or bypass gates as part of this completed observation. Settings/property-read errors also need separate compatibility investigation. Existing signing approvals do not authorize those new account/network actions.

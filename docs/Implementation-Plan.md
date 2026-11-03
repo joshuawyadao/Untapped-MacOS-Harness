@@ -16,7 +16,7 @@ Build a reversible, version-pinned native macOS diagnostic harness around Untapp
 - [x] Attempt preparation and bounded offline startup on the pinned local artifact when safe; stop at any concrete signing/security/terms gate and record each unverified milestone. Never infer reward success from a visible UI.
 - [x] Update README, CONTRIBUTING, governance, and focused architecture/verification docs with ownership, isolation limits, rollback, actual results, and the explicit game-profile strategy needed before gameplay.
 - [x] Review staged files for vendor/private data, checkpoint coherent slices, and push this feature branch through save-branch. Do not open or merge a PR.
-- [ ] Demonstrate one correctly detected real card-reward screen and visually check the existing overlay. Copy05 now records manual Terms acceptance and full Core initialization. The owner chose to plan an isolated game profile first; setup, gameplay, detection, attachment, and reward verification remain pending.
+- [ ] Complete independent scaled-geometry and overlay verification. Debug-game install/menu, native detection/connection and real reward IDs/upgrades/order are now observed. Captured scale fields are missing; the owner confirmed no overlay appeared, and the vendor reward tree is login-gated in the empty offline profile.
 - [x] Prepare a reviewable, opt-in outer-companion ad-hoc signing command and session-bound receipt guard, with synthetic tests. Do not execute signing until the owner explicitly approves the exact per-copy change. Preserve the five original entitlements, Hardened Runtime, nested code, and all game/OS protections.
 
 ## Open questions
@@ -322,10 +322,12 @@ Reconcile the owner-run debug-game observation with its exported events and card
 - Out: New signing/launches, network or account changes, bypassing vendor login gates, treating cropped photos or reader output as independent geometry ground truth.
 
 ### Action items
-- [ ] Verify ordered bootstrap/ready/detection/attach/connect/reward evidence and compare photo names, visible upgrade status and ordering with captured IDs.
-- [ ] Trace native coordinates and overlay rendering/account gates; record lost scale fields and avoid a tautological compare-reward pass.
-- [ ] Record successful test-account install/menu confirmation, successful real reward traversal, owner's corrected no-overlay observation, offline-data/settings errors and exact remaining limitations.
-- [ ] Update canonical status/verification/runbook/architecture, run documentation hygiene/whitespace, commit/push. No tests need changing for this evidence-only slice; existing98 behavior tests remain applicable and do not prove native overlay compatibility.
+- [x] Verify ordered bootstrap/ready/detection/attach/connect/reward evidence and compare photo names, visible upgrade status and ordering with captured IDs.
+- [x] Trace native coordinates and overlay rendering/account gates; record lost scale fields and avoid a tautological compare-reward pass.
+- [x] Record successful test-account install/menu confirmation, successful real reward traversal, owner's corrected no-overlay observation, offline-data/settings errors and exact remaining limitations.
+- [x] Update canonical status/verification/runbook/architecture, run documentation hygiene/whitespace, commit/push. No tests need changing for this evidence-only slice; existing98 behavior tests remain applicable and do not prove native overlay compatibility.
 
 ### Open questions
 - None for evidence reconciliation. Future scale-capture instrumentation needs a fresh companion proposal before signing; any network/account experiment needs a separately reviewed plan. Neither is executed here.
+
+Result: read-only event/photo comparison verifies HAZE0/RICOCHET0/INFINITE_BLADES0 and ordering after the complete native event chain. Pinned-source review identifies GlobalUi-normalized raw hitboxes, separate scale fields omitted by our capture, and vendor account gating with silent empty unauthenticated UI. Owner corrected earlier overlay selection: none was noticed on the game screen. Public-data cache and settings-property errors limit broader behavior. Updated current README/table and focused docs; no code, test, signature, account or network change in this slice. All98 existing behavior tests remain applicable. Full geometry/overlay acceptance remains incomplete.

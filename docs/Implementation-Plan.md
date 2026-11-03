@@ -476,3 +476,21 @@ Check the complete gateway path before opening the companion and retain safe exc
 Implementation checkpoint evidence: added eight gateway and seven supervisor preflight/privacy tests; all154 tests pass. Boundary review found two issues now fixed and regression-covered: validate bounded UTF-8 JSON objects (including rejection of nonfinite constants/duplicate keys), and attribute late no-app cleanup failures wholly to preflight. The response reader also handles streams that close as their last bytes are read. A real fixed-data through-gateway preflight in UID501 returned both expected401 JSON objects, no failures and clean drain, using no account or app. The root cause of the prior real-flow exception remains unknown. Final gateway hash79c16a7e9cacba58dfaa23b96b0446ddf9496101dd7da00a8e00c675898c85e5 is frozen; archive preparation/docs remain before final save.
 
 Final staging evidence: code checkpoint3733ae9 records the complete tested gate/error behavior. Revision08c's signed app/receipt match08b/08 exactly; all333 archive entries and a private exact-mode extraction pass full byte/mode/link/signature/payload/policy verification. Archive SHA-2565453194a1674b54386524df00080eb2a4cab5b36ec12d5e0a6d3102d05e594bd. Current original helpers/launcher match staged bytes, checksum/proposal/hash/shell/docs/repository/whitespace checks pass, and older artifacts remain preserved. No08c companion or real OAuth session was run. The owner must review/initiate the next bounded08c attempt and provide only its new sanitized Diagnostic file path; no authentication/overlay or real-flow root cause is claimed.
+
+## Record verified controlled sign-in and prepare the reward observation
+
+Reconcile the owner's successful08c sign-in with its sanitized report, then document the existing isolated-game/controlled-companion sequence for the next reward-screen check.
+
+### Scope
+- In: Evidence-only status/runbook updates; genuine authentication and200 token/account responses; existing manual-play and observe-debug-game commands; separate unverified STS2/public-data/overlay/geometry gates.
+- Out: New app/network/game execution by the assistant, source/signature/policy changes, inferred cause of the older502, raw account/log data or a claim of visible overlay success.
+
+### Action items
+- [x] Read /private/tmp/sts2test-controlled.mjy01eeq.json: expected preflight, genuine authenticated event, oauth_token200/account200, no failures/overflow and complete cleanup after the post-auth timeout.
+- [ ] Checkpoint this resolved evidence plan before documentation changes.
+- [ ] Update README, controlled-access plan, architecture, runbook and verification with the verified milestone and limits. Preserve historical failures as evidence; their exact cause remains unproven.
+- [ ] Document the existing owner-run900-second debug-game session, reward pause, and controlled_sign_in.sh --observe-debug-game. Explain that fresh profiles/memory-only credentials require sign-in again for that combined run.
+- [ ] Run documentation/repository/whitespace and existing-script syntax checks, commit/push and give the owner the first game command. No tests/code changes are needed for this evidence-only slice; the existing154 tests remain applicable.
+
+### Open questions
+- None for the evidence update. The owner must reach a reward screen and complete the next manual sign-in to observe the overlay. This sign-in-only result proves no game attachment, STS2 feature/public-data population or rendered geometry.

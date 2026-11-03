@@ -406,3 +406,25 @@ Read only bounded saved authentication-error text inside the owner's private tes
 Evidence: /private/tmp/sts2test-controlled.7a7o1dnx.json records bootstrap, ready and manual-sign-in-ready, followed by oauth_token403 once. No account/public-data route was reached. Settings/cache false flags in this login-only run do not prove game-settings or public-data compatibility. The browser and companion displayed authentication failure. Ranked diagnostic branches are an upstream HTML/security rejection, a structured OAuth protocol rejection, or another unclassified403; the local allowlist-rejection hypothesis is contradicted by the route counter. The next read-only probe distinguishes these branches without guessing the cause.
 
 Implementation result: the saved-error classifier and standard-account wrapper are staged with exact byte parity. Seven focused tests and the complete133-test suite pass; shell syntax, staged import/help, helper-policy hash binding, documentation links/hygiene and whitespace pass. Source logs are read-only; no network/vendor process, signed-payload change or gateway/adapter change occurred. The owner must run the saved-error command in UID502 and provide only its sanitized Diagnostic file path before the upstream403 can be explained or a concrete fix selected.
+
+## Preserve the original companion User-Agent at the gateway
+
+Restore the pinned original client's HTTP User-Agent in the gateway, then prepare a reviewed helper revision around byte-identical signed copy08 payload for a manual bounded retry.
+
+### Scope
+- In: One fixed outbound header matching the original node-fetch library; an inert HTTP regression; an explicit revised gateway hash/proposal and profile-free companion08b transfer; current runbook/access/security/verification docs.
+- Out: Browser impersonation, challenge handling, route/body/credential expansion, changed OAuth/PKCE checks, a new app signature/ASAR, game/profile changes, or an automatic live sign-in retry.
+
+### Action items
+- [x] Read saved-error classification: token error and callback failure, no recognized JSON OAuth/HTML/challenge/provider markers. Inspect pinned original node-fetch defaults and stdlib transport.
+- [x] Compare exactly two credential-free GETs to the existing reviewed account endpoint, changing only User-Agent: current default403 text/plain, original companion header401 JSON with the standard missing-credentials message. Record only fixed metadata, not raw response content. This isolates a header-dependent transport rejection but does not yet prove a successful token exchange.
+- [ ] Checkpoint this resolved plan; add an inert on-wire HTTP regression and demonstrate failure before the fix.
+- [ ] Set only the fixed original User-Agent inside the gateway transport; keep caller-supplied User-Agent disallowed and expose the fixed value in the review proposal. Run focused and full synthetic suites.
+- [ ] Create revision08b with byte-identical signed app/receipt, revised gateway hash and explicit proposal; verify signature/payload/tree equality and exact-mode profile-free archive extraction. Stage the current original helpers and revised default launcher with parity; preserve old archives.
+- [ ] Update README, SECURITY.md, Controlled-Access-Plan.md, Test-Account-Runbook.md and Verification.md with measured evidence, reviewable header-only change and retry limits; run syntax/hygiene, checkpoint and push.
+- [ ] Have the owner review and initiate the next bounded manual login-only attempt in UID502. Do not claim authentication success from an unauthenticated401 response.
+
+### Open questions
+- None for implementation. The owner-run revised sign-in attempt remains a distinct runtime step. Its result is required to establish whether the token failure is resolved.
+
+Discovery: the original packed node_modules/node-fetch/lib/index.js sets User-Agent to node-fetch/1.0 (+https://github.com/bitinn/node-fetch). The gateway's urllib transport instead supplies Python's default when no header is set. The two-request comparison used no tokens/cookies/body/query, normal TLS verification, no redirects, and no browser/app execution. A fixed original-client header preserves integration behavior; no arbitrary client/header or protective-check bypass is added. The signed app need not be modified: only separately reviewed manifest/helper metadata changes, retaining policy-drift checks rather than silently updating the old manifest.

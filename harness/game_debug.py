@@ -195,6 +195,25 @@ def verify(session):
     return receipt["signed_files"]
 
 
+def extract_transfer(archive, destination):
+    """Extract a checksum-verified local archive into a fresh private directory."""
+    archive = Path(archive).absolute()
+    destination = _root(destination)
+    if archive.is_symlink() or archive.resolve(strict=True) != archive or not archive.is_file():
+        raise HarnessError("Game transfer archive is missing or redirected")
+    if any(destination.iterdir()):
+        raise HarnessError("Game transfer extraction requires an empty private directory")
+    try:
+        result = subprocess.run(["/usr/bin/tar", "-xpf", str(archive), "-C", str(destination)],
+                                capture_output=True, text=True, timeout=60,
+                                env={"PATH": "/usr/bin:/bin", "LANG": "C", "COPYFILE_DISABLE": "1"})
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise HarnessError("Game transfer extraction unavailable or timed out") from exc
+    if result.returncode:
+        raise HarnessError("Game transfer extraction failed: " + result.stderr[-1000:])
+    _root(destination)
+
+
 def install(source, session):
     name, home, original = game.test_identity("sts2test", game.PROTECTED_HOME)
     source = _root(source)

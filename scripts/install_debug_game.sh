@@ -27,7 +27,7 @@ cd "$test_code"
 probe_python=/opt/homebrew/bin/python3
 if [ ! -x "$probe_python" ]; then probe_python=/usr/bin/python3; fi
 "$probe_python" - <<'PY'
-import json, os, subprocess, tempfile
+import json, tempfile
 from pathlib import Path
 from harness import game_debug, game_launch
 _, home, _ = game_launch.test_identity('sts2test', game_launch.PROTECTED_HOME)
@@ -37,6 +37,6 @@ destination = home/game_debug.TEST_SESSION
 if destination.exists() or destination.is_symlink():
     raise SystemExit('Debug-game session already exists; stop instead of overwriting.')
 source = Path(tempfile.mkdtemp(prefix='sts2-debug-transfer-', dir='/private/tmp'))
-subprocess.run(['/usr/bin/tar','-xf','/private/tmp/untapped-sts2-transfer-01/debug-game01.tar','-C',str(source)],check=True)
+game_debug.extract_transfer(Path('/private/tmp/untapped-sts2-transfer-01/debug-game01.tar'), source)
 print(json.dumps(game_debug.install(source, destination), indent=2))
 PY

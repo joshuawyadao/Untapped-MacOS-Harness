@@ -303,10 +303,12 @@ The owner-run installer stopped before installation with signed-tree mismatch. A
 - Out: Changing signed payload/receipt, new signing, game launch, overwriting partial sessions or inspecting the other user's private home.
 
 ### Action items
-- [ ] Confirm the real archive mismatch is exclusively file modes, preserving content hashes and entries.
-- [ ] Add a bounded private transfer extractor preserving recorded permissions; use it in the installer and test under umask077 with a real inert archive.
-- [ ] Prove default extraction fails and fixed extraction matches the signed receipt with the unchanged real archive; preserve failed private extraction for the owner and keep the destination-new guard.
-- [ ] Update verification/runbook, run focused/full tests and syntax/hygiene, stage original fix, commit/push and provide the same install retry command. Existing signing/test approval remains valid.
+- [x] Confirm the real archive mismatch is exclusively file modes, preserving content hashes and entries.
+- [x] Add a bounded private transfer extractor preserving recorded permissions; use it in the installer and test under umask077 with a real inert archive.
+- [x] Prove default extraction fails and fixed extraction matches the signed receipt with the unchanged real archive; preserve failed private extraction for the owner and keep the destination-new guard.
+- [x] Update verification/runbook, run focused/full tests and syntax/hygiene, stage original fix, commit/push and provide the same install retry command. Existing signing/test approval remains valid.
 
 ### Open questions
 - None. This corrects original transfer code without changing vendor bytes or signature scope.
+
+Result: exact installer extraction reproduced427 permission-only mismatches in the unchanged real archive (all bytes/entries matched). Added private bounded exact-mode extractor and wired installer; the new inert regression failed before -xpf and passes afterward. Three new tests bring total to98 passing. Fixed real extraction under umask077 passed all440 signed entries plus native deep signature/entitlement/receipt verification; no re-signing or vendor execution. Staged only original helper/installer fix with parity/syntax checks; failed UID502 extraction preserved. Updated architecture, verification and runbook. Owner must retry installation in UID502, then run the already-approved60-second boot check.

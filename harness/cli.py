@@ -5,6 +5,7 @@ import math
 import os
 import platform
 import plistlib
+import shlex
 import shutil
 import signal
 import subprocess
@@ -270,6 +271,7 @@ def launch_outer(session, seconds, approved=False, target_pid=None, target_game=
                             "UNTAPPED_HARNESS_GATEWAY_KEY": _controlled.key,
                             "UNTAPPED_HARNESS_NETWORK_SHA256": sha256(helper.read_bytes())})
         print("Manual sign-in URL will be written privately to: " + str(profile / "manual-sign-in-url.txt"), flush=True)
+        print("After Sign In, run in another Terminal: cat " + shlex.quote(str(profile / "manual-sign-in-url.txt")), flush=True)
         print("Use the companion Sign In button, then read that file in another Terminal and open its URL manually. Do not share the URL or raw logs.", flush=True)
     environment["UC_TEST_SANDBOX_DIR"] = str(profile)
     environment["TMPDIR"] = str(profile / "temp")

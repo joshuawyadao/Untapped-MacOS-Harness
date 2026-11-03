@@ -46,7 +46,9 @@ class ControlledTests(unittest.TestCase):
                       'controlled_gateway_sha256':cli.sha256((cli.ROOT/'harness/gateway.py').read_bytes()),
                       'controlled_network_sha256':cli.sha256((cli.ROOT/'harness/controlled_network.cjs').read_bytes())}
             (session/'manifest.json').write_text(json.dumps(manifest))
-            self.assertEqual(controlled.proposal(session)['scope'],'MANUAL_OAUTH_AND_PUBLIC_DATA_ONLY')
+            proposed=controlled.proposal(session)
+            self.assertEqual(proposed['scope'],'MANUAL_OAUTH_AND_PUBLIC_DATA_ONLY')
+            self.assertEqual(proposed['outbound_user_agent'], 'node-fetch/1.0 (+https://github.com/bitinn/node-fetch)')
             for key in ('controlled_gateway_sha256','controlled_network_sha256'):
                 changed={**manifest,key:'0'*64};(session/'manifest.json').write_text(json.dumps(changed))
                 with self.assertRaisesRegex(HarnessError,'changed since preparation'):
@@ -124,12 +126,15 @@ class ControlledTests(unittest.TestCase):
                  patch.object(cli.subprocess,'Popen',return_value=process) as spawn, \
                  patch.object(cli,'stop_probe') as stop, \
                  patch.object(cli,'load_events',side_effect=OSError('private failure')), \
-                 contextlib.redirect_stdout(io.StringIO()):
+                 contextlib.redirect_stdout(io.StringIO()) as instructions:
                 with self.assertRaises(OSError):
                     cli.launch_outer(session,300,approved=True,_controlled=gateway)
             stop.assert_called_once_with(process)
             _,options=spawn.call_args
             environment=options['env'];profile=Path(environment['UC_TEST_SANDBOX_DIR'])
+            self.assertIn('After Sign In, run in another Terminal: cat ',instructions.getvalue())
+            self.assertIn(str(profile/'manual-sign-in-url.txt'),instructions.getvalue())
+            self.assertNotIn(gateway.key,instructions.getvalue())
             self.assertEqual(environment['UNTAPPED_HARNESS_CONTROLLED_ACCESS'],'1')
             self.assertEqual(environment['UNTAPPED_HARNESS_GATEWAY_KEY'],gateway.key)
             self.assertEqual(environment['UNTAPPED_HARNESS_NETWORK_SHA256'],cli.sha256((profile/'controlled-network.cjs').read_bytes()))

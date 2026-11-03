@@ -125,11 +125,13 @@ Full geometry is still incomplete: current capture omits native scaleX/scaleY, a
 
 The vendor reward UI is statically login-gated, and public-data fetching has no cache under the retained offline policy. Full UI work needs a separately reviewed isolated account/data plan; do not sign in, enable networking, approve prompts or bypass gates as part of this completed observation. Settings/property-read errors also need separate compatibility investigation. Existing signing approvals do not authorize those new account/network actions.
 
-## Approved controlled sign-in probe (first attempt failed)
+## Controlled sign-in revision08b (ready for owner review/retry)
 
-The owner approved the [controlled-access plan](Controlled-Access-Plan.md) and exact private copy08 signing/access proposals. Outer-only signing and deep signature/entitlement/payload checks pass. The signed profile-free archive, checksum and original launcher/helpers are staged; exact-mode extraction was verified. The first live probe subsequently failed at token HTTP403; the read-only follow-up below is the current next step.
+The owner approved the original [controlled-access plan](Controlled-Access-Plan.md) and copy08 signing/access proposals. Its first login-only attempt failed at upstream token HTTP403. Read-only saved-error inspection was unclassified. A two-request comparison then isolated header-dependent behavior: Python's default received403, and the original companion's User-Agent received the expected unauthenticated401. No account credentials were sent during that comparison.
 
-In the standard sts2test account, close Steam and every game copy, then run:
+Review revision08b in the access plan before retrying. It sets only the fixed original User-Agent at the gateway; routes, bodies, credential scope and app confinement are unchanged. The signed app/receipt are identical to copy08, with no new signing. A fresh revised manifest pins the new gateway hash, and verified companion08b.tar plus current helpers are staged. The launcher now selects this revised archive; old archives remain preserved. Authentication success after this correction is still unverified.
+
+To initiate the reviewed bounded retry in the standard sts2test account, close Steam and every game copy, then run:
 
 ```sh
 /bin/sh /private/tmp/untapped-sts2-transfer-01/controlled_sign_in.sh
@@ -137,11 +139,11 @@ In the standard sts2test account, close Steam and every game copy, then run:
 
 This first probe is login-only. A later `--observe-debug-game` mode can observe only the existing verified debug game. The attempt is at most300 seconds and at most45 seconds after genuine sign-in succeeds.
 
-The companion does not open a browser: its sign-in control writes a private manual-sign-in URL file and the supervisor prints that file's location. Read it in a second test-account Terminal and open the URL yourself in that account's browser; finish credentials/consent manually. Do not share that URL, raw logs/settings or callback material. The new Diagnostic file export contains only safe harness status/events/cards and route counters. Existing raw-log observation exports must not be used after authentication.
+The companion does not open a browser: its sign-in control writes a private manual-sign-in URL file. Terminal now prints a complete `After Sign In, run in another Terminal: cat …` command containing only that new file's location. Click Log in, then run the printed cat command in a second test-account Terminal and open its URL yourself in that account's browser; finish credentials/consent manually. Use the fresh path/URL from this attempt. Do not share that URL, raw logs/settings or callback material. The new Diagnostic file export contains only safe harness status/events/cards and route counters. Existing raw-log observation exports must not be used after authentication.
 
 Account/token and public JSON/commentary/tier routes are permitted by the approved gateway; stats/predictions, history/uploads, telemetry and artwork are blocked. The vendor consent scope is companion:full-access even though companion traffic is filtered; browser website traffic is outside that filter. The separate settings-property error can still block overlay target resolution, so successful login/data loading is not proof that the overlay appears. Send only the printed sanitized Diagnostic file path after this run; retain a failed/timed-out result for review before another attempt.
 
-## Read the saved token HTTP403 without sharing raw logs
+## Saved token HTTP403 classification (completed)
 
 The first probe's safe export records one upstream oauth_token403, no authenticated event, no local allowlist rejection and complete cleanup. In the same sts2test account, run this read-only command against that saved attempt:
 
@@ -149,4 +151,4 @@ The first probe's safe export records one upstream oauth_token403, no authentica
 /bin/sh /private/tmp/untapped-sts2-transfer-01/classify_sign_in_error.sh /private/tmp/uc-sts2-502-b6hogsud/outer-attempt-64jcgjm3
 ```
 
-Send only the printed `Diagnostic file: /private/tmp/sts2test-auth-error.…json` path. This original helper reads two bounded saved logs privately and exports fixed error categories/booleans only. It opens no browser/app and makes no network requests. It does not modify the saved attempt, gateway, adapter or signed copy08. An unclassified result is valid evidence; do not paste raw errors or retry login to fill the gap.
+This check has completed: UNCLASSIFIED_TOKEN_ERROR, with no recognized HTML/security/OAuth markers and no truncated logs. There is no need to repeat it for this attempt. For any later use, send only its printed `Diagnostic file: /private/tmp/sts2test-auth-error.…json` path. This original helper reads two bounded saved logs privately and exports fixed error categories/booleans only. It opens no browser/app and makes no network requests. It does not modify the saved attempt, gateway, adapter or signed copy08. An unclassified result is valid evidence; do not paste raw errors.

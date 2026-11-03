@@ -412,19 +412,21 @@ Implementation result: the saved-error classifier and standard-account wrapper a
 Restore the pinned original client's HTTP User-Agent in the gateway, then prepare a reviewed helper revision around byte-identical signed copy08 payload for a manual bounded retry.
 
 ### Scope
-- In: One fixed outbound header matching the original node-fetch library; an inert HTTP regression; an explicit revised gateway hash/proposal and profile-free companion08b transfer; current runbook/access/security/verification docs.
+- In: One fixed outbound header matching the original node-fetch library; an inert HTTP regression; an explicit revised gateway hash/proposal and profile-free companion08b transfer; print a complete path-only cat command for the owner's manual URL handoff; current runbook/access/security/verification docs.
 - Out: Browser impersonation, challenge handling, route/body/credential expansion, changed OAuth/PKCE checks, a new app signature/ASAR, game/profile changes, or an automatic live sign-in retry.
 
 ### Action items
 - [x] Read saved-error classification: token error and callback failure, no recognized JSON OAuth/HTML/challenge/provider markers. Inspect pinned original node-fetch defaults and stdlib transport.
 - [x] Compare exactly two credential-free GETs to the existing reviewed account endpoint, changing only User-Agent: current default403 text/plain, original companion header401 JSON with the standard missing-credentials message. Record only fixed metadata, not raw response content. This isolates a header-dependent transport rejection but does not yet prove a successful token exchange.
-- [ ] Checkpoint this resolved plan; add an inert on-wire HTTP regression and demonstrate failure before the fix.
-- [ ] Set only the fixed original User-Agent inside the gateway transport; keep caller-supplied User-Agent disallowed and expose the fixed value in the review proposal. Run focused and full synthetic suites.
-- [ ] Create revision08b with byte-identical signed app/receipt, revised gateway hash and explicit proposal; verify signature/payload/tree equality and exact-mode profile-free archive extraction. Stage the current original helpers and revised default launcher with parity; preserve old archives.
-- [ ] Update README, SECURITY.md, Controlled-Access-Plan.md, Test-Account-Runbook.md and Verification.md with measured evidence, reviewable header-only change and retry limits; run syntax/hygiene, checkpoint and push.
+- [x] Checkpoint this resolved plan (`42b1af1`); add an inert on-wire HTTP regression and demonstrate failure before the fix.
+- [x] Set only the fixed original User-Agent inside the gateway transport; keep caller-supplied User-Agent disallowed and expose the fixed value in the review proposal. Print the complete local URL-file read command without its contents. Run focused and full synthetic suites.
+- [x] Create revision08b with byte-identical signed app/receipt, revised gateway hash and explicit proposal; verify signature/payload/tree equality and exact-mode profile-free archive extraction. Stage the current original helpers and revised default launcher with parity; preserve old archives.
+- [x] Update README, SECURITY.md, Controlled-Access-Plan.md, Test-Account-Runbook.md, Harness-Architecture.md and Verification.md with measured evidence, reviewable header-only change and retry limits; run syntax/hygiene and save through save-branch.
 - [ ] Have the owner review and initiate the next bounded manual login-only attempt in UID502. Do not claim authentication success from an unauthenticated401 response.
 
 ### Open questions
 - None for implementation. The owner-run revised sign-in attempt remains a distinct runtime step. Its result is required to establish whether the token failure is resolved.
 
 Discovery: the original packed node_modules/node-fetch/lib/index.js sets User-Agent to node-fetch/1.0 (+https://github.com/bitinn/node-fetch). The gateway's urllib transport instead supplies Python's default when no header is set. The two-request comparison used no tokens/cookies/body/query, normal TLS verification, no redirects, and no browser/app execution. A fixed original-client header preserves integration behavior; no arbitrary client/header or protective-check bypass is added. The signed app need not be modified: only separately reviewed manifest/helper metadata changes, retaining policy-drift checks rather than silently updating the old manifest.
+
+Implementation result: the inert on-wire regression failed403 before the fix and passes401 afterward. All134 tests pass, including updated external-header denial/proposal/manual-read-command checks. Revision08b's signed app tree and receipt match08 exactly; native signature/payload verification and all333 archive entries/extracted modes/content/links pass. Archive SHA-2568d1587fb765e9f008258b72bd2c8fea3ff44b3cf8747c4d41963165f3097939a; gateway SHA-25670d78c4798db97790fead4e22a41e061c241f2f3373f18aac6d5f46ff9c3cdd3. Original helper/launcher parity, shell syntax, checksum, staged proposal/hash binding and documentation/repository checks pass. Old artifacts are preserved. No new signing, vendor app execution or live OAuth retry occurred. The owner's review/initiation and sanitized retry result remain pending; no authentication/overlay success is claimed.

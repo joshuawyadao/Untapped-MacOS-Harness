@@ -10,7 +10,7 @@ from pathlib import Path
 
 from . import cli, game_debug, game_launch, reward_probe
 from .asar import HarnessError, sha256
-from .gateway import Gateway
+from .gateway import COMPANION_USER_AGENT, Gateway
 
 EVENTS = {"bootstrap", "ready", "window-detected", "attach-attempt", "reader-connected",
           "reward", "manual-sign-in-ready", "authenticated"}
@@ -27,6 +27,7 @@ def proposal(session):
     return {"scope": "MANUAL_OAUTH_AND_PUBLIC_DATA_ONLY", "session": str(session),
             "companion_remote_network": "DENIED_UNCHANGED_OUTER_POLICY",
             "oauth_scope": "companion:full-access", "browser_network": "OUTSIDE_COMPANION_GATEWAY",
+            "outbound_user_agent": COMPANION_USER_AGENT,
             "keytar_credentials": "SESSION_MEMORY_ONLY", "raw_logs": "PRIVATE_NEVER_SHARED",
             "auth_hosts": ["api.accounts.untapped.gg", "api.sts2.untapped.gg"],
             "public_hosts": ["sts2json.untapped.gg", "sts2.untapped.gg", "api.sts2.untapped.gg"],

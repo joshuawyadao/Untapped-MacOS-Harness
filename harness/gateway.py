@@ -17,6 +17,8 @@ from urllib.request import HTTPSHandler, HTTPRedirectHandler, ProxyHandler, Requ
 
 MAX_REQUEST = 32768
 MAX_RESPONSE = 8 * 1024 * 1024
+# Pinned original node-fetch default; never supplied by an app request or env.
+COMPANION_USER_AGENT = "node-fetch/1.0 (+https://github.com/bitinn/node-fetch)"
 _UUID = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\Z")
 _VERSION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,79}\Z")
 _PUBLIC_JSON = frozenset({
@@ -165,6 +167,7 @@ class _NoRedirect(HTTPRedirectHandler):
 def _transport(method, url, headers, body):
     opener = build_opener(ProxyHandler({}), HTTPSHandler(context=ssl.create_default_context()), _NoRedirect())
     request = Request(url, data=body, headers=headers, method=method)
+    request.add_header("User-Agent", COMPANION_USER_AGENT)
     deadline = time.monotonic() + 10
     try:
         response = opener.open(request, timeout=10)

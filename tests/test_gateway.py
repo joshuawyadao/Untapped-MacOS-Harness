@@ -101,6 +101,7 @@ class GatewayTests(unittest.TestCase):
             ("https://sts2json.untapped.gg/data/public/latest/eng/other.json", "GET", {}, None),
             ("https://api.sts2.untapped.gg/api/v1/tier-lists/123/resolve/?game_version=1", "GET", {}, None),
             (good, "GET", {"X-Secret": "x"}, None),
+            (good, "GET", {"User-Agent": "caller-controlled"}, None),
             (good, "GET", {}, "unexpected"),
             (good, "GET", {}, ""),
         ]

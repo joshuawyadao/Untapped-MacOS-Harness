@@ -1,6 +1,7 @@
 """Exact guards for one user-supplied build; never spoof app.isPackaged globally."""
 from pathlib import Path
 from .asar import HarnessError
+from .sts2_ui import SETTINGS_UI_ENTRY, patch_settings_ui
 
 VERSION = "3.12.3-latest"
 ASAR_SHA256 = "ca3a2e6a6f728b2d635abfc70a5434d4107438b8d801a650357989e8442d798c"
@@ -12,7 +13,11 @@ MAIN = "dist/main/index.js"
 SERVICES = "dist/main/chunks/Services-DMO98y9F.js"
 OVERLAY = "dist/renderer/assets/Sts2Overlay-DPeYNPLb.js"
 RUNTIME = "dist/renderer/assets/ScryRuntime-Bw9hEAKx.js"
+SETTINGS_UI = SETTINGS_UI_ENTRY
 SCRY = "node_modules/untapped-scry/lib/binding/napi-v5/untapped-scry.node"
+RUNTIME_STORE_GETTER_OLD = '  get LocalStore() {\n    return new GodotFileIo(this.object("LocalStore"));\n  }'
+RUNTIME_STORE_GETTER_NEW = '  get LocalStore() {\n    return resolveHarnessSts2LocalFileIo(this);\n  }'
+RUNTIME_STORE_CLASS = 'class CloudSaveStore extends ScryObject {'
 
 # Small exact-match anchors, not a redistributed companion bundle.
 CORE_PATCHES = [
@@ -52,6 +57,17 @@ SERVICES_PATCHES = [
 
 CONTROLLED = 'process.env.UNTAPPED_HARNESS_CONTROLLED_ACCESS === "1"'
 CORE_PATCHES.extend([
+    ('      this.state.settings.set(curr);\n      this.processWatcher.update();',
+     '      this.state.settings.set(curr);\n'
+     '      if (curr && typeof curr === "object") global.__untappedHarnessEvent("settings-read");\n'
+     '      this.processWatcher.update();'),
+    ('    index.ipcHandle(`${routerPath}.overlayReady`, async () => {\n      this.isWindowReady = true;',
+     '    index.ipcHandle(`${routerPath}.overlayReady`, async () => {\n      this.isWindowReady = true;\n'
+     '      if (routerPath === "sts2") global.__untappedHarnessEvent("overlay-ready");'),
+    ('      index.decayGpuCrashCount();\n      this.emit("show");',
+     '      index.decayGpuCrashCount();\n'
+     '      if (this.routerPath === "sts2") global.__untappedHarnessEvent("overlay-show");\n'
+     '      this.emit("show");'),
     ('    this.logWatcher.on("runComplete", this.onRunComplete.bind(this));',
      '    if (!(' + CONTROLLED + ')) this.logWatcher.on("runComplete", this.onRunComplete.bind(this));'),
     ('  maybeStartLogWatcher() {', '  maybeStartLogWatcher() {\n    if (' + CONTROLLED + ') return;'),
@@ -92,8 +108,14 @@ def patched_entries(archive):
     services = archive.read(SERVICES).decode()
     for old, new in SERVICES_PATCHES:
         services = replace_once(services, old, new)
+    runtime = archive.read(RUNTIME).decode()
+    runtime = replace_once(runtime, RUNTIME_STORE_GETTER_OLD, RUNTIME_STORE_GETTER_NEW)
+    store_helper = Path(__file__).with_name("sts2_store_compat.cjs").read_text()
+    runtime = replace_once(runtime, RUNTIME_STORE_CLASS, store_helper + "\n" + RUNTIME_STORE_CLASS)
+    settings_ui = patch_settings_ui(archive.read(SETTINGS_UI).decode())
     bootstrap = Path(__file__).with_name("bootstrap.cjs").read_text()
     if not main.startswith('"use strict";\n'):
         raise HarnessError("Main entry lost its strict-mode directive")
     main = '"use strict";\n' + bootstrap + "\n" + main[len('"use strict";\n'):]
-    return {CORE: core.encode(), MAIN: main.encode(), SERVICES: services.encode()}
+    return {CORE: core.encode(), MAIN: main.encode(), SERVICES: services.encode(),
+            RUNTIME: runtime.encode(), SETTINGS_UI: settings_ui.encode()}

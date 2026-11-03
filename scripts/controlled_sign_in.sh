@@ -1,5 +1,5 @@
 #!/bin/sh
-# Revision08c adds a fixed-data gateway check and safe failure metadata.
+# Copy09 exposes normal Mac STS2 settings and reads both native save-store types.
 # Review the revised controlled-access proposal before the owner-run retry.
 set -eu
 if [ "$(id -un)" != "sts2test" ]; then
@@ -21,14 +21,14 @@ if [ ! -d "$test_code/harness" ] || [ -L "$test_code" ] || [ -L "$test_code/harn
 fi
 umask 077
 cd "$transfer"
-shasum -a 256 -c companion08c.sha256
-for module in asar.py patches.py signing.py cli.py process_identity.py target_identity.c game_launch.py game_debug.py reward_probe.py controlled.py gateway.py controlled_network.cjs; do
+shasum -a 256 -c companion09.sha256
+for module in asar.py patches.py sts2_ui.py sts2_store_compat.cjs signing.py cli.py process_identity.py target_identity.c game_launch.py game_debug.py reward_probe.py controlled.py gateway.py controlled_network.cjs; do
   if [ -L "$transfer/harness/$module" ] || [ ! -f "$transfer/harness/$module" ] || [ -L "$test_code/harness/$module" ]; then
     echo 'Harness source missing or redirected.' >&2
     exit 2
   fi
 done
-for module in asar.py patches.py signing.py cli.py process_identity.py target_identity.c game_launch.py game_debug.py reward_probe.py controlled.py gateway.py controlled_network.cjs; do
+for module in asar.py patches.py sts2_ui.py sts2_store_compat.cjs signing.py cli.py process_identity.py target_identity.c game_launch.py game_debug.py reward_probe.py controlled.py gateway.py controlled_network.cjs; do
   cp "$transfer/harness/$module" "$test_code/harness/$module"
 done
 cd "$test_code"
@@ -43,6 +43,6 @@ print(tempfile.mkdtemp(prefix=f'uc-sts2-{os.getuid()}-',dir='/private/tmp'))
 PY
 )
 # Preserve recorded signed modes while keeping the containing root private.
-tar -xpf "$transfer/companion08c.tar" -C "$session"
+tar -xpf "$transfer/companion09.tar" -C "$session"
 # The expansion is either empty or the fixed literal flag selected above.
 "$probe_python" -m harness.controlled "$session" --approve-controlled-access $observe

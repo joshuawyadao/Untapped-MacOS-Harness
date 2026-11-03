@@ -111,6 +111,7 @@ def prepare(app, destination):
     report.update({
         "schema": 1, "patched_asar_sha256": sha256(patched_bytes),
         "controlled_access_version": 1, "controlled_preflight_version": 1, "reward_scale_capture": True,
+        "sts2_store_compat_version": 1, "sts2_macos_settings_ui": True,
         "controlled_gateway_sha256": sha256((ROOT / "harness/gateway.py").read_bytes()),
         "controlled_network_sha256": sha256((ROOT / "harness/controlled_network.cjs").read_bytes()),
         "patched_entries": sorted(replacements), "vendor_bundle_seal": "INVALIDATED_BY_RESOURCE_PATCH",
@@ -353,6 +354,8 @@ def status(session):
         "window_detection": "OBSERVED" if "window-detected" in names else "UNTESTED",
         "attachment": "CONNECT_ACKNOWLEDGED" if "reader-connected" in names else "ATTEMPTED" if "attach-attempt" in names else "UNTESTED",
         "state_reading": "REWARD_EVENT_OBSERVED" if "reward" in names else "UNTESTED",
+        "settings_reading": "OBSERVED" if "settings-read" in names else "NOT_OBSERVED",
+        "overlay_window": "SHOW_RECORDED" if "overlay-show" in names else "RENDERER_READY" if "overlay-ready" in names else "NOT_OBSERVED",
         "overlay": "UNTESTED_REQUIRES_VISUAL_CHECK",
         "reward_comparison": "UNTESTED_USE_COMPARE_REWARD",
         "terms_screen_logged": terms_seen,

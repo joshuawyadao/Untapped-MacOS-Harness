@@ -5,6 +5,7 @@ import unittest
 
 from harness.asar import Archive, HarnessError
 from harness import patches
+from harness.sts2_ui import UI_OLD
 from test_harness import synthetic_archive
 
 
@@ -47,6 +48,8 @@ def fixture_archive(services=SERVICES_SOURCE):
         patches.CORE: core.encode(),
         patches.MAIN: main.encode(),
         patches.SERVICES: services.encode(),
+        patches.RUNTIME: (patches.RUNTIME_STORE_CLASS + '\n' + patches.RUNTIME_STORE_GETTER_OLD + '\n}\n').encode(),
+        patches.SETTINGS_UI: UI_OLD.encode(),
         "untouched.txt": b"unchanged",
     }))
 
@@ -104,15 +107,29 @@ class OfflineAuthTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_three_patched_entries_preserve_terms_and_unrelated_archive_content(self):
+    def test_five_patched_entries_preserve_terms_and_unrelated_archive_content(self):
         archive = fixture_archive()
         replacements = patches.patched_entries(archive)
-        self.assertEqual(set(replacements), {patches.CORE, patches.MAIN, patches.SERVICES})
+        self.assertEqual(set(replacements), {patches.CORE, patches.MAIN, patches.SERVICES,
+                                            patches.RUNTIME, patches.SETTINGS_UI})
         rewritten = Archive(archive.rewrite(replacements))
         self.assertEqual(rewritten.read("untouched.txt"), b"unchanged")
         self.assertIn(b"TERMS_REMAIN_USER_CONTROLLED", rewritten.read(patches.CORE))
         self.assertIn(b'UNTAPPED_HARNESS_OFFLINE === "1"', rewritten.read(patches.SERVICES))
         self.assertEqual(archive.read(patches.SERVICES), SERVICES_SOURCE.encode())
+        self.assertIn(b'resolveHarnessSts2LocalFileIo(this)', rewritten.read(patches.RUNTIME))
+        self.assertIn(b'platforms: ["win32", "linux", "darwin"]', rewritten.read(patches.SETTINGS_UI))
+        self.assertIn(b'franchise: "STS2"', rewritten.read(patches.SETTINGS_UI))
+
+    def test_changed_or_duplicated_store_getter_fails_before_archive_mutation(self):
+        archive=fixture_archive()
+        original=archive.read(patches.RUNTIME)
+        for runtime in (original.replace(patches.RUNTIME_STORE_GETTER_OLD.encode(),b'changed'),
+                        original+b'\n'+patches.RUNTIME_STORE_GETTER_OLD.encode()):
+            changed=Archive(archive.rewrite({patches.RUNTIME:runtime}))
+            with self.assertRaises(HarnessError):
+                patches.patched_entries(changed)
+        self.assertEqual(archive.read(patches.RUNTIME),original)
 
     def test_missing_or_duplicate_services_method_refuses_patch(self):
         for source in (SERVICES_SOURCE.replace(AUTH_ANCHOR, "async ensureOtherCredentials() {"),

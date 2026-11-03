@@ -56,7 +56,7 @@
   const seen = new Set();
   let rewards = 0;
   global.__untappedHarnessEvent = (event) => {
-    if (!["bootstrap", "ready", "window-detected", "attach-attempt", "reader-connected", "manual-sign-in-ready", "authenticated"].includes(event) || seen.has(event)) return;
+    if (!["bootstrap", "ready", "window-detected", "attach-attempt", "reader-connected", "manual-sign-in-ready", "authenticated", "settings-read", "overlay-ready", "overlay-show"].includes(event) || seen.has(event)) return;
     seen.add(event);
     fs.appendFileSync(events, JSON.stringify({ event, time: new Date().toISOString() }) + "\n", { mode: 0o600 });
   };

@@ -35,6 +35,9 @@ class ControlledTests(unittest.TestCase):
         self.assertNotIn('secret', json.dumps(exported))
         self.assertNotIn('private@', json.dumps(exported))
         self.assertEqual(exported[1]['cards'][0]['scaleX'],0.8)
+        for name in ('settings-read','overlay-ready','overlay-show'):
+            safe_event=controlled.sanitized_events([{'event':name,'settings':{'steamUserId':'secret'},'token':'secret'}])
+            self.assertEqual(safe_event,[{'event':name}])
         raw[-1]['cards'][0]['id']='private@example.test'
         with self.assertRaises(HarnessError):
             controlled.sanitized_events(raw)

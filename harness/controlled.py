@@ -15,7 +15,7 @@ from .asar import HarnessError, sha256
 from .gateway import COMPANION_USER_AGENT, Gateway
 
 EVENTS = {"bootstrap", "ready", "window-detected", "attach-attempt", "reader-connected",
-          "reward", "manual-sign-in-ready", "authenticated"}
+          "reward", "manual-sign-in-ready", "authenticated", "settings-read", "overlay-ready", "overlay-show"}
 ROUTES = {"oauth_token", "accounts_account", "sts2_exchange", "sts2_account", "sts2_features",
           "tier_resolve", "public_json", "commentary_events", "denied", "error", "unknown"}
 ERROR_KINDS = {"TLS_CERTIFICATE_ERROR", "TLS_PROTOCOL_ERROR", "DNS_ERROR", "TIMEOUT",
@@ -73,7 +73,7 @@ def sanitized_events(events):
 def sanitized_report(report):
     result = {}
     for key in ("static_inspection", "startup", "companion_initialization", "window_detection",
-                "attachment", "state_reading", "overlay", "reward_comparison"):
+                "attachment", "state_reading", "settings_reading", "overlay_window", "overlay", "reward_comparison"):
         value = report.get(key)
         if isinstance(value, str) and re.fullmatch(r"[A-Z0-9_]{1,80}", value):
             result[key] = value

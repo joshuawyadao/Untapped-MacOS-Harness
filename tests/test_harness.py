@@ -151,6 +151,22 @@ class PatchTests(unittest.TestCase):
                     cli.inspect_app(app)
 
 
+class LifecycleStatusTests(unittest.TestCase):
+    def test_window_lifecycle_and_settings_do_not_certify_visible_overlay(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            session=Path(tmp);profile=session/'profile';profile.mkdir()
+            path=profile/'events.jsonl'
+            path.write_text('\n'.join(json.dumps({'event':name}) for name in ('settings-read','overlay-ready'))+'\n')
+            report=cli.status(session)
+            self.assertEqual(report['settings_reading'],'OBSERVED')
+            self.assertEqual(report['overlay_window'],'RENDERER_READY')
+            self.assertEqual(report['overlay'],'UNTESTED_REQUIRES_VISUAL_CHECK')
+            with path.open('a') as output: output.write(json.dumps({'event':'overlay-show'})+'\n')
+            report=cli.status(session)
+            self.assertEqual(report['overlay_window'],'SHOW_RECORDED')
+            self.assertEqual(report['overlay'],'UNTESTED_REQUIRES_VISUAL_CHECK')
+
+
 class BootstrapTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("node"), "Node is required for bootstrap execution test")
     def test_bootstrap_redirects_paths_and_keeps_credentials_and_events_in_memory(self):
@@ -219,6 +235,10 @@ class BootstrapTests(unittest.TestCase):
               first.globals.__untappedHarnessEvent('unapproved-event');
               first.globals.__untappedHarnessEvent('reader-connected');
               first.globals.__untappedHarnessEvent('reader-connected');
+              for (const name of ['settings-read', 'overlay-ready', 'overlay-show']) {
+                first.globals.__untappedHarnessEvent(name, {steamUserId:'must not appear'});
+                first.globals.__untappedHarnessEvent(name);
+              }
               const allCards = Array.from({ length: 22 }, (_, i) => ({
                 id: 'ID' + i, upgradeLevel: 0, cx: 0.2, cy: 0.5,
                 width: 0.1, height: 0.2, scaleX: 0.8, scaleY: 0.9, accountToken: 'must not appear',
@@ -233,6 +253,11 @@ class BootstrapTests(unittest.TestCase):
               assert.equal(lines.find((event) => event.event === 'reward').cards[0].scaleY, 0.9);
               assert.equal(lines.some((event) => event.event === 'unapproved-event'), false);
               assert.equal(lines.filter((event) => event.event === 'reader-connected').length, 1);
+              for (const name of ['settings-read', 'overlay-ready', 'overlay-show']) {
+                const matches = lines.filter(event => event.event === name);
+                assert.equal(matches.length, 1);
+                assert.deepEqual(Object.keys(matches[0]).sort(), ['event', 'time']);
+              }
               assert.equal(JSON.stringify(lines).includes('must not appear'), false);
               const second = boot();
               assert.equal(await second.moduleStub._load('keytar').getPassword('service', 'person'), null);

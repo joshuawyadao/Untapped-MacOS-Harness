@@ -34,10 +34,12 @@ The owner explicitly approved the prepared copied-game get-task-allow signing, c
 
 ### Action items
 - [x] Re-read exact proposal, unsigned verification record and current receipts; no backup/run or activation receipt exists.
-- [ ] Checkpoint the resolved approval/activation plan before the local operation.
-- [ ] Activate with --approve-main-copy-signing; verify game and companion signatures/entitlements, full trees/payloads, proposal-hash receipt and unchanged installed source.
-- [ ] Record completed activation and unchanged progress/empty live directories in migration/security/readiness/verification docs; run appropriate syntax/hygiene/doc checks. Existing218 tests remain applicable unless source changes.
-- [ ] Commit/push and give the normal-account interactive start command with owner-controlled Steam/Cloud confirmations. No additional approval is needed for the reviewed scope.
+- [x] Checkpoint the resolved approval/activation plan before the local operation.
+- [x] Activate with --approve-main-copy-signing; verify game and companion signatures/entitlements, full trees/payloads, proposal-hash receipt and unchanged installed source.
+- [x] Record completed activation and unchanged progress/empty live directories in migration/security/readiness/verification docs; run appropriate syntax/hygiene/doc checks. Existing218 tests remain applicable unless source changes.
+- [x] Commit/push and give the normal-account interactive start command with owner-controlled Steam/Cloud confirmations. No additional approval is needed for the reviewed scope.
 
 ### Open questions
 - None for signing activation. Live Steam initialization, profile match, Cloud/save behavior and actual tier values require the owner's first run; the launcher itself prompts after its verified backup.
+
+Activation result: plan0886ff1 precedes the approved operation. Both copied apps were signed and their full native signatures/entitlements/Hardened Runtime, payload preservation, source tree and proposal-bound receipt verified. Only allowed outer signing files changed; installed game unchanged. Backups/runs/preferences remain empty, and no real progress contents, game/companion execution, authentication or remote requests occurred. No source/tests changed, so the existing218-test result remains applicable. Operator-sequence review confirms the first-run command, factual owner Steam/Cloud confirmations,4-hour companion default and normal game quit. Current docs now distinguish completed signing activation from pending live compatibility. Final docs/hygiene/save checks follow; no further signing approval is needed.

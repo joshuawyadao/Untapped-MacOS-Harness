@@ -331,3 +331,25 @@ Reconcile the owner-run debug-game observation with its exported events and card
 - None for evidence reconciliation. Future scale-capture instrumentation needs a fresh companion proposal before signing; any network/account experiment needs a separately reviewed plan. Neither is executed here.
 
 Result: read-only event/photo comparison verifies HAZE0/RICOCHET0/INFINITE_BLADES0 and ordering after the complete native event chain. Pinned-source review identifies GlobalUi-normalized raw hitboxes, separate scale fields omitted by our capture, and vendor account gating with silent empty unauthenticated UI. Owner corrected earlier overlay selection: none was noticed on the game screen. Public-data cache and settings-property errors limit broader behavior. Updated current README/table and focused docs; no code, test, signature, account or network change in this slice. All98 existing behavior tests remain applicable. Full geometry/overlay acceptance remains incomplete.
+
+## Controlled manual sign-in, public-data gateway and scale-complete capture
+
+Prepare the vendor OAuth path and required public data behind a default-deny local gateway, retaining the companion's outer remote-network denial and genuine vendor account gates.
+
+### Scope
+- In: Original loopback gateway restricted to reviewed HTTPS method/path/body shapes; manual browser OAuth PKCE/callback with memory-only keytar; disable unrelated MTGA upload-token bootstrap and all run/history uploads/telemetry producers; allow account/token/franchise/account/features and public JSON/commentary/tier-list reads; record scale fields and compare rendered hitbox dimensions; bounded private controlled-session launcher and sanitized exports; fresh companion/signing proposal.
+- Out: Live sign-in or remote gateway traffic now, automatic browser launch/Terms/OS prompts, bypassing login, network permissions in the app itself, gameplay-context stats/predictions, run history/upload traffic, artwork CDNs, global Keychain/protocol/Steam changes or additional game signing. Browser website traffic is outside companion gateway confinement.
+
+### Action items
+- [ ] Implement/test a capability-protected loopback gateway with exact HTTPS route/method/body allowlist, no redirects/cookies, public credential stripping, bounded I/O and route-only counters; use fake upstreams in tests.
+- [ ] Implement/test a controlled Node-fetch adapter and manual authorization URL handoff preserving PKCE/state/callback. Keep raw logs/URLs/tokens private and use only structured sanitized exports; retain default offline behavior.
+- [ ] Patch exact vendor auth/upload/telemetry seams for controlled mode without faking OAuth/account success. Enumerate only in-memory credentials for the exact service and block all upload-token/claims/run-history/stats routes.
+- [ ] Retain native scaleX/scaleY in reward capture and require scale evidence for independent rendered-hitbox comparison; preserve legacy raw comparisons as explicitly incomplete. Add meaningful executable JS and geometry tests.
+- [ ] Add bounded controlled launcher (maximum300 seconds, manual sign-in; optional exact verified debug-game target) with gateway lifetime cleanup and unchanged outer policy. Prepare a test-account script supporting a login-only probe and later reward observation; no raw authenticated log export.
+- [ ] Prepare fresh copy08 from the pinned vendor source and verify exact entry/native differences, syntax and outer-only original-entitlement signing proposal without signing/launching. Keep current approved game and copy07 intact.
+- [ ] Update README, SECURITY, architecture, runbook and verification with exact permitted disclosures, vendor companion:full-access OAuth consent scope, browser limits, settings/overlay uncertainty and reviewable next command. Run focused/full tests, synthetic local gateway probes, hygiene/syntax and commit/push.
+
+### Open questions
+- None for preparation. Actual controlled network/auth execution and fresh-copy signing require approval of the concrete resulting proposal. The user creates/logs into the account manually. The existing settings-reader property error remains an independent overlay prerequisite, not resolved by sign-in alone.
+
+Discovery: vendor OAuth uses accounts.untapped.gg/authorize with PKCE/state and localhost ports17791–17799. Token/account and STS2 exchange/account/features are required; current offline credential branch and findCredentials-empty shim block real account use. authSuccessCallback also attempts unrelated MTGA upload-token acquisition, which must be omitted narrowly to avoid removing a legitimate account. Node-fetch is the main data/auth path; Electron image requests remain separately blocked. Public data and tier/commentary GETs are distinct from gameplay-context stats POSTs. Existing shared raw-log exporter is unsafe after login and will not be reused. Existing98 tests cover current behavior only; new synthetic tests will verify the new boundaries without live credentials/vendor execution.

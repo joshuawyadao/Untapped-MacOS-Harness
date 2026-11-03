@@ -451,3 +451,24 @@ Distinguish a same-user connectivity/runtime problem from successful-response ha
 - None for safe diagnosis. UID502's private exception cannot be inspected from UID501; if the local response matrix does not reproduce it, the owner must run the fixed-data checker and share only its sanitized Diagnostic file path.
 
 Implementation result: the fixed-data checker and standard-account wrapper are staged with byte parity. Five focused privacy/category/scope/fail-fast/identity tests and all139 tests pass. Shell syntax, staged help/import, unchanged08b gateway/adapter hash binding and repository/documentation checks pass. No signed app, ASAR, gateway, adapter or manifest change occurred in this slice; the checker opens no saved OAuth/log data and no vendor app. One inert negative request in UID501 returned normal401 but does not identify UID502's exception. The owner's fixed-data check and sanitized result remain required before selecting a concrete fix or another real login attempt.
+
+## Add a gateway preflight and useful fixed-field failure evidence
+
+Check the complete gateway path before opening the companion and retain safe exception categories/stages/timing from a real failure, so another manual attempt produces actionable evidence without exposing credentials.
+
+### Scope
+- In: Fixed two-request gateway preflight, bounded fixed-field gateway failure metadata, shared safe exception classifier, separately labeled preflight/app counters, unchanged overall300-second attempt budget, owner-review revision08c around identical signed08 app bytes, tests and current docs.
+- Out: A speculative authentication fix, new route/credential/TLS/sandbox scope, raw error text/headers/bodies, automated real OAuth, or new signing/ASAR/game changes.
+
+### Action items
+- [x] Verify UID502 transport export lawr_85r: normal401 JSON for both fixed-data requests, Python3.11.2 and accessible default CA. Basic transport failure is not reproduced by these inputs.
+- [x] Exercise the complete capability-protected gateway in UID501 with the same two fixed-data requests: upstream and local responses401, normal cleanup, no exceptions. The real-flow error remains unexplained.
+- [ ] Checkpoint this resolved plan before implementation. Assign only gateway.py and gateway tests to the existing bounded gateway worker; keep supervisor/export/launcher/docs/artifacts and Git with the parent.
+- [ ] Add fixed-category exception stage/duration/numeric-code metadata capped at32 records, without messages or request data. Add a through-gateway preflight restricted to the same account GET and inert token POST; abort on the first unexpected result/exception.
+- [ ] Validate signed payloads before any preflight request. Keep preflight counters separate from companion counters and export safe failure fields after drain. Open the companion only after preflight passes, counting preflight time against the existing300-second budget. Keep genuine auth and45-second post-auth limits.
+- [ ] Add meaningful synthetic tests for preflight scope/pass/failure, privacy/bounds, no app on failure, cleanup, remaining-time budget and counter separation; preserve existing checks. Run focused/full tests and syntax/hygiene.
+- [ ] Prepare08c with identical signed app/receipt, revised pinned gateway hash and explicit preflight/error proposal. Verify signature/tree/archive/extraction/source parity, preserve older artifacts and update the staged default launcher.
+- [ ] Update README, SECURITY.md, architecture, controlled-access plan, runbook and verification, save/push, then give the owner the reviewed next command. Actual real-flow cause and authentication success remain unverified until that result.
+
+### Open questions
+- None for the diagnostic improvement. This adds actionable observability and a connection gate; it does not claim a root-cause fix. The owner initiates any next real sign-in after reviewing the new preflight/error scope.

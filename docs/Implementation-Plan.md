@@ -377,9 +377,30 @@ The owner approved copy08's outer-only signing and first controlled manual sign-
 - [x] Apply the approved outer signature and verify the receipt, native payload pins and original entitlements/Runtime.
 - [x] Create and inspect companion08.tar with only app/manifest/signing receipt, preserving file modes; stage its checksum, original helpers and controlled_sign_in.sh with byte parity.
 - [x] Update the controlled-access plan and runbook with staged state and verify repository/shell/archive hygiene. Save these results through save-branch. Existing126 tests cover unchanged executable behavior; no test changes are needed for signing, transfer staging and evidence-only documentation.
-- [ ] Have the owner run the bounded login-only probe in sts2test and review only its sanitized Diagnostic file. This step remains pending until the owner executes it.
+- [x] Have the owner run the bounded login-only probe in sts2test and review only its sanitized Diagnostic file. The first probe completed with upstream token HTTP403 and no authenticated event; see the diagnosis below.
 
 ### Open questions
 - None. Approval is explicit; the first live probe requires the owner's manual interaction in UID502 and will not be launched from the assistant's UID501 session.
 
 Staging result: copy08 is signed outer-only and verified with original entitlements/Runtime, signed executable5cc4476cf26ea005a0d4d69021dc9b70a6c7cf939fe9a7e348eb402aed8f3383. The333-entry archive d8b847b8291c6a9f2da72246eabd810c3a52f2e8467681e5ff0c38b0212a85db matches all source entry types/modes/content/links, and a fresh exact-mode extraction passes native signature/payload and helper-policy verification. Current17 original harness sources and controlled launcher are staged with byte parity; checksum, shell/Node syntax, documentation links, repository hygiene and whitespace pass. No vendor process or live request ran. Owner-run authentication and the sanitized result remain pending; the prior126-test suite is unchanged.
+
+## Classify the first controlled token HTTP403 privately
+
+Read only bounded saved authentication-error text inside the owner's private test session and export fixed categories, so the failed token exchange can be diagnosed without copying tokens, URLs, account fields or raw logs.
+
+### Scope
+- In: An original read-only auth-error classifier and standard-test-account wrapper; bounded no-symlink owned-file reads; synthetic privacy/path regressions; current controlled-access/runbook/verification evidence.
+- Out: Another live request/sign-in, gateway/adapter/ASAR/signature changes, extra routes, copying raw errors or account/token material, and any claim of the HTTP403's cause before the private classifier result is available.
+
+### Action items
+- [x] Replay the sanitized first result: one oauth_token HTTP403, no denied route, no authenticated event, clean gateway drain and companion exit0. This proves the request passed local validation; it does not distinguish a vendor OAuth response from an upstream access/security response.
+- [ ] Checkpoint this resolved plan before implementation.
+- [ ] Add fixed-category classification of only bounded token-grant error bodies and original OAuth milestones, with no unrecognized output strings. Keep all raw input private.
+- [ ] Add an owner-run wrapper restricted to the existing owned private controlled-attempt namespace; do not execute the app or make network requests.
+- [ ] Add synthetic tests for challenge/HTML/OAuth markers, ignored unrelated text, secret exclusion, bounds, ownership/link/path rejection and generic CLI failures. Run focused/full tests, shell syntax and repository checks.
+- [ ] Update Controlled-Access-Plan.md, Test-Account-Runbook.md, Verification.md, README and SECURITY.md; stage the original classifier/wrapper with parity, commit/push and give the owner one read-only command.
+
+### Open questions
+- None for this diagnostic implementation. The saved private error must be classified by UID502 before choosing a transport or vendor-authentication fix. No new live probe is part of this slice.
+
+Evidence: /private/tmp/sts2test-controlled.7a7o1dnx.json records bootstrap, ready and manual-sign-in-ready, followed by oauth_token403 once. No account/public-data route was reached. Settings/cache false flags in this login-only run do not prove game-settings or public-data compatibility. The browser and companion displayed authentication failure. Ranked diagnostic branches are an upstream HTML/security rejection, a structured OAuth protocol rejection, or another unclassified403; the local allowlist-rejection hypothesis is contradicted by the route counter. The next read-only probe distinguishes these branches without guessing the cause.

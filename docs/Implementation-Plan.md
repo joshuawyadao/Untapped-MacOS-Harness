@@ -293,3 +293,20 @@ The owner explicitly approved signing `/private/tmp/untapped-sts2-debug-game-01/
 No open questions. Existing95 passing behavior tests cover this implementation; this slice uses actual signing/tree/archive verification and script/repository checks, without new executable source changes.
 
 Approved execution result: outer-only signing succeeded. Both architectures retain ad-hoc Hardened Runtime and the exact original four entitlements plus get-task-allow. Exactly the executable and CodeResources hashes changed; all other tree entries, file modes and symlinks match baseline. Signed executable hash74ba017ccac7626b9f269f8d2bf31dc2d185c64442bb18d5fa9a2abe910c6b63. Installed source still matches the full original pin. A443-entry app/baseline/receipt-only archive was verified entry-by-entry (file bytes/modes and symlink text) and by checksum288503d9974b4e9d8c5c7917851187cf33bec3a46a17d1bca7c6d619fca1e8e4. Original helper sources and install/play/observer scripts are now staged with byte/syntax verification. A final native verify command passed. No vendor application was launched; installation and boot/reward evidence await the owner in UID502. No executable source/test changes in this slice; prior95 tests remain applicable.
+
+## Preserve signed transfer modes during private extraction
+
+The owner-run installer stopped before installation with signed-tree mismatch. A tiny inert archive reproduced tar -xf applying umask077 (0755 becomes0700). Compare real archive byte/mode deltas before fixing; never relax receipt verification or re-sign the game.
+
+### Scope
+- In: Exact-mode extraction into a fresh owned private directory, inert archive regression reproducing the installer's umask, updated staged installer/helper and verification/runbook evidence.
+- Out: Changing signed payload/receipt, new signing, game launch, overwriting partial sessions or inspecting the other user's private home.
+
+### Action items
+- [ ] Confirm the real archive mismatch is exclusively file modes, preserving content hashes and entries.
+- [ ] Add a bounded private transfer extractor preserving recorded permissions; use it in the installer and test under umask077 with a real inert archive.
+- [ ] Prove default extraction fails and fixed extraction matches the signed receipt with the unchanged real archive; preserve failed private extraction for the owner and keep the destination-new guard.
+- [ ] Update verification/runbook, run focused/full tests and syntax/hygiene, stage original fix, commit/push and provide the same install retry command. Existing signing/test approval remains valid.
+
+### Open questions
+- None. This corrects original transfer code without changing vendor bytes or signature scope.

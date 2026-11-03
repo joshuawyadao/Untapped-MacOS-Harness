@@ -195,3 +195,10 @@ This uses the launcher's Python interpreter and at most two reviewed HTTPS reque
 Send only `Diagnostic file: /private/tmp/sts2test-transport.…json`. The output contains fixed network/error categories and CA/runtime booleans, excluding raw responses/errors, environment values and CA paths. Normal401/invalid-client responses here simply show that transport completed; they are not successful authentication. No real OAuth retry is needed for this check.
 
 The owner completed this check as lawr_85r: both routes returned normal401 JSON. Do not repeat it for this case; the current next command is the copy09 controlled launcher above. Its new Diagnostic file includes separate preflight/app counters and fixed failure stages/categories/timing, preserving raw errors and account data privately.
+
+
+## Copy09 visible-overlay result and eventual main-account use
+
+The owner subsequently selected Tiers and photographed visible badges under Collision Course, Astral Pulse and Celestial Might. The matching sanitized yzm82cgr report confirms one native reward event, successful settings-read/overlay-ready/overlay-show, no settings-property error, genuine authentication, account/features/public-data responses and complete cleanup. The earlier t6ewzvvg attempt read settings and prepared the renderer but reached no reward/show before timeout. Actual tier letters remain unresolved (`?-Tier` in the photo); check that an enabled tier list covers the current character, not only another character or Colorless. No additional identical card-detection run is needed just to prove rendering.
+
+The owner wants normal macOS/Steam progress eventually. The commands above still require sts2test and do not support that progress. From this repository in the normal account, `python3 -m harness.main_account inspect` performs only a privacy-safe read-only readiness check; it does not start a main-account session. Follow the [main-account migration plan](Main-Account-Migration.md). No normal save copy/restore, Cloud configuration change or launch is authorized by an inventory result.

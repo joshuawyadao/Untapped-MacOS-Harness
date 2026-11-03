@@ -110,6 +110,8 @@ def prepare(app, destination):
     report.update({
         "schema": 1, "patched_asar_sha256": sha256(patched_bytes),
         "controlled_access_version": 1, "reward_scale_capture": True,
+        "controlled_gateway_sha256": sha256((ROOT / "harness/gateway.py").read_bytes()),
+        "controlled_network_sha256": sha256((ROOT / "harness/controlled_network.cjs").read_bytes()),
         "patched_entries": sorted(replacements), "vendor_bundle_seal": "INVALIDATED_BY_RESOURCE_PATCH",
         "signing_changed": False, "game_modified": False,
         "startup": "UNTESTED", "attachment": "UNTESTED", "state_reading": "UNTESTED",
@@ -258,7 +260,10 @@ def launch_outer(session, seconds, approved=False, target_pid=None, target_game=
         if manifest.get("controlled_access_version") != 1:
             raise HarnessError("This companion lacks the controlled-access preparation")
         helper = profile / "controlled-network.cjs"
-        helper.write_bytes((ROOT / "harness/controlled_network.cjs").read_bytes())
+        helper_bytes = (ROOT / "harness/controlled_network.cjs").read_bytes()
+        if sha256(helper_bytes) != manifest.get("controlled_network_sha256"):
+            raise HarnessError("Controlled network adapter changed since preparation")
+        helper.write_bytes(helper_bytes)
         helper.chmod(0o600)
         environment.update({"UNTAPPED_HARNESS_CONTROLLED_ACCESS": "1",
                             "UNTAPPED_HARNESS_GATEWAY_URL": _controlled.url,
@@ -287,7 +292,11 @@ def launch_outer(session, seconds, approved=False, target_pid=None, target_game=
             else:
                 deadline = time.monotonic() + seconds
                 authenticated = False
-                while process.poll() is None:
+                while True:
+                    exit_code = process.poll()
+                    if exit_code is not None:
+                        result["exit_code"] = exit_code
+                        break
                     if not authenticated and any(event.get("event") == "authenticated" for event in load_events(attempt)):
                         authenticated = True
                         result["authenticated_event_observed"] = True

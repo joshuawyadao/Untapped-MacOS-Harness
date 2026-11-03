@@ -39,6 +39,19 @@ class ControlledTests(unittest.TestCase):
         with self.assertRaises(HarnessError):
             controlled.sanitized_events(raw)
 
+    def test_proposal_refuses_gateway_or_adapter_drift(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            session=Path(tmp).resolve()
+            manifest={'controlled_access_version':1,
+                      'controlled_gateway_sha256':cli.sha256((cli.ROOT/'harness/gateway.py').read_bytes()),
+                      'controlled_network_sha256':cli.sha256((cli.ROOT/'harness/controlled_network.cjs').read_bytes())}
+            (session/'manifest.json').write_text(json.dumps(manifest))
+            self.assertEqual(controlled.proposal(session)['scope'],'MANUAL_OAUTH_AND_PUBLIC_DATA_ONLY')
+            for key in ('controlled_gateway_sha256','controlled_network_sha256'):
+                changed={**manifest,key:'0'*64};(session/'manifest.json').write_text(json.dumps(changed))
+                with self.assertRaisesRegex(HarnessError,'changed since preparation'):
+                    controlled.proposal(session)
+
     def test_report_export_excludes_future_account_fields_and_raw_errors(self):
         report = {'startup':'ELECTRON_READY','email':'private@example.test',
                   'startup_blockers':['token=secret'], 'launch':{'seconds_limit':300,'token':'secret',
@@ -103,7 +116,7 @@ class ControlledTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             session=Path(tmp).resolve();app=session/'Companion.app';app.mkdir()
             (session/'signing.json').write_text('{}')
-            manifest={'schema':1,'controlled_access_version':1}
+            manifest={'schema':1,'controlled_access_version':1,'controlled_network_sha256':cli.sha256((cli.ROOT/'harness/controlled_network.cjs').read_bytes())}
             gateway=SimpleNamespace(url='http://127.0.0.1:1234/fetch',key='k'*40)
             process=Mock(pid=1234);process.poll.return_value=None
             process.wait.side_effect=subprocess.TimeoutExpired('fixture',0.5)
@@ -134,7 +147,7 @@ class ControlledTests(unittest.TestCase):
             process=Mock(pid=1234);process.poll.return_value=None
             process.wait.side_effect=subprocess.TimeoutExpired('fixture',0.5)
             gateway=SimpleNamespace(url='http://127.0.0.1:1234/fetch',key='k'*40)
-            with patch.object(cli,'_validate_launch_copy',return_value=(session,{'controlled_access_version':1},app)), \
+            with patch.object(cli,'_validate_launch_copy',return_value=(session,{'controlled_access_version':1,'controlled_network_sha256':cli.sha256((cli.ROOT/'harness/controlled_network.cjs').read_bytes())},app)), \
                  patch.object(cli.subprocess,'Popen',return_value=process),patch.object(cli,'stop_probe') as stop, \
                  patch.object(cli,'load_events',return_value=[{'event':'authenticated'}]), \
                  patch.object(cli.time,'monotonic',side_effect=[0,10,56]), \
@@ -143,6 +156,24 @@ class ControlledTests(unittest.TestCase):
             self.assertTrue(report['launch']['authenticated_event_observed'])
             self.assertTrue(report['launch']['time_limit_reached'])
             stop.assert_called_once_with(process)
+
+    def test_controlled_poll_exit_retains_failure_after_auth(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            session=Path(tmp).resolve();app=session/'Companion.app';app.mkdir()
+            (session/'signing.json').write_text('{}')
+            process=Mock(pid=1234);process.poll.side_effect=[None,-5]
+            process.wait.side_effect=subprocess.TimeoutExpired('fixture',0.5)
+            manifest={'controlled_access_version':1,'controlled_network_sha256':cli.sha256((cli.ROOT/'harness/controlled_network.cjs').read_bytes())}
+            with patch.object(cli,'_validate_launch_copy',return_value=(session,manifest,app)), \
+                 patch.object(cli.subprocess,'Popen',return_value=process),patch.object(cli,'stop_probe') as stop, \
+                 patch.object(cli,'load_events',return_value=[{'event':'authenticated'}]),contextlib.redirect_stdout(io.StringIO()):
+                report=cli.launch_outer(session,300,approved=True,_controlled=SimpleNamespace(url='http://127.0.0.1:1234/fetch',key='k'*40))
+            self.assertEqual(report['launch']['exit_code'],-5)
+            self.assertTrue(report['launch']['authenticated_event_observed'])
+            stop.assert_called_once_with(process)
+            safe={'events':[{'event':'authenticated'}],'report':{'startup':'ELECTRON_READY','launch':{'exit_code':-5}}}
+            with patch.object(controlled,'run',return_value=safe),contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(controlled.main(['/unused','--approve-controlled-access']),1)
 
     def test_login_only_refuses_running_game_before_gateway(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -208,6 +208,7 @@ class Gateway:
         self._counts = {}
         self._server = None
         self._thread = None
+        self.cleanup_complete = True
 
     @property
     def counts(self):
@@ -233,6 +234,7 @@ class Gateway:
                 self._slots = threading.BoundedSemaphore(8)
                 self._active = set()
                 self._active_lock = threading.Lock()
+                self._handler_threads = set()
                 super().__init__(*args, **kwargs)
 
             def process_request(self, request, client_address):
@@ -250,11 +252,15 @@ class Gateway:
                     raise
 
             def process_request_thread(self, request, client_address):
+                thread = threading.current_thread()
+                with self._active_lock:
+                    self._handler_threads.add(thread)
                 try:
                     super().process_request_thread(request, client_address)
                 finally:
                     with self._active_lock:
                         self._active.discard(request)
+                        self._handler_threads.discard(thread)
                     self._slots.release()
 
             def close_clients(self):
@@ -331,7 +337,17 @@ class Gateway:
             self._server.close_clients()
             self._server.server_close()
             self._thread.join(timeout=2)
+            deadline = time.monotonic() + 11
+            with self._server._active_lock:
+                handlers = tuple(self._server._handler_threads)
+            for handler in handlers:
+                if handler is not threading.current_thread():
+                    handler.join(timeout=max(0, deadline - time.monotonic()))
+            self.cleanup_complete = not self._thread.is_alive() and not any(
+                handler.is_alive() for handler in handlers
+            )
             self._server = None
+        return self.cleanup_complete
 
     def __exit__(self, *_args):
         self.close()

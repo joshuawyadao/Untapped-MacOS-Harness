@@ -1,6 +1,7 @@
 import http.client
 import json
 import socket
+import threading
 import time
 import unittest
 from unittest import mock
@@ -193,6 +194,54 @@ class GatewayTests(unittest.TestCase):
             with self.assertRaises(TimeoutError):
                 _transport("GET", "https://api.sts2.untapped.gg/api/v1/account", {}, None)
         self.assertEqual(response.fp.raw._sock.timeouts, [9, 5])
+
+    def test_close_waits_for_inflight_upstream_handler(self):
+        entered = threading.Event()
+        release = threading.Event()
+
+        def slow_transport(*_args):
+            entered.set()
+            release.wait(3)
+            return 200, {}, b"ok"
+
+        self.gateway._transport = slow_transport
+        server = self.gateway._server
+        client_done = threading.Event()
+
+        def client():
+            try:
+                self.request("https://api.sts2.untapped.gg/api/v1/account")
+            except (OSError, http.client.HTTPException):
+                pass  # close() deliberately terminates the active client socket.
+            finally:
+                client_done.set()
+
+        request_thread = threading.Thread(target=client)
+        request_thread.start()
+        self.assertTrue(entered.wait(2))
+        close_done = threading.Event()
+        close_result = []
+
+        def close_gateway():
+            close_result.append(self.gateway.close())
+            close_done.set()
+
+        closer = threading.Thread(target=close_gateway)
+        closer.start()
+        try:
+            self.assertFalse(close_done.wait(0.1))
+            release.set()
+            self.assertTrue(close_done.wait(3))
+            self.assertEqual(close_result, [True])
+            self.assertFalse(server._handler_threads)
+            counts = self.gateway.counts
+            time.sleep(0.05)
+            self.assertEqual(self.gateway.counts, counts)
+        finally:
+            release.set()
+            closer.join(3)
+            request_thread.join(3)
+        self.assertTrue(client_done.is_set())
 
     def test_token_and_exchange_reject_duplicates_and_bad_scope(self):
         url = "https://api.accounts.untapped.gg/o/token"

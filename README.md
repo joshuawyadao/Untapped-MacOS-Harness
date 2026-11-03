@@ -81,3 +81,9 @@ Copy07 passed the identity guard but native `connect` returned false before any 
 The future guarded test uses a distinct `UntappedSTS2DebugGameSession` in `sts2test`, with a verified signing receipt and explicit `--debug-game` selection for launch and reader observation. It shares that account's existing test game data; it does not copy or access normal-account saves. See the [review scope and pending workflow](docs/Test-Account-Runbook.md#separate-debug-game-copy-proposal).
 
 The current recorder captures raw normalized hitbox width/height but omits the separately returned scaleX/scaleY. Do not certify displayed bounds by comparing those raw dimensions with card artwork, or by copying reader coordinates into expected JSON. A future capture update and an independent full game-viewport screenshot are needed for that check. See the [native reward evidence and remaining gaps](docs/Verification.md#first-real-native-reward-state).
+
+## Prepared controlled sign-in setup
+
+Copy08 now includes a controlled manual OAuth/public-data path and scale-complete capture. The companion's remote-network denial stays in place; an original loopback gateway allows only reviewed account/token and public JSON/commentary/tier-list requests. Stats/gameplay-context POSTs, uploads, telemetry and artwork remain blocked. Browser sign-in is manual and outside that gateway; the vendor requests companion:full-access consent scope. Authenticated diagnostics exclude raw logs/account/token data.
+
+The [controlled-access review](docs/Controlled-Access-Plan.md) records exact routes, disclosures, bounded workflow and limits. All126 synthetic tests pass; only fake/local upstreams were used. Copy08 and its exact signing/access proposals are prepared but unsigned/unlaunched, with no live transfer staged. This setup does not resolve the separate settings-reader error or establish visible overlay compatibility.

@@ -21,6 +21,9 @@ def proposal(session):
     manifest = cli.read_json(session / "manifest.json")
     if manifest.get("controlled_access_version") != 1:
         raise HarnessError("Prepare a current controlled-access companion first")
+    for filename, key in (("gateway.py", "controlled_gateway_sha256"), ("controlled_network.cjs", "controlled_network_sha256")):
+        if sha256(Path(__file__).with_name(filename).read_bytes()) != manifest.get(key):
+            raise HarnessError("Controlled policy changed since preparation; prepare a new review")
     return {"scope": "MANUAL_OAUTH_AND_PUBLIC_DATA_ONLY", "session": str(session),
             "companion_remote_network": "DENIED_UNCHANGED_OUTER_POLICY",
             "oauth_scope": "companion:full-access", "browser_network": "OUTSIDE_COMPANION_GATEWAY",
@@ -95,11 +98,13 @@ def run(session, *, approved=False, observe=False, seconds=300):
     with Gateway() as gateway:
         report = cli.launch_outer(session, seconds, approved=True, _controlled=gateway, **target)
         events = sanitized_events(cli.load_events(Path(report["attempt_dir"])))
-        counts = [{"route": route, "status": status, "count": count}
-                  for (route, status), count in sorted(gateway.counts.items())]
+    if not gateway.cleanup_complete:
+        raise HarnessError("Controlled gateway cleanup did not complete")
+    counts = [{"route": route, "status": status, "count": count}
+              for (route, status), count in sorted(gateway.counts.items())]
     safe = {"schema": 1, "mode": "CONTROLLED_MANUAL_OAUTH", "report": sanitized_report(report),
             "events": events, "gateway_counts": counts,
-            "raw_logs_included": False, "account_details_included": False}
+            "raw_logs_included": False, "account_details_included": False, "gateway_cleanup_complete": True}
     # report/status are harness-generated fixed fields, not raw server/account responses.
     output = tempfile.NamedTemporaryFile(prefix="sts2test-controlled.", suffix=".json", dir="/private/tmp", delete=False)
     with output:

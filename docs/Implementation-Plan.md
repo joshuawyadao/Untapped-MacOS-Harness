@@ -496,3 +496,25 @@ Reconcile the owner's successful08c sign-in with its sanitized report, then docu
 - None for the evidence update. The owner must reach a reward screen and complete the next manual sign-in to observe the overlay. This sign-in-only result proves no game attachment, STS2 feature/public-data population or rendered geometry.
 
 Evidence result: controlled08c sign-in is verified by the genuine event plus real token/account200 responses, with preflight401s separated, no gateway failures and complete post-auth cleanup. Updated status/access/runbook/architecture/verification and corrected obsolete scale-capture guidance. Existing scripts' syntax, documentation links, repository hygiene and whitespace pass. No source/tests/policy/artifacts changed, so the prior154-test suite was not rerun. The owner-run authenticated reward capture, public-data/STS2 features, game settings, visible overlay and independent geometry remain pending; no new permission is required to prepare these already established commands.
+
+## Restore local-store settings and expose normal Mac STS2 badge controls
+
+Support the pinned game's real local/cloud save-store variants and expose the existing STS2 settings UI on packaged macOS so the owner can choose public tier badges within the established data policy.
+
+### Scope
+- In: Exact guarded runtime/store and STS2-only settings-platform patches; positive native class selection; fixed settings/overlay lifecycle events; synthetic behavior/guard/privacy tests; a fresh copy09 with reviewed payload differences and the established outer-only resealing procedure; current evidence/runbook docs.
+- Out: Invented settings/scores, global packaged-status spoofing, login/feature bypasses, arbitrary native store types, new API routes/data disclosures, stats/prediction/upload access, native binary/game/entitlement/OS-security changes or automatic UI consent/gameplay.
+
+### Action items
+- [x] Verify authenticated reward export rbnc3vt6:42 reward events with HEADBUTT/FORGOTTEN_RITUAL/INFERNAL_BLADE0 and scale fields, settings-property error, public JSON200×6, STS2 exchange200 and tier resolve200×8; owner reports no overlay. Photo agrees on names/order but crops viewport, so independent geometry remains unverified.
+- [x] Trace source gates: settings-null has legitimate window/data/render fallbacks, so it does not prove the overlay-window cause. Fresh badge mode is stats under the intentionally blocked stats/prediction policy; normal Tiers selection lives in a STS2 settings menu hidden on packaged Darwin.
+- [x] Compare static pinned assembly metadata/IL: _saveStore is ISaveStore; Steam-uninitialized construction retains GodotFileIo, while the vendor always asks for CloudSaveStore.LocalStore. Both class/property names exist; this is a type-variant mismatch, not a supported rename hypothesis.
+- [ ] Checkpoint this resolved plan. Delegate only the original store helper/tests and independent UI patch helper/tests; keep patch integration, shared fixtures, diagnostics, artifacts/docs and Git with the parent.
+- [ ] Implement a helper selecting exact GodotFileIo directly or exact CloudSaveStore.LocalStore, requiring the inner type and preserving native read/string errors. Inline it in the runtime with exact anchors; keep the original settings schema.
+- [ ] Add Darwin only to the STS2 settings-menu entry, preserving packaged status, other games, normal login/features and user-selected badge mode. Add fixed events for valid settings and overlay ready/show paths without data bodies; keep visual overlay evidence separate.
+- [ ] Extend synthetic archives/guard checks and meaningful JS/type/platform/privacy tests, run focused/full tests, compare all prepared entries/native files and syntax-check changed vendor JS without executing it.
+- [ ] Prepare copy09 from pristine source with explicit signing/access proposals; use the already approved outer-companion-only ad-hoc procedure retaining original five entitlements and Hardened Runtime, no nested signing/new access. The handoff requires new approval for access-broadening changes; this reuse adds none. Stop and explain if automatic review requires separate approval.
+- [ ] Verify signature/payload/archive/extraction/source parity, preserve old copies, stage09 and current helpers, update README/security/architecture/access/runbook/verification, checkpoint/push and provide owner-run Tiers instructions. No real runtime/overlay success is claimed during preparation.
+
+### Open questions
+- None for implementation. A bounded owner-run09 observation must confirm settings recovery, legitimate Tiers configuration and actual overlay visibility. Existing public/latest/eng data limits stay fixed; the vendor already has a version-to-latest fallback. No broader data approval is inferred.

@@ -121,7 +121,7 @@ The first debug-game install stopped during source verification because tar extr
 
 Installation and the60-second menu check succeeded, followed by a real native reader connection and reward event in the approved manual-play/45-second observation. Haze, Ricochet and Infinite Blades match the photo, all upgrade level0 and in the correct order. The owner clarified that no overlay appeared on the game screen. Do not repeat an identical run merely to reconfirm those IDs.
 
-Full geometry is still incomplete: that copy07 capture omitted native scaleX/scaleY, and the phone photo cropped the game viewport. Current08c capture supports both scales; its real reward capture and an independent full-viewport digital screenshot remain needed. Use the game content area, not desktop/title-bar coordinates, and never use reader values as their own expected answer.
+Full geometry is still incomplete: that copy07 capture omitted native scaleX/scaleY, and the phone photo cropped the game viewport. The authenticated08c capture now includes both scales; an independent full-viewport digital screenshot remains needed. Use the game content area, not desktop/title-bar coordinates, and never use reader values as their own expected answer.
 
 The vendor reward UI is statically login-gated, and the old offline observation had no public-data cache. The reviewed controlled-account/data plan below now governs authenticated testing; no gate is bypassed. Settings/property-read errors remain a separate compatibility question.
 
@@ -129,11 +129,11 @@ The vendor reward UI is statically login-gated, and the old offline observation 
 
 The owner approved the original [controlled-access plan](Controlled-Access-Plan.md) and copy08 signing/access proposals. Its first login-only attempt failed at upstream token HTTP403. Read-only saved-error inspection was unclassified. A two-request comparison then isolated header-dependent behavior: Python's default received403, and the original companion's User-Agent received the expected unauthenticated401. No account credentials were sent during that comparison.
 
-Revision08b restored the fixed original User-Agent without changing signed app/receipt or route/credential/confinement scope. Its archive and original metadata remain preserved. The current launcher selects08c, whose login-only success is now verified; the next step is the authenticated reward observation below.
+Revision08b restored the fixed original User-Agent without changing signed app/receipt or route/credential/confinement scope. Its archive and original metadata remain preserved. The later08c authenticated reward observation is complete with no visible overlay. The current launcher selects copy09 for the settings/Tiers check below;08c remains preserved.
 
 The owner ran08b and received generic gateway error502. The standalone fixed-data check then returned normal401 JSON for both routes in sts2test, so it did not reproduce that exception. Revision08c now adds those checks through the actual gateway before opening the app, plus safe stage/category/timing on a real failure. Its signed app/receipt are identical; no signing or route expansion occurs. Review the [08c scope](Controlled-Access-Plan.md) before starting this next attempt.
 
-In the standard sts2test account, close Steam and every game copy, then run the reviewed08c launcher:
+For a login-only diagnostic in the standard sts2test account, close Steam and every game copy, then run the current launcher (copy09):
 
 ```sh
 /bin/sh /private/tmp/untapped-sts2-transfer-01/controlled_sign_in.sh
@@ -143,25 +143,34 @@ The launcher validates the signed copy, then makes at most two fixed-data checks
 
 The companion does not open a browser: its sign-in control writes a private manual-sign-in URL file. Terminal now prints a complete `After Sign In, run in another Terminal: cat …` command containing only that new file's location. Click Log in, then run the printed cat command in a second test-account Terminal and open its URL yourself in that account's browser; finish credentials/consent manually. Use the fresh path/URL from this attempt. Do not share that URL, raw logs/settings or callback material. The new Diagnostic file export contains only safe harness status/events/cards and route counters. Existing raw-log observation exports must not be used after authentication.
 
-Account/token and public JSON/commentary/tier routes are permitted by the approved gateway; stats/predictions, history/uploads, telemetry and artwork are blocked. The vendor consent scope is companion:full-access even though companion traffic is filtered; browser website traffic is outside that filter. The separate settings-property error can still block overlay target resolution, so successful login/data loading is not proof that the overlay appears. Send only the printed sanitized Diagnostic file path after this run; retain a failed/timed-out result for review before another attempt.
+Account/token and public JSON/commentary/tier routes are permitted by the approved gateway; stats/predictions, history/uploads, telemetry and artwork are blocked. The vendor consent scope is companion:full-access even though companion traffic is filtered; browser website traffic is outside that filter. The settings-property error is a separate compatibility issue; vendor window/data fallbacks exist, so it is not a proven rendering cause. Successful login/data loading is not proof that the overlay appears. Send only the printed sanitized Diagnostic file path after this run; retain a failed/timed-out result for review before another attempt.
 
 ## Authenticated reward observation (next step)
 
-The owner-run mjy01eeq report confirms the genuine authenticated event and token/account200 responses, no gateway failures and complete post-auth cleanup. This was login-only; STS2 features/public data and overlay remain unverified. The old502 cause is still unknown.
+Completed08c: genuine authentication, native reader connection and42 reward events, with Headbutt, Forgotten Ritual and Infernal Blade matching the photo in order at upgrade0. STS2 exchange, all six public definitions and tier resolution returned200. The owner saw no overlay. Settings-property error persists. Copy09 is now staged with two scoped changes: recognize the game's direct local save store, and expose the normal STS2 settings tab on packaged macOS. It leaves the mode for the owner to select; a fresh profile still defaults to stats, whose gameplay-context requests are blocked here.
 
-With Steam closed, in sts2test run the existing approved manual-play launcher:
+In sts2test, keep Steam closed. If the approved debug-game session has ended, reopen it with:
 
 ```sh
 /bin/sh /private/tmp/untapped-sts2-transfer-01/play_debug_game.sh --manual-play
 ```
 
-It opens only the verified debug-game copy for at most900 seconds and uses that account's existing test game data. Continue/play manually until a card reward, then leave the choices unselected. Once ready, use another Terminal in the same account:
+It opens only the verified debug-game copy for at most900 seconds and uses that account's existing test game data. Continue/play manually until a card reward, then leave the choices unselected. In another Terminal in the same account run:
 
 ```sh
 /bin/sh /private/tmp/untapped-sts2-transfer-01/controlled_sign_in.sh --observe-debug-game
 ```
 
-This verifies the exact debug-game receipt/PID/user/path, preflights the gateway, then opens the protected companion for the remaining300-second budget. Each attempt has a fresh profile and memory-only credentials, so review Terms/sign in manually again using the new printed cat command and URL. After sign-in, bring the reward window forward and observe what appears until the45-second post-auth stop. Send the sanitized Diagnostic file path and describe any visible overlay. Do not infer ratings or alignment from a successful reader event. A full game-viewport digital capture will be needed for independent geometry; keep raw auth logs/URLs private.
+This selects verified copy09 and the exact debug-game receipt/PID/user/path, preflights the unchanged gateway, then opens the protected companion for the remaining300-second budget. Review Terms/sign in manually using the new printed cat command and private URL. Do not share that URL. The app stops at most45 seconds after genuine authentication.
+
+Within that window:
+
+1. Open **Slay The Spire 2 → Badges → Tiers** in the companion. This is the normal setting; no mode is forced by the harness.
+2. If no author is enabled, choose one under **Tier Lists**. The vendor may already auto-enable its default author. Complete any normal Welcome prompt yourself if shown.
+3. Bring the game reward window to the front; the vendor defaults to hiding its overlay in the background. Leave the offered cards unselected and observe whether tier badges appear.
+4. If possible, take a digital capture of the complete game content viewport, excluding the private Terminal URL and account details. A cropped phone photo cannot verify full geometry.
+
+Send only the sanitized Diagnostic file path and describe the visual result. New settings_reading and overlay_window statuses distinguish settings-read, renderer-ready and show-call events; overlay still requires your visual check. Unknown native store types fail rather than producing invented settings. No09 runtime result is yet claimed. Stats, predictions, uploads, telemetry and unreviewed routes stay blocked; the original public/latest/eng fallback stays available. Do not use old raw-log exporters after sign-in.
 
 ## Saved token HTTP403 classification (completed)
 
@@ -185,4 +194,4 @@ This uses the launcher's Python interpreter and at most two reviewed HTTPS reque
 
 Send only `Diagnostic file: /private/tmp/sts2test-transport.…json`. The output contains fixed network/error categories and CA/runtime booleans, excluding raw responses/errors, environment values and CA paths. Normal401/invalid-client responses here simply show that transport completed; they are not successful authentication. No real OAuth retry is needed for this check.
 
-The owner completed this check as lawr_85r: both routes returned normal401 JSON. Do not repeat it for this case; the current next command is the08c controlled launcher above. Its new Diagnostic file includes separate preflight/app counters and fixed failure stages/categories/timing, preserving raw errors and account data privately.
+The owner completed this check as lawr_85r: both routes returned normal401 JSON. Do not repeat it for this case; the current next command is the copy09 controlled launcher above. Its new Diagnostic file includes separate preflight/app counters and fixed failure stages/categories/timing, preserving raw errors and account data privately.

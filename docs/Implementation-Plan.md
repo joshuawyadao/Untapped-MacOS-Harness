@@ -487,10 +487,12 @@ Reconcile the owner's successful08c sign-in with its sanitized report, then docu
 
 ### Action items
 - [x] Read /private/tmp/sts2test-controlled.mjy01eeq.json: expected preflight, genuine authenticated event, oauth_token200/account200, no failures/overflow and complete cleanup after the post-auth timeout.
-- [ ] Checkpoint this resolved evidence plan before documentation changes.
-- [ ] Update README, controlled-access plan, architecture, runbook and verification with the verified milestone and limits. Preserve historical failures as evidence; their exact cause remains unproven.
-- [ ] Document the existing owner-run900-second debug-game session, reward pause, and controlled_sign_in.sh --observe-debug-game. Explain that fresh profiles/memory-only credentials require sign-in again for that combined run.
-- [ ] Run documentation/repository/whitespace and existing-script syntax checks, commit/push and give the owner the first game command. No tests/code changes are needed for this evidence-only slice; the existing154 tests remain applicable.
+- [x] Checkpoint this resolved evidence plan (`ebc54ac`) before documentation changes.
+- [x] Update README, controlled-access plan, architecture, runbook and verification with the verified milestone and limits. Preserve historical failures as evidence; their exact cause remains unproven.
+- [x] Document the existing owner-run900-second debug-game session, reward pause, and controlled_sign_in.sh --observe-debug-game. Explain that fresh profiles/memory-only credentials require sign-in again for that combined run.
+- [x] Run documentation/repository/whitespace and existing-script syntax checks, save through save-branch and give the owner the first game command. No tests/code changes are needed for this evidence-only slice; the existing154 tests remain applicable.
 
 ### Open questions
 - None for the evidence update. The owner must reach a reward screen and complete the next manual sign-in to observe the overlay. This sign-in-only result proves no game attachment, STS2 feature/public-data population or rendered geometry.
+
+Evidence result: controlled08c sign-in is verified by the genuine event plus real token/account200 responses, with preflight401s separated, no gateway failures and complete post-auth cleanup. Updated status/access/runbook/architecture/verification and corrected obsolete scale-capture guidance. Existing scripts' syntax, documentation links, repository hygiene and whitespace pass. No source/tests/policy/artifacts changed, so the prior154-test suite was not rerun. The owner-run authenticated reward capture, public-data/STS2 features, game settings, visible overlay and independent geometry remain pending; no new permission is required to prepare these already established commands.

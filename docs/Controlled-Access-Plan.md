@@ -2,11 +2,11 @@
 
 ## Approved and staged state
 
-**Revision08c is staged for owner review: it checks the gateway before opening the companion and records safe failure details.** The08b real-login exception502 remains unexplained; both fixed-data requests completed normally in sts2test. Revision08c's app tree and signing receipt are byte/mode/symlink identical to signed copy08, with no new signing, ASAR or entitlement change. Its preparation is `/private/tmp/untapped-native-sts2-poc-08c/Companion.app`. ASAR SHA-256 remains `1c343975300061b01917f5258d9f03089c0bb7ed9e21471e9560f055eeb02720`. Original native/framework binaries, Info.plist, original entitlements and Hardened Runtime are retained; the source image remains detached.
+**Revision08c controlled sign-in is verified:** the genuine authenticated event, token/account200 responses, no gateway failures and complete cleanup are recorded. The08b real-login exception502 remains unexplained. Revision08c's app tree and signing receipt are byte/mode/symlink identical to signed copy08, with no new signing, ASAR or entitlement change. Its preparation is `/private/tmp/untapped-native-sts2-poc-08c/Companion.app`. ASAR SHA-256 remains `1c343975300061b01917f5258d9f03089c0bb7ed9e21471e9560f055eeb02720`. Original native/framework binaries, Info.plist, original entitlements and Hardened Runtime are retained; the source image remains detached.
 
-The owner approved original copy08 signing/access and subsequently initiated08b. The new08c preflight/error proposal is a separate review item before another owner-run attempt; no new app signature is needed. Deep strict signature verification, both architectures' original five entitlements, native payload pins and revised gateway/adapter hash binding pass. Signed executable SHA-256 remains `5cc4476cf26ea005a0d4d69021dc9b70a6c7cf939fe9a7e348eb402aed8f3383`.
+The owner approved original copy08 signing/access and subsequently initiated08b and08c. No new app signature was needed. Deep strict signature verification, both architectures' original five entitlements, native payload pins and revised gateway/adapter hash binding pass. Signed executable SHA-256 remains `5cc4476cf26ea005a0d4d69021dc9b70a6c7cf939fe9a7e348eb402aed8f3383`.
 
-The revised `companion08c.tar` and checksum are staged at `/private/tmp/untapped-sts2-transfer-01` with current original helpers and `controlled_sign_in.sh`. Archive SHA-256: `5453194a1674b54386524df00080eb2a4cab5b36ec12d5e0a6d3102d05e594bd`. All333 entries match source type/mode/content/link target; a private exact-mode extraction reproduced the identical signed tree and passed signature/payload/policy verification. Only Companion.app, revised manifest.json and unchanged signing.json are archived. Previous archives/metadata, copy07 and the debug game are preserved. No08c companion or real OAuth flow has been run.
+The revised `companion08c.tar` and checksum are staged at `/private/tmp/untapped-sts2-transfer-01` with current original helpers and `controlled_sign_in.sh`. Archive SHA-256: `5453194a1674b54386524df00080eb2a4cab5b36ec12d5e0a6d3102d05e594bd`. All333 entries match source type/mode/content/link target; a private exact-mode extraction reproduced the identical signed tree and passed signature/payload/policy verification. Only Companion.app, revised manifest.json and unchanged signing.json are archived. Previous archives/metadata, copy07 and the debug game are preserved. The owner subsequently completed the successful08c login-only run recorded below.
 
 ## Boundary and disclosures
 
@@ -66,7 +66,7 @@ Every controlled attempt starts a fresh private app profile and memory credentia
 5. Signed validation/preflight time counts against the existing300-second app-attempt budget; the app receives only the remaining whole seconds. It closes at most45 seconds after genuine auth, or earlier at the remaining deadline. Cleanup still drains the gateway afterward. No gameplay is automated; descendants/gateway remain supervised.
 6. Send only the sanitized Diagnostic file path. Startup without a real authenticated event is not reported as a successful sign-in; a later nonzero native exit also fails the probe. Do not infer overlay success from authentication alone.
 
-The original login and08b retry failed. The standalone fixed-data check has completed normally; the next owner action is the reviewed08c launcher. Successful token exchange remains unverified. The assistant has not started another real sign-in or companion from UID501.
+The original login and08b retry failed;08c subsequently completed real sign-in in UID502. The assistant has not started a real sign-in or companion from UID501. The next owner action combines the existing isolated debug game with the same controlled launcher, as described in the runbook.
 
 ## First live sign-in result and read-only follow-up
 
@@ -104,4 +104,10 @@ The prior CloudSaveStore/settings property error can independently leave the ven
 
 ## Verification so far
 
-All154 tests pass, including15 new gateway/supervisor preflight and privacy cases. Test traffic uses only fake/local servers; the finite real diagnostic/preflight requests above are separate evidence. Signature/archive/extraction/hash/source-parity checks pass; the signed app/receipt and CJS adapter remain identical. The08c real login result is pending, with authentication and overlay compatibility still unverified.
+All154 tests pass, including15 new gateway/supervisor preflight and privacy cases. Test traffic uses only fake/local servers; the finite real requests and successful owner login are separate evidence. Signature/archive/extraction/hash/source-parity checks pass; signed app/receipt and adapter remain identical. The login-only milestone is verified; authenticated game/public-data/overlay/geometry checks remain pending.
+
+## Verified08c login-only result and next reward check
+
+The owner reported successful sign-in, confirmed by /private/tmp/sts2test-controlled.mjy01eeq.json: preflight passed, bootstrap/ready/Core initialization, genuine authenticated event at21:26:36.436Z on2026-11-03, one oauth_token200 and one accounts_account200. There are no gateway failures or overflow. The post-auth limit was reached with complete gateway cleanup and no recorded failing native exit. Preflight401s are separate from the real200s; no raw logs/account details were exported. The older502's exact cause remains unknown, so success is not attributed to a speculative fix.
+
+No game was present. This report does not establish STS2 token/features or public definitions, native game attachment under authentication, game-settings compatibility, overlay/rating display or scaled geometry. Start the already approved900-second debug-game session in sts2test, pause at a card reward, then use controlled_sign_in.sh --observe-debug-game. Fresh profiles and memory-only keytar require manual sign-in again for that combined attempt; test-account browser cookies may remain. Keep stats/uploads/telemetry/artwork restrictions and send only the sanitized combined Diagnostic file.

@@ -121,15 +121,15 @@ The first debug-game install stopped during source verification because tar extr
 
 Installation and the60-second menu check succeeded, followed by a real native reader connection and reward event in the approved manual-play/45-second observation. Haze, Ricochet and Infinite Blades match the photo, all upgrade level0 and in the correct order. The owner clarified that no overlay appeared on the game screen. Do not repeat an identical run merely to reconfirm those IDs.
 
-Full geometry is still incomplete: current capture omits native scaleX/scaleY, and the phone photo crops the game viewport. A future scale-complete companion preparation/signing proposal and full-viewport digital screenshot are needed for an independent rendered-bounds comparison. Use the game content area, not desktop or title-bar coordinates. Never use the captured reader values as their own expected answer.
+Full geometry is still incomplete: that copy07 capture omitted native scaleX/scaleY, and the phone photo cropped the game viewport. Current08c capture supports both scales; its real reward capture and an independent full-viewport digital screenshot remain needed. Use the game content area, not desktop/title-bar coordinates, and never use reader values as their own expected answer.
 
-The vendor reward UI is statically login-gated, and public-data fetching has no cache under the retained offline policy. Full UI work needs a separately reviewed isolated account/data plan; do not sign in, enable networking, approve prompts or bypass gates as part of this completed observation. Settings/property-read errors also need separate compatibility investigation. Existing signing approvals do not authorize those new account/network actions.
+The vendor reward UI is statically login-gated, and the old offline observation had no public-data cache. The reviewed controlled-account/data plan below now governs authenticated testing; no gate is bypassed. Settings/property-read errors remain a separate compatibility question.
 
 ## Controlled sign-in revision08c (preflight and useful failure evidence)
 
 The owner approved the original [controlled-access plan](Controlled-Access-Plan.md) and copy08 signing/access proposals. Its first login-only attempt failed at upstream token HTTP403. Read-only saved-error inspection was unclassified. A two-request comparison then isolated header-dependent behavior: Python's default received403, and the original companion's User-Agent received the expected unauthenticated401. No account credentials were sent during that comparison.
 
-Revision08b restored the fixed original User-Agent without changing signed app/receipt or route/credential/confinement scope. Its archive and original metadata remain preserved. The current launcher selects08c, described below; successful authentication is still unverified.
+Revision08b restored the fixed original User-Agent without changing signed app/receipt or route/credential/confinement scope. Its archive and original metadata remain preserved. The current launcher selects08c, whose login-only success is now verified; the next step is the authenticated reward observation below.
 
 The owner ran08b and received generic gateway error502. The standalone fixed-data check then returned normal401 JSON for both routes in sts2test, so it did not reproduce that exception. Revision08c now adds those checks through the actual gateway before opening the app, plus safe stage/category/timing on a real failure. Its signed app/receipt are identical; no signing or route expansion occurs. Review the [08c scope](Controlled-Access-Plan.md) before starting this next attempt.
 
@@ -144,6 +144,24 @@ The launcher validates the signed copy, then makes at most two fixed-data checks
 The companion does not open a browser: its sign-in control writes a private manual-sign-in URL file. Terminal now prints a complete `After Sign In, run in another Terminal: cat …` command containing only that new file's location. Click Log in, then run the printed cat command in a second test-account Terminal and open its URL yourself in that account's browser; finish credentials/consent manually. Use the fresh path/URL from this attempt. Do not share that URL, raw logs/settings or callback material. The new Diagnostic file export contains only safe harness status/events/cards and route counters. Existing raw-log observation exports must not be used after authentication.
 
 Account/token and public JSON/commentary/tier routes are permitted by the approved gateway; stats/predictions, history/uploads, telemetry and artwork are blocked. The vendor consent scope is companion:full-access even though companion traffic is filtered; browser website traffic is outside that filter. The separate settings-property error can still block overlay target resolution, so successful login/data loading is not proof that the overlay appears. Send only the printed sanitized Diagnostic file path after this run; retain a failed/timed-out result for review before another attempt.
+
+## Authenticated reward observation (next step)
+
+The owner-run mjy01eeq report confirms the genuine authenticated event and token/account200 responses, no gateway failures and complete post-auth cleanup. This was login-only; STS2 features/public data and overlay remain unverified. The old502 cause is still unknown.
+
+With Steam closed, in sts2test run the existing approved manual-play launcher:
+
+```sh
+/bin/sh /private/tmp/untapped-sts2-transfer-01/play_debug_game.sh --manual-play
+```
+
+It opens only the verified debug-game copy for at most900 seconds and uses that account's existing test game data. Continue/play manually until a card reward, then leave the choices unselected. Once ready, use another Terminal in the same account:
+
+```sh
+/bin/sh /private/tmp/untapped-sts2-transfer-01/controlled_sign_in.sh --observe-debug-game
+```
+
+This verifies the exact debug-game receipt/PID/user/path, preflights the gateway, then opens the protected companion for the remaining300-second budget. Each attempt has a fresh profile and memory-only credentials, so review Terms/sign in manually again using the new printed cat command and URL. After sign-in, bring the reward window forward and observe what appears until the45-second post-auth stop. Send the sanitized Diagnostic file path and describe any visible overlay. Do not infer ratings or alignment from a successful reader event. A full game-viewport digital capture will be needed for independent geometry; keep raw auth logs/URLs private.
 
 ## Saved token HTTP403 classification (completed)
 

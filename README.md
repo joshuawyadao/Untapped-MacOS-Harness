@@ -2,7 +2,7 @@
 
 An unofficial, experimental harness for investigating whether the **existing Untapped.gg companion** can work with native macOS Slay the Spire 2.
 
-**Status: the native reader connected and read a real reward screen from the separately approved debug-enabled game copy.** Haze, Ricochet and Infinite Blades matched the visible cards in order, all upgrade level0. Scaled geometry is not independently verified, and the owner confirmed no overlay appeared on the game screen. The fresh offline profile has no account/public-data cache; the vendor reward-overlay tree is login-gated. This is a reader milestone, not a working full Untapped experience. The installed game and normal saves remain unchanged.
+**Status: native reward reading and controlled sign-in are verified.** Haze, Ricochet and Infinite Blades matched the earlier debug-game reward, all upgrade level0 and in order. Revision08c subsequently completed genuine authentication with token/account200 responses and clean gateway cleanup. The earlier offline observation showed no overlay; authenticated game attachment, STS2/public-data loading, visible overlay and independent scaled geometry are the next checks. The installed game and normal saves remain unchanged.
 
 ## What this repository provides
 
@@ -37,13 +37,13 @@ November 2 attempts record manual acceptance in separate private profiles. A new
 
 Current preparation also patches offline credential acquisition to return authentication unavailable before any credential read or anonymous-token request. This preserves Terms and the existing reader, creates no login/token, and keeps remote networking blocked. Copy05 was separately approved, signed, and launched in bounded protected attempts; the latest manual acceptance proceeds to logged Core initialization. Other vendor metrics requests still fail under the offline policy, so the outer restrictions remain necessary.
 
-If a real reward event is later captured, manually transcribe the visible cards and normalized positions into a private JSON file, then compare it:
+For an independent reward comparison, manually transcribe the visible cards and normalized positions into a private JSON file, then compare it:
 
 ```sh
 python3 -m harness.cli compare-reward /private/tmp/untapped-sts2-session /private/tmp/expected-reward.json --reward-index 0
 ```
 
-See [verification](docs/Verification.md) for the exact JSON shape and evidence rules. A matching reward does not establish overlay display or adaptive advice. Live gameplay awaits an explicit game-profile, saves, and Steam Cloud strategy; do not assume a copied game isolates them.
+See [verification](docs/Verification.md) for the exact JSON shape and evidence rules. A matching reward does not establish overlay display or adaptive advice. Use the verified separate-account workflow for live tests; a copied game alone does not isolate saves or Steam Cloud.
 
 ## Project resources
 
@@ -80,10 +80,10 @@ Copy07 passed the identity guard but native `connect` returned false before any 
 
 The guarded test uses a distinct `UntappedSTS2DebugGameSession` in `sts2test`, with a verified signing receipt and explicit `--debug-game` selection. Its native detection/connection/reward read is observed. It shares that account's existing test game data without importing normal-account saves. See the [verified setup and current workflow](docs/Test-Account-Runbook.md).
 
-The current recorder captures raw normalized hitbox width/height but omits the separately returned scaleX/scaleY. Do not certify displayed bounds by comparing those raw dimensions with card artwork, or by copying reader coordinates into expected JSON. A future capture update and an independent full game-viewport screenshot are needed for that check. See the [native reward evidence and remaining gaps](docs/Verification.md#first-real-native-reward-state).
+The earlier copy07 capture omitted scaleX/scaleY. Current08c capture retains them, but a real scale-complete capture and an independent full game-viewport screenshot remain needed. Do not certify displayed bounds by comparing raw hitboxes with painted artwork or by using reader coordinates as their own expected values. See the [native reward evidence and remaining gaps](docs/Verification.md#first-real-native-reward-state).
 
 ## Prepared controlled sign-in setup
 
 Copy08 now includes a controlled manual OAuth/public-data path and scale-complete capture. The companion's remote-network denial stays in place; an original loopback gateway allows only reviewed account/token and public JSON/commentary/tier-list requests. Stats/gameplay-context POSTs, uploads, telemetry and artwork remain blocked. Browser sign-in is manual and outside that gateway; the vendor requests companion:full-access consent scope. Authenticated diagnostics exclude raw logs/account/token data.
 
-The [controlled-access review](docs/Controlled-Access-Plan.md) records exact routes, disclosures, bounded workflow and limits. All154 tests pass using fake/local test servers. The08b retry failed with a generic gateway exception502, while standalone fixed-data checks completed normally in sts2test. Revision08c now validates two fixed-data responses through the gateway before opening the companion, and exports safe exception category/stage/timing if a real failure occurs. Signed app/receipt, routes and CJS adapter are unchanged; preflight uses the existing300-second budget. The [owner-run08c launcher](docs/Test-Account-Runbook.md) is staged for review. The real-flow cause, successful authentication, separate settings-reader issue and visible overlay remain unverified.
+The [controlled-access review](docs/Controlled-Access-Plan.md) records exact routes, disclosures, bounded workflow and limits. All154 tests pass using fake/local test servers. The owner-run08c report confirms preflight pass, genuine authentication, token/account200 responses, no gateway failures and complete post-auth cleanup. The older08b exception's cause remains unknown. Signed app/receipt, routes and CJS adapter are unchanged; preflight uses the existing300-second budget. The [authenticated reward observation](docs/Test-Account-Runbook.md#authenticated-reward-observation-next-step) is the next owner-run step. STS2/public-data loading, game settings compatibility, visible overlay and independent geometry remain unverified.

@@ -422,7 +422,7 @@ Restore the pinned original client's HTTP User-Agent in the gateway, then prepar
 - [x] Set only the fixed original User-Agent inside the gateway transport; keep caller-supplied User-Agent disallowed and expose the fixed value in the review proposal. Print the complete local URL-file read command without its contents. Run focused and full synthetic suites.
 - [x] Create revision08b with byte-identical signed app/receipt, revised gateway hash and explicit proposal; verify signature/payload/tree equality and exact-mode profile-free archive extraction. Stage the current original helpers and revised default launcher with parity; preserve old archives.
 - [x] Update README, SECURITY.md, Controlled-Access-Plan.md, Test-Account-Runbook.md, Harness-Architecture.md and Verification.md with measured evidence, reviewable header-only change and retry limits; run syntax/hygiene and save through save-branch.
-- [ ] Have the owner review and initiate the next bounded manual login-only attempt in UID502. Do not claim authentication success from an unauthenticated401 response.
+- [x] Have the owner review and initiate the next bounded manual login-only attempt in UID502. The08b attempt completed with a gateway error502 and no authenticated event; the next diagnosis below distinguishes transport errors from response handling.
 
 ### Open questions
 - None for implementation. The owner-run revised sign-in attempt remains a distinct runtime step. Its result is required to establish whether the token failure is resolved.
@@ -430,3 +430,22 @@ Restore the pinned original client's HTTP User-Agent in the gateway, then prepar
 Discovery: the original packed node_modules/node-fetch/lib/index.js sets User-Agent to node-fetch/1.0 (+https://github.com/bitinn/node-fetch). The gateway's urllib transport instead supplies Python's default when no header is set. The two-request comparison used no tokens/cookies/body/query, normal TLS verification, no redirects, and no browser/app execution. A fixed original-client header preserves integration behavior; no arbitrary client/header or protective-check bypass is added. The signed app need not be modified: only separately reviewed manifest/helper metadata changes, retaining policy-drift checks rather than silently updating the old manifest.
 
 Implementation result: the inert on-wire regression failed403 before the fix and passes401 afterward. All134 tests pass, including updated external-header denial/proposal/manual-read-command checks. Revision08b's signed app tree and receipt match08 exactly; native signature/payload verification and all333 archive entries/extracted modes/content/links pass. Archive SHA-2568d1587fb765e9f008258b72bd2c8fea3ff44b3cf8747c4d41963165f3097939a; gateway SHA-25670d78c4798db97790fead4e22a41e061c241f2f3373f18aac6d5f46ff9c3cdd3. Original helper/launcher parity, shell syntax, checksum, staged proposal/hash binding and documentation/repository checks pass. Old artifacts are preserved. No new signing, vendor app execution or live OAuth retry occurred. The owner's review/initiation and sanitized retry result remain pending; no authentication/overlay success is claimed.
+
+## Diagnose revision08b gateway transport error502
+
+Distinguish a same-user connectivity/runtime problem from successful-response handling before another manual OAuth attempt, using fixed inert requests and safe exception categories.
+
+### Scope
+- In: Replay the sanitized08b failure; inspect transport response paths with inert local servers; prepare a standard-account transport checker using at most two fixed reviewed requests with no real client/code/token/account; fixed exception/CA/runtime metadata only; scoped tests and docs.
+- Out: Raw exception/log exports, account credentials, retrying real OAuth automatically, changing route/credential/sandbox/TLS policy or signing/app bytes on speculation.
+
+### Action items
+- [x] Verify sts2test-controlled.w7jrcoj3.json: ready/Core initialized, no startup blockers, clean exit0/drain, only route error502 once and no authenticated event. This generic exception branch does not identify a server status or reason.
+- [x] Send one inert negative-test POST from UID501 to the reviewed token route: normal401 JSON invalid_client, no real client/code/account. The exact launcher interpreter is Python3.11.2, default CA file readable, no CA environment overrides. This does not reproduce UID502's exception.
+- [ ] Checkpoint the resolved diagnostic plan before implementation; inspect200/401, close/chunked/EOF response handling with only inert local servers.
+- [ ] If no concrete response-handling fix is reproduced, add an owner-run checker using the launcher's interpreter: credential-free account GET, then a fixed nonexistent-client/code token POST only if the first transport completes. Export fixed response/error categories and runtime/CA booleans without raw text; stop at the first transport exception.
+- [ ] Add meaningful synthetic privacy/category/request-scope tests; run focused/full checks and keep the existing signed app, adapter and gateway policy pins unchanged unless a reproduced fix requires a separate reviewed revision.
+- [ ] Update controlled-access/runbook/verification/current status docs, stage any original checker with parity, commit/push and provide the smallest next owner action. No new real sign-in is part of this diagnostic step.
+
+### Open questions
+- None for safe diagnosis. UID502's private exception cannot be inspected from UID501; if the local response matrix does not reproduce it, the owner must run the fixed-data checker and share only its sanitized Diagnostic file path.

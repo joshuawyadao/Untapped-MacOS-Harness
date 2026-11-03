@@ -125,11 +125,13 @@ Full geometry is still incomplete: current capture omits native scaleX/scaleY, a
 
 The vendor reward UI is statically login-gated, and public-data fetching has no cache under the retained offline policy. Full UI work needs a separately reviewed isolated account/data plan; do not sign in, enable networking, approve prompts or bypass gates as part of this completed observation. Settings/property-read errors also need separate compatibility investigation. Existing signing approvals do not authorize those new account/network actions.
 
-## Controlled sign-in revision08b (ready for owner review/retry)
+## Controlled sign-in revision08b (retry failed; diagnose transport next)
 
 The owner approved the original [controlled-access plan](Controlled-Access-Plan.md) and copy08 signing/access proposals. Its first login-only attempt failed at upstream token HTTP403. Read-only saved-error inspection was unclassified. A two-request comparison then isolated header-dependent behavior: Python's default received403, and the original companion's User-Agent received the expected unauthenticated401. No account credentials were sent during that comparison.
 
 Review revision08b in the access plan before retrying. It sets only the fixed original User-Agent at the gateway; routes, bodies, credential scope and app confinement are unchanged. The signed app/receipt are identical to copy08, with no new signing. A fresh revised manifest pins the new gateway hash, and verified companion08b.tar plus current helpers are staged. The launcher now selects this revised archive; old archives remain preserved. Authentication success after this correction is still unverified.
+
+The owner has now run08b, with a generic gateway exception502 and no authenticated event. Use the fixed-data diagnostic below before another real login attempt. The login command remains documented for later use; it is not the current next step.
 
 To initiate the reviewed bounded retry in the standard sts2test account, close Steam and every game copy, then run:
 
@@ -152,3 +154,15 @@ The first probe's safe export records one upstream oauth_token403, no authentica
 ```
 
 This check has completed: UNCLASSIFIED_TOKEN_ERROR, with no recognized HTML/security/OAuth markers and no truncated logs. There is no need to repeat it for this attempt. For any later use, send only its printed `Diagnostic file: /private/tmp/sts2test-auth-error.…json` path. This original helper reads two bounded saved logs privately and exports fixed error categories/booleans only. It opens no browser/app and makes no network requests. It does not modify the saved attempt, gateway, adapter or signed copy08. An unclassified result is valid evidence; do not paste raw errors.
+
+## Check transport in sts2test without signing in (current next step)
+
+In the existing sts2test Terminal, run:
+
+```sh
+/bin/sh /private/tmp/untapped-sts2-transfer-01/diagnose_account_transport.sh
+```
+
+This uses the launcher's Python interpreter and at most two reviewed HTTPS requests: an account GET without credentials, then a token POST with fixed nonexistent client/code/verifier data. It stops after the first transport exception. It opens no app/browser or saved login files and sends no real account credentials. TLS/proxy/redirect and request limits are unchanged.
+
+Send only `Diagnostic file: /private/tmp/sts2test-transport.…json`. The output contains fixed network/error categories and CA/runtime booleans, excluding raw responses/errors, environment values and CA paths. Normal401/invalid-client responses here simply show that transport completed; they are not successful authentication. No real OAuth retry is needed for this check.

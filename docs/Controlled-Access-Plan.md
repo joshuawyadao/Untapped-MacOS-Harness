@@ -1,10 +1,12 @@
 # Controlled manual sign-in and public-data test
 
-## Prepared state
+## Approved and staged state
 
-Copy08 is prepared and **unsigned/unlaunched** at `/private/tmp/untapped-native-sts2-poc-08/Companion.app`. Its ASAR SHA-256 is `1c343975300061b01917f5258d9f03089c0bb7ed9e21471e9560f055eeb02720`. Only the pinned main/Core/Services entries changed; all other138 files and symlinks match the pristine source. Original framework/native binaries, Info.plist and both original entitlement sets are unchanged. The read-only source image was detached after inspection.
+Copy08 is **signed, verified and staged; unlaunched** at `/private/tmp/untapped-native-sts2-poc-08/Companion.app`. Its ASAR SHA-256 is `1c343975300061b01917f5258d9f03089c0bb7ed9e21471e9560f055eeb02720`. Only the pinned main/Core/Services entries changed during preparation; all other138 files and symlinks matched the pristine source. The approved outer signature changes only the executable signature and CodeResources seal. Original framework/native binaries, Info.plist and both original entitlement sets remain unchanged; Hardened Runtime is retained. The read-only source image was detached after inspection.
 
-The exact local proposals are `signing-proposal.json` and `controlled-access-proposal.json` in that private preparation directory. They are generated artifacts outside Git. Signing/network execution requires owner approval; no signed copy08 archive or live controlled script has been staged. Existing copy07 and the already approved debug-enabled game remain intact.
+The owner approved the exact local `signing-proposal.json` and `controlled-access-proposal.json` in that private preparation directory, including the first bounded manual sign-in probe. Deep strict signature verification, both architectures' original five entitlements, native payload pins and gateway/adapter hash binding pass. Signed executable SHA-256: `5cc4476cf26ea005a0d4d69021dc9b70a6c7cf939fe9a7e348eb402aed8f3383`.
+
+The signed `companion08.tar` and checksum are staged at `/private/tmp/untapped-sts2-transfer-01`, together with current original helpers and `controlled_sign_in.sh`. Archive SHA-256: `d8b847b8291c6a9f2da72246eabd810c3a52f2e8467681e5ff0c38b0212a85db`. All333 entries were checked for type/mode/content or symlink target; a private exact-mode extraction reproduced the tree and passed signature/payload verification. The archive contains only Companion.app, manifest.json and signing.json, with no profile, Terms, account or logs. Existing copy07 and the approved debug game remain intact. No copy08 application or live request has run yet.
 
 ## Boundary and disclosures
 
@@ -53,16 +55,16 @@ The old reward script's raw-log exporter is not used for authenticated runs. `co
 
 Every controlled attempt starts a fresh private app profile and memory credential map. Closing the attempt loses that map; the test-account browser can retain its own site cookies under the owner's control. Retained private session folders can be discarded precisely after review; never delete another profile or game save as cleanup.
 
-## Bounded owner-run workflow after approval
+## Bounded owner-run workflow
 
-1. Apply the exact copy08 outer-only ad-hoc signing proposal, preserving original five entitlements and Hardened Runtime; verify signatures/payloads. No new game signing is needed.
-2. Stage only app/manifest/signing receipt as companion08.tar plus checksum, and original harness sources/script. Never transfer a profile, account settings, Terms, saves or raw logs.
-3. In `sts2test`, start a login-only probe with no game/Steam using `controlled_sign_in.sh`. A later combined reward test uses `--observe-debug-game` with the already verified debug game paused at a reward. This flag verifies that exact game receipt/PID/path/user before attachment.
+1. Completed: apply the exact copy08 outer-only ad-hoc signing proposal, preserving original five entitlements and Hardened Runtime; verify signatures/payloads. No new game signing is needed.
+2. Completed: stage only app/manifest/signing receipt as companion08.tar plus checksum, and original harness sources/script. No profile, account settings, Terms, saves or raw logs were transferred.
+3. In `sts2test`, close Steam and every game copy, then run `/bin/sh /private/tmp/untapped-sts2-transfer-01/controlled_sign_in.sh` for the approved login-only probe. A later combined reward test uses `--observe-debug-game` with the already verified debug game paused at a reward. This flag verifies that exact game receipt/PID/path/user before attachment.
 4. Review Terms manually. Use the companion's sign-in control, read the private URL file in another Terminal, and open that URL yourself in the test-account browser. Do not paste it into this chat. Finish the vendor's sign-in/consent yourself; do not approve unrelated OS prompts.
 5. The companion runs at most300 seconds and closes at most45 seconds after the original auth callback reports success, whichever limit comes first. No gameplay is automated. All app descendants and the local gateway are supervised/closed.
 6. Send only the sanitized Diagnostic file path. Startup without a real authenticated event is not reported as a successful sign-in; a later nonzero native exit also fails the probe. Do not infer overlay success from authentication alone.
 
-No script in this workflow is ready for execution until the concrete signing/network proposal is approved and the verified signed transfer is staged. The new script currently exists in the repository only.
+The approved login-only command is ready for the owner to run in UID502. The assistant does not launch it from the original UID501 account. If time expires before sign-in, retain the sanitized result and review it before another attempt.
 
 ## Geometry and remaining limits
 
@@ -72,4 +74,4 @@ The prior CloudSaveStore/settings property error can independently leave the ven
 
 ## Verification so far
 
-All126 portable tests pass, including synthetic JS auth/credential/upload/metric boundaries, original adapter URL validation, gateway default-deny/payload/header/redirect/cache/size/deadline/concurrency tests, supervisor cleanup, sanitized exports and scaled comparisons. Local gateway tests use only fake upstreams. An original inert client under the unchanged outer policy reached the loopback gateway and its fake public response; public credentials were stripped. No vendor service, account or application was contacted/executed in these tests. Copy08's exact three changed JS entries pass Node syntax checks; other138 files and symlinks match pristine source. Live integration remains pending approval.
+All126 portable tests pass, including synthetic JS auth/credential/upload/metric boundaries, original adapter URL validation, gateway default-deny/payload/header/redirect/cache/size/deadline/concurrency tests, supervisor cleanup, sanitized exports and scaled comparisons. Local gateway tests use only fake upstreams. An original inert client under the unchanged outer policy reached the loopback gateway and its fake public response; public credentials were stripped. No vendor service, account or application was contacted/executed in these tests. Copy08's exact three changed JS entries pass Node syntax checks; other138 files and symlinks matched pristine source before signing. Approved signing and verified transfer staging are complete; live integration awaits the owner-run probe.

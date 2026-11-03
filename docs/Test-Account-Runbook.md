@@ -125,10 +125,18 @@ Full geometry is still incomplete: current capture omits native scaleX/scaleY, a
 
 The vendor reward UI is statically login-gated, and public-data fetching has no cache under the retained offline policy. Full UI work needs a separately reviewed isolated account/data plan; do not sign in, enable networking, approve prompts or bypass gates as part of this completed observation. Settings/property-read errors also need separate compatibility investigation. Existing signing approvals do not authorize those new account/network actions.
 
-## Prepared controlled sign-in probe (pending approval)
+## Approved controlled sign-in probe (ready for owner)
 
-The [controlled-access plan](Controlled-Access-Plan.md) and private copy08 signing/access JSON proposals are ready for review. No controlled script/archive is staged live and no live OAuth request has been made. After exact approval/signature/transfer verification, `controlled_sign_in.sh` will run a login-only probe with Steam/game absent, or `--observe-debug-game` will observe only the existing verified debug game. The attempt is at most300 seconds and at most45 seconds after genuine sign-in succeeds.
+The owner approved the [controlled-access plan](Controlled-Access-Plan.md) and exact private copy08 signing/access proposals. Outer-only signing and deep signature/entitlement/payload checks pass. The signed profile-free archive, checksum and original launcher/helpers are staged; exact-mode extraction was verified. No live OAuth request or copy08 application launch has been made.
+
+In the standard sts2test account, close Steam and every game copy, then run:
+
+```sh
+/bin/sh /private/tmp/untapped-sts2-transfer-01/controlled_sign_in.sh
+```
+
+This first probe is login-only. A later `--observe-debug-game` mode can observe only the existing verified debug game. The attempt is at most300 seconds and at most45 seconds after genuine sign-in succeeds.
 
 The companion does not open a browser: its sign-in control writes a private manual-sign-in URL file and the supervisor prints that file's location. Read it in a second test-account Terminal and open the URL yourself in that account's browser; finish credentials/consent manually. Do not share that URL, raw logs/settings or callback material. The new Diagnostic file export contains only safe harness status/events/cards and route counters. Existing raw-log observation exports must not be used after authentication.
 
-Account/token and public JSON/commentary/tier routes are permitted by the proposed gateway; stats/predictions, history/uploads, telemetry and artwork are blocked. The vendor consent scope is companion:full-access even though companion traffic is filtered; browser website traffic is outside that filter. The separate settings-property error can still block overlay target resolution, so successful login/data loading is not proof that the overlay appears. Do not execute this new mode until its concrete signing/network approval and staged-transfer steps are complete.
+Account/token and public JSON/commentary/tier routes are permitted by the approved gateway; stats/predictions, history/uploads, telemetry and artwork are blocked. The vendor consent scope is companion:full-access even though companion traffic is filtered; browser website traffic is outside that filter. The separate settings-property error can still block overlay target resolution, so successful login/data loading is not proof that the overlay appears. Send only the printed sanitized Diagnostic file path after this run; retain a failed/timed-out result for review before another attempt.

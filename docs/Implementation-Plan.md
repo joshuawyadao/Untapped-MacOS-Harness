@@ -373,11 +373,13 @@ The owner approved copy08's outer-only signing and first controlled manual sign-
 - Out: New game signing/launch, automated sign-in/Terms/OS prompts, expanded gateway routes, normal-profile access, private-log exports or a claim of working overlay.
 
 ### Action items
-- [ ] Checkpoint this resolved approval before signing the exact prepared copy08.
-- [ ] Apply the approved outer signature and verify the receipt, native payload pins and original entitlements/Runtime.
-- [ ] Create and inspect companion08.tar with only app/manifest/signing receipt, preserving file modes; stage its checksum, original helpers and controlled_sign_in.sh with byte parity.
-- [ ] Update the controlled-access plan and runbook with staged state, verify repository/shell/archive hygiene, commit and push. Existing126 tests cover unchanged executable behavior; no test changes are needed for signing, transfer staging and evidence-only documentation.
+- [x] Checkpoint this resolved approval before signing the exact prepared copy08 (`4b9b426`).
+- [x] Apply the approved outer signature and verify the receipt, native payload pins and original entitlements/Runtime.
+- [x] Create and inspect companion08.tar with only app/manifest/signing receipt, preserving file modes; stage its checksum, original helpers and controlled_sign_in.sh with byte parity.
+- [x] Update the controlled-access plan and runbook with staged state and verify repository/shell/archive hygiene. Save these results through save-branch. Existing126 tests cover unchanged executable behavior; no test changes are needed for signing, transfer staging and evidence-only documentation.
 - [ ] Have the owner run the bounded login-only probe in sts2test and review only its sanitized Diagnostic file. This step remains pending until the owner executes it.
 
 ### Open questions
 - None. Approval is explicit; the first live probe requires the owner's manual interaction in UID502 and will not be launched from the assistant's UID501 session.
+
+Staging result: copy08 is signed outer-only and verified with original entitlements/Runtime, signed executable5cc4476cf26ea005a0d4d69021dc9b70a6c7cf939fe9a7e348eb402aed8f3383. The333-entry archive d8b847b8291c6a9f2da72246eabd810c3a52f2e8467681e5ff0c38b0212a85db matches all source entry types/modes/content/links, and a fresh exact-mode extraction passes native signature/payload and helper-policy verification. Current17 original harness sources and controlled launcher are staged with byte parity; checksum, shell/Node syntax, documentation links, repository hygiene and whitespace pass. No vendor process or live request ran. Owner-run authentication and the sanitized result remain pending; the prior126-test suite is unchanged.

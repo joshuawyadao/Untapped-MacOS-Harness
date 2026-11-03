@@ -104,7 +104,7 @@ class ControlledTests(unittest.TestCase):
 
     def test_cli_requires_real_auth_event_not_only_startup_or_timeout(self):
         for events, status in (([],1),([{'event':'authenticated'}],0)):
-            result={'events':events,'report':{'startup':'ELECTRON_READY','startup_blocker_count':0,'launch':{}}}
+            result={'events':events,'preflight':{'passed':True},'report':{'startup':'ELECTRON_READY','startup_blocker_count':0,'launch':{}}}
             with patch.object(controlled,'run',return_value=result),contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(controlled.main(['/unused','--approve-controlled-access']),status)
 
@@ -176,7 +176,7 @@ class ControlledTests(unittest.TestCase):
             self.assertEqual(report['launch']['exit_code'],-5)
             self.assertTrue(report['launch']['authenticated_event_observed'])
             stop.assert_called_once_with(process)
-            safe={'events':[{'event':'authenticated'}],'report':{'startup':'ELECTRON_READY','launch':{'exit_code':-5}}}
+            safe={'events':[{'event':'authenticated'}],'preflight':{'passed':True},'report':{'startup':'ELECTRON_READY','launch':{'exit_code':-5}}}
             with patch.object(controlled,'run',return_value=safe),contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(controlled.main(['/unused','--approve-controlled-access']),1)
 

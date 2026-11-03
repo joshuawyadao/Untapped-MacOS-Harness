@@ -110,7 +110,7 @@ def prepare(app, destination):
     (destination / "profile").mkdir(mode=0o700)
     report.update({
         "schema": 1, "patched_asar_sha256": sha256(patched_bytes),
-        "controlled_access_version": 1, "reward_scale_capture": True,
+        "controlled_access_version": 1, "controlled_preflight_version": 1, "reward_scale_capture": True,
         "controlled_gateway_sha256": sha256((ROOT / "harness/gateway.py").read_bytes()),
         "controlled_network_sha256": sha256((ROOT / "harness/controlled_network.cjs").read_bytes()),
         "patched_entries": sorted(replacements), "vendor_bundle_seal": "INVALIDATED_BY_RESOURCE_PATCH",

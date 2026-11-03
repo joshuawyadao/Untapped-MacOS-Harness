@@ -1,55 +1,17 @@
 """Check the test account's HTTPS transport using fixed data and safe output."""
 
 import argparse
-import http.client
 import json
 import os
-import socket
 import ssl
 import sys
 import tempfile
-from urllib.error import URLError
 from urllib.parse import urlencode
 
 from . import game_launch, gateway
 
 
-def exception_fields(error):
-    """Classify an exception without copying its message, URL or response."""
-    cause = error
-    for _ in range(3):
-        if isinstance(cause, URLError):
-            cause = cause.reason
-        else:
-            break
-    if isinstance(cause, ssl.SSLCertVerificationError):
-        category = "TLS_CERTIFICATE_ERROR"
-    elif isinstance(cause, ssl.SSLError):
-        category = "TLS_PROTOCOL_ERROR"
-    elif isinstance(cause, socket.gaierror):
-        category = "DNS_ERROR"
-    elif isinstance(cause, TimeoutError):
-        category = "TIMEOUT"
-    elif isinstance(cause, http.client.IncompleteRead):
-        category = "INCOMPLETE_RESPONSE"
-    elif isinstance(cause, ConnectionRefusedError):
-        category = "CONNECTION_REFUSED"
-    elif isinstance(cause, (ConnectionError, http.client.RemoteDisconnected)):
-        category = "CONNECTION_CLOSED"
-    elif isinstance(cause, OSError):
-        category = "OS_ERROR"
-    elif isinstance(cause, AttributeError):
-        category = "RESPONSE_INTERFACE_ERROR"
-    elif isinstance(cause, (TypeError, ValueError)):
-        category = "INTERNAL_SHAPE_ERROR"
-    else:
-        category = "UNKNOWN_TRANSPORT_ERROR"
-    fields = {"transport_error": category}
-    for attribute, field in (("errno", "os_errno"), ("verify_code", "certificate_verify_code")):
-        value = getattr(cause, attribute, None)
-        if type(value) is int and -65536 <= value <= 65536:
-            fields[field] = value
-    return fields
+exception_fields = gateway.exception_fields
 
 
 def runtime_fields():

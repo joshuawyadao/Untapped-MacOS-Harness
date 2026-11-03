@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hmac
+import http.client
 import json
 import re
 import secrets
@@ -12,7 +13,8 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.error import HTTPError
-from urllib.parse import parse_qsl, urlsplit
+from urllib.error import URLError
+from urllib.parse import parse_qsl, urlencode, urlsplit
 from urllib.request import HTTPSHandler, HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 MAX_REQUEST = 32768
@@ -26,6 +28,46 @@ _PUBLIC_JSON = frozenset({
     "localization/encounters.json", "localization/enchantments.json",
 })
 _SAFE_HEADERS = frozenset({"accept", "content-type", "if-none-match", "authorization"})
+_ROUTE_IDS = frozenset({"oauth_token", "accounts_account", "sts2_exchange", "sts2_account",
+                        "sts2_features", "tier_resolve", "public_json", "commentary_events"})
+
+
+def exception_fields(error):
+    """Classify an exception without copying its message, URL or response."""
+    cause = error
+    for _ in range(3):
+        if isinstance(cause, URLError):
+            cause = cause.reason
+        else:
+            break
+    if isinstance(cause, ssl.SSLCertVerificationError):
+        category = "TLS_CERTIFICATE_ERROR"
+    elif isinstance(cause, ssl.SSLError):
+        category = "TLS_PROTOCOL_ERROR"
+    elif isinstance(cause, socket.gaierror):
+        category = "DNS_ERROR"
+    elif isinstance(cause, TimeoutError):
+        category = "TIMEOUT"
+    elif isinstance(cause, http.client.IncompleteRead):
+        category = "INCOMPLETE_RESPONSE"
+    elif isinstance(cause, ConnectionRefusedError):
+        category = "CONNECTION_REFUSED"
+    elif isinstance(cause, (ConnectionError, http.client.RemoteDisconnected)):
+        category = "CONNECTION_CLOSED"
+    elif isinstance(cause, OSError):
+        category = "OS_ERROR"
+    elif isinstance(cause, AttributeError):
+        category = "RESPONSE_INTERFACE_ERROR"
+    elif isinstance(cause, (TypeError, ValueError)):
+        category = "INTERNAL_SHAPE_ERROR"
+    else:
+        category = "UNKNOWN_TRANSPORT_ERROR"
+    fields = {"transport_error": category}
+    for attribute, field in (("errno", "os_errno"), ("verify_code", "certificate_verify_code")):
+        value = getattr(cause, attribute, None)
+        if type(value) is int and -65536 <= value <= 65536:
+            fields[field] = value
+    return fields
 
 
 class Denied(Exception):
@@ -39,6 +81,10 @@ def _unique_object(pairs):
             raise Denied()
         result[key] = value
     return result
+
+
+def _reject_json_constant(_value):
+    raise ValueError()
 
 
 def _text_safe(value):
@@ -212,16 +258,118 @@ class Gateway:
         self._server = None
         self._thread = None
         self.cleanup_complete = True
+        self._failure_details = []
+        self._failure_overflow = 0
 
     @property
     def counts(self):
         with self._lock:
             return dict(self._counts)
 
+    @property
+    def failure_details(self):
+        with self._lock:
+            return [dict(row) for row in self._failure_details]
+
+    @property
+    def failure_overflow(self):
+        with self._lock:
+            return self._failure_overflow
+
     def _count(self, route, status):
         with self._lock:
             key = (route, status)
             self._counts[key] = self._counts.get(key, 0) + 1
+
+    def _record_failure(self, route, stage, started, error):
+        row = {"route": route if route in _ROUTE_IDS else "denied",
+               "stage": stage if stage in ("LOCAL_REQUEST", "UPSTREAM_TRANSPORT",
+                                           "UPSTREAM_RESPONSE", "LOCAL_RESPONSE") else "LOCAL_REQUEST",
+               "elapsed_ms": max(0, min(300000, int((time.monotonic() - started) * 1000))),
+               **exception_fields(error)}
+        with self._lock:
+            if len(self._failure_details) < 32:
+                self._failure_details.append(row)
+            else:
+                self._failure_overflow += 1
+
+    def preflight(self):
+        """Exercise the live loopback gateway with two fixed inert requests."""
+        requests = (
+            {"url": "https://api.accounts.untapped.gg/api/v1/account", "method": "GET", "headers": {}, "body": None},
+            {"url": "https://api.accounts.untapped.gg/o/token", "method": "POST",
+             "headers": {"Content-Type": "application/x-www-form-urlencoded"},
+             "body": urlencode({"client_id": "harness-inert-client", "code": "harness-inert-code",
+                                "code_verifier": "harness-inert-verifier", "grant_type": "authorization_code",
+                                "redirect_uri": "http://localhost:17791/", "scope": "companion:full-access"})},
+        )
+        result = {"passed": False, "results": [], "requests_attempted": 0,
+                  "maximum_requests": 2, "real_credentials_sent": False}
+        if not self._server or not self._thread.is_alive():
+            return result
+        deadline = time.monotonic() + 15
+        port = urlsplit(self.url).port
+        for request in requests:
+            route, _, _, _ = _validate(request)
+            row = {"route": route}
+            result["requests_attempted"] += 1
+            connection = None
+            try:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError()
+                connection = http.client.HTTPConnection("127.0.0.1", port, timeout=remaining)
+                connection.request("POST", "/fetch", body=json.dumps(request).encode("utf-8"),
+                                   headers={"X-Harness-Key": self.key, "Content-Type": "application/json"})
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError()
+                if connection.sock:
+                    connection.sock.settimeout(remaining)
+                response = connection.getresponse()
+                size = 0
+                chunks = []
+                while True:
+                    if response.isclosed() or response.length == 0:
+                        break
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise TimeoutError()
+                    response.fp.raw._sock.settimeout(remaining)
+                    chunk = response.read1(min(8192, 32769 - size))
+                    if not chunk:
+                        break
+                    size += len(chunk)
+                    if size > 32768:
+                        raise ValueError()
+                    chunks.append(chunk)
+                media = (response.getheader("Content-Type") or "").split(";")[0].strip().lower()
+                kind = {"application/json": "JSON", "text/plain": "TEXT", "text/html": "HTML"}.get(media, "OTHER")
+                json_object = False
+                if kind == "JSON":
+                    try:
+                        json_object = isinstance(json.loads(b"".join(chunks).decode("utf-8"),
+                                                            object_pairs_hook=_unique_object,
+                                                            parse_constant=_reject_json_constant), dict)
+                    except (Denied, ValueError, UnicodeDecodeError, RecursionError):
+                        pass
+                row.update(status=response.status, response_kind=kind, body_bytes=size,
+                           json_object=json_object)
+            except Exception as error:
+                row.update(exception_fields(error))
+                result["results"].append(row)
+                break
+            finally:
+                if connection:
+                    connection.close()
+            result["results"].append(row)
+            if row["status"] != 401 or row["response_kind"] != "JSON" or not row["json_object"]:
+                break
+        result["passed"] = len(result["results"]) == 2 and all(
+            row.get("status") == 401 and row.get("response_kind") == "JSON" and row.get("json_object") is True
+            for row in result["results"]
+        )
+        return result
 
     def __enter__(self):
         gateway = self
@@ -295,6 +443,8 @@ class Gateway:
 
             def do_POST(self):
                 route = "denied"
+                stage = "LOCAL_REQUEST"
+                started = time.monotonic()
                 try:
                     if self.client_address[0] != "127.0.0.1" or self.path != "/fetch":
                         raise Denied()
@@ -311,16 +461,20 @@ class Gateway:
                         raise Denied()
                     payload = json.loads(self.rfile.read(int(length)), object_pairs_hook=_unique_object)
                     route, url, headers, body = _validate(payload)
+                    stage = "UPSTREAM_TRANSPORT"
                     status, upstream_headers, data = gateway._transport(payload["method"], url, headers, body)
+                    stage = "UPSTREAM_RESPONSE"
                     if not isinstance(status, int) or not 100 <= status <= 599 or (300 <= status < 400 and status != 304) or not isinstance(data, bytes) or len(data) > MAX_RESPONSE:
                         raise Denied()
                     allowed = {k: v for k, v in upstream_headers.items() if k.lower() in ("content-type", "etag")}
                     gateway._count(route, status)
+                    stage = "LOCAL_RESPONSE"
                     self._send(status, data, allowed)
                 except (Denied, ValueError, UnicodeDecodeError, TypeError):
                     gateway._count("denied", 403)
                     self._send(403, b"denied")
-                except Exception:
+                except Exception as error:
+                    gateway._record_failure(route, stage, started, error)
                     gateway._count("error", 502)
                     self._send(502, b"upstream error")
 

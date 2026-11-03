@@ -363,3 +363,21 @@ Independent boundary review found two concrete follow-ups before final save: fre
 Review follow-up: capture a controlled child exit seen by poll between wait timeouts, so authentication cannot mask a later crash/signal. Added regression preserving exit-5 and nonzero CLI result. Controlled exports now require gateway.cleanup_complete and snapshot route counters only after shutdown/drain. No runtime claim is made if cleanup fails.
 
 Final boundary fixes are implemented: prepared metadata pins gateway/adapter hashes, changed code is refused before activation/staging, gateway handlers drain before final counters and cleanup failure prevents a clean export, and poll-observed child crashes remain nonzero failures. The still-unapproved unsigned copy08 metadata is refreshed to the final helper hashes; no ASAR/native/signature change is involved. Final tests include126 cases.
+
+## Approved copy08 signing and controlled sign-in staging
+
+The owner approved copy08's outer-only signing and first controlled manual sign-in probe: at most300 seconds, ending within45 seconds after genuine authentication. Retain the original five companion entitlements, Hardened Runtime, unchanged outer confinement and reviewed gateway routes. The owner handles Terms, browser sign-in and consent manually in the standard sts2test account.
+
+### Scope
+- In: Sign only the prepared copy08 outer bundle; verify signature, entitlements, pinned payloads and helper hashes; stage a profile-free signed archive and current original harness sources; provide the owner-run login-only command.
+- Out: New game signing/launch, automated sign-in/Terms/OS prompts, expanded gateway routes, normal-profile access, private-log exports or a claim of working overlay.
+
+### Action items
+- [ ] Checkpoint this resolved approval before signing the exact prepared copy08.
+- [ ] Apply the approved outer signature and verify the receipt, native payload pins and original entitlements/Runtime.
+- [ ] Create and inspect companion08.tar with only app/manifest/signing receipt, preserving file modes; stage its checksum, original helpers and controlled_sign_in.sh with byte parity.
+- [ ] Update the controlled-access plan and runbook with staged state, verify repository/shell/archive hygiene, commit and push. Existing126 tests cover unchanged executable behavior; no test changes are needed for signing, transfer staging and evidence-only documentation.
+- [ ] Have the owner run the bounded login-only probe in sts2test and review only its sanitized Diagnostic file. This step remains pending until the owner executes it.
+
+### Open questions
+- None. Approval is explicit; the first live probe requires the owner's manual interaction in UID502 and will not be launched from the assistant's UID501 session.

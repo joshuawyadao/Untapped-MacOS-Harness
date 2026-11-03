@@ -1,6 +1,6 @@
 # Main-account and Steam progress migration
 
-The owner wants to use existing progress in the normal macOS and Steam accounts eventually. Fresh test progress is a development fixture, not the intended permanent setup. Main-account execution is not enabled by this milestone.
+The owner wants existing normal macOS and Steam progress. The main-account launcher is implemented and prepared for review; copied-app signing and live activation remain pending. Fresh test progress is a development fixture, not the permanent setup.
 
 ## Verified starting point
 
@@ -24,16 +24,42 @@ An existing directory is not proof of a valid or current save. A single Steam na
 
 The pinned game's custom Godot configuration identifies `SlayTheSpire2` as its user-data directory name. The native Mac root is under the account's Library/Application Support, outside the application bundle. Copying an app therefore does not isolate its data. Static UserDataPathProvider methods2125/2128/2130 build `user://{steam|default}/{localPlayerId}/profileN/...`, or `modded/profileN/...`. Namespace IDs remain private. The game has separate Steam/default platform namespaces and profile directories; the earlier `--force-steam=off` test path must not be treated as a route to existing Steam progress.
 
-## Proposed migration phases
+## Implemented main-account launcher
 
-| Phase | Work and exit condition |
+The launcher is implemented and its unsigned copied apps are prepared under `~/Library/Application Support/UntappedSTS2Harness`. Activation is pending owner review. The Steam-installed app is unchanged; no real progress backup or live game/companion run has occurred during implementation.
+
+| Command | Behavior |
 | --- | --- |
-| Readiness, this milestone | Confirm the pinned game and presence of local/Steam data using metadata only. Record unresolved/redirected/inaccessible/multiple namespaces without opening progress. |
-| Recoverable progress plan | Define the exact local data set, confirm Steam Cloud is up to date with the owner, quit relevant writers and prepare a private verified backup before a future live write. Do not copy test progress over normal progress or automatically restore Cloud state. |
-| Main-account launcher proposal | Pin separate copied game/companion apps and exact current-user PID. Specify any debugger entitlement/signing, narrowly allowed save writes, Steam initialization/Cloud participation, profile selection, session limit, normal exit and cleanup. Keep the Steam-installed game unchanged. Prepare the exact proposal before requesting activation approval. |
-| Persistent companion preferences | Retain normal Tiers/creator preferences in a dedicated private harness profile. Decide authentication storage separately; current memory-only credentials do not silently become disk or Keychain credentials. Keep the reviewed public-data gateway unchanged. |
-| Bounded live compatibility | Owner confirms the expected normal profile/progression before play. Stop on an unexpected Steam-installed replacement process, profile migration, Cloud conflict, changed build or OS prompt. Confirm actual tiers, rewards, shops/upgrades, resolution changes and normal save/exit behavior incrementally. |
-| Longer normal use | Expand only after live compatibility and save/Cloud behavior pass. Prefer owner-controlled normal exit; do not use the diagnostic forced cutoff as a normal save strategy. Preserve version pins and rollback instructions. |
+| `scripts/main_account.sh proposal` | Read the exact prepared signing/access proposal. No app launch or signing. |
+| `scripts/main_account.sh activate --approve-main-copy-signing` | After explicit approval, ad-hoc sign only the outer copied game and companion. The game copy gains get-task-allow; the companion retains its five original entitlements. Hardened Runtime and nested payloads remain. |
+| `scripts/main_account.sh start --approve-main-account-launch --confirm-cloud-synced --confirm-steam-account` | After activation and the owner's confirmations, require Steam/games closed, make/verify a private backup, prompt the owner to open intended Steam, revalidate source/progress, then launch the copied game and confined companion. |
+
+Commands run from the repository in the normal macOS account. The shell wrapper has no built-in approval flags. The flags express deliberate owner opt-in, not an authorization token; signing receipts record local operations rather than consent.
+
+### Proposed live sequence, after activation approval
+
+1. In the normal account, let Steam finish synchronizing the normal game's progress. Quit the game normally, wait for Cloud to be up to date, then quit Steam. Other accounts must have no Steam/game instance running.
+2. Run the reviewed start command above. It refuses changed sources, missing signing receipts or conflicting processes before progress is opened.
+3. The launcher copies the entire fixed Godot data root into a new private backup, verifies every payload hash and checks the source stayed stable. It then prompts you to open Steam in the intended account. Wait until Steam/Cloud is ready, then press Return. If opening Steam updates the game or changes progress, the launcher refuses the stale preparation/backup; it does not restore automatically.
+4. The copied game starts directly with `--force-steam=on --nomods --windowed`, genuine AppID2868840, normal HOME and a private working-directory AppID file. **The game uses normal current-user/Steam permissions, without the test-game sandbox.** It can read/write your normal progress, and the Steam client/game can synchronize Cloud. That access is part of the pending activation proposal; the companion gateway does not confine it.
+5. Positive Steam initialization and enabled-account/app Cloud-store log markers are required before starting the companion. They do not identify the Steam account or prove freshness. The confined reader additionally compares the exact private expected Steam ID and current profile. Until that positive comparison, the STS2 overlay stays hidden even if native reward data exists; null or mismatched settings invalidate the gate. A mismatch immediately hides the overlay and stops the companion.
+6. Sign into Untapped manually through the private URL-file instruction. The first main run requires your own Terms choice; existing test-account acceptance/settings are not imported. Choose Tiers and an appropriate creator list. These validated choices can persist; authentication remains memory-only and is repeated next session.
+7. Confirm the expected normal profile/progression in the game before playing. First-run Steam compatibility, actual tiers and Cloud save/exit remain live checks, not certified by source inspection. Stop and review any unexpected profile, migration, Cloud conflict or OS prompt.
+8. Quit the game normally when done. The companion ends on game exit, owner companion Quit, target conflict, context mismatch, Ctrl+C or its session limit. **No launcher path kills the game or restores progress automatically.** If the companion ends first, the launcher explicitly says the game is still running and must be quit normally.
+
+### Duration and persistence
+
+The main companion defaults to4 hours, configurable with `--minutes` up to8 hours. Authentication does not shorten the session to45 seconds. The game has no forced timeout. Existing test-account commands retain their original limits and guards.
+
+Each companion run uses a new short private tmp copy to retain the known-working Electron helper layout. Only validated STS2 booleans/badge mode, actual prior manual `acceptedTOS`, and minimal UUID/enabled/color tier selections are seeded/harvested. Account lists, tokens, Chromium state, unrelated settings, logs and cached account data are excluded. Native credentials remain memory-only; normal Keychain/profile access stays denied. Fresh public tier metadata is fetched through the unchanged gateway.
+
+Owned process-group cleanup includes helpers after the main companion exits. Successful private attempts are removed after preference harvest; failures retain private evidence and produce a fixed-stage `sts2main-controlled.*.json` diagnostic after gateway drain. Shared output contains no Steam IDs, save paths/fingerprints, account values or raw exceptions. Cleanup failures are reported as failures. Native termination is not called a verified graceful Quit.
+
+### Backup and rollback boundary
+
+Backups are local owned0700 directories with0600 payload/receipt files. Copying uses held no-follow descriptors and refuses links, hardlinks, special files, wrong owners, overlaps, changes during copy and bounded size/depth/count violations. Current limits are2GiB,20,000 files,40,000 entries and depth16. The source is rechecked against the verified receipt after Steam opens and before launch. Incomplete backups have no success receipt. Private receipt hashes/relative names never enter the shared summary.
+
+Backups are retained, with no automatic pruning or restore command. A local backup is not a Cloud rollback transaction; a later restore must consider remote state and be reviewed separately. Do not copy test-account progress over the real profile.
 
 ## Steam and Cloud contract
 
@@ -43,12 +69,16 @@ Static NGame startup invokes account/profile migration and cloud sync before pro
 
 The future plan must distinguish native game save writes from companion access and Steam Cloud traffic. The companion's gateway is not a firewall for the Steam client or game. Its stats/prediction/upload restrictions remain unchanged, and no claim of adaptive advice or complete Untapped feature support follows from displaying tier badges.
 
-## Current boundary
+## Prepared artifacts and activation boundary
 
-No main-account game/companion process, additional signing, save backup/copy/write/restore, Steam/Cloud setting change, credential persistence or broader request scope is activated here. Existing test-account guards stay intact. The next executable milestone is an exact main-account launch and progress-protection proposal, informed by the readiness result and static Steam/save contracts.
+The main workspace contains a pristine copied game, an unsigned patched companion, exact entitlements/commands in `main-proposal.json`, a private Steam/profile binding, and empty backups/runs/preferences directories. Neither copied app has been re-signed or executed. The new companion ASAR SHA-256 is `2daf620993d64105d37d45ce2ad3fca38bdd3ba9d13d12614438bf7408af455c`.
+
+All440 game-tree entries match the pinned installed source (`4892eb6c03ae851fde4f075c5ca75d9db827b84b2c651bcc9b5e62cd41add85e`). Of15099 companion archive entries exactly five packed JS files change; all329 other app entries match, including native binaries, original executable, Info.plist, links and modes. All five changed JS files syntax-check. The resource patch invalidates the companion seal until the proposed outer-only signing; it is not a signed release. Gateway hash `79c16a7e9cacba58dfaa23b96b0446ddf9496101dd7da00a8e00c675898c85e5` and adapter hash `91018dd8955e51a5f4edb9f517a3262d172d4e4b30c20f6eb664b6a137870c02` are unchanged.
+
+The owner must review/approve copied-app signing and the first main-account activation. The game copy's debugger entitlement broadens process access relative to the existing isolated test approval. The live proposal also covers normal game/Steam progress writes, Cloud behavior, verified local backup,4-hour default companion operation and normal owner-controlled game exit. No SIP/Gatekeeper, quarantine, Steam launch options or Cloud setting is changed. No main-account authentication, backup, game, companion or remote request has run during preparation.
 
 ## Current readiness result
 
 The normal-account command completed successfully on November3,2026: release/assembly `MATCH`; data root `DIRECTORY`; Steam namespace `SINGLE` with one user directory and one normal profile directory, no modded profiles; local namespace present with one user directory and no profile directories observed. No scan limit or incomplete flag was reached. These counts reveal no account/profile identifiers and do not establish save validity, active-account identity or Cloud freshness. Main launch remains disabled and Cloud state unverified. No save contents, Steam config, credentials or account logs were opened; no game/companion/network/signing/save operation ran.
 
-Eleven focused synthetic tests cover privacy/content-open traps, missing/inaccessible/redirected/wrong-owner/ambiguous inputs, vendor FIFO/link rejection, total/per-directory bounds, generic CLI errors and no network/process/mutation calls. The first review found descriptor-reopen and FIFO risks; no-follow descriptor walks and nonblocking regular-file validation now address both. A subsequent independent read-only review found no additional blocking issue. The main-account launcher, exact signing/save-write/Cloud proposal and real tier values are subsequent implementation work.
+Eleven focused synthetic tests cover privacy/content-open traps, missing/inaccessible/redirected/wrong-owner/ambiguous inputs, vendor FIFO/link rejection, total/per-directory bounds, generic CLI errors and no network/process/mutation calls. The first review found descriptor-reopen and FIFO risks; no-follow descriptor walks and nonblocking regular-file validation now address both. A subsequent independent read-only review found no additional blocking issue. The launcher and concrete signing/access proposal are now prepared. Live Steam/account/profile compatibility, actual tier values and normal save/Cloud behavior remain unverified.

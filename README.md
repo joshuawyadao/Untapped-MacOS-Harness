@@ -2,7 +2,7 @@
 
 An unofficial, experimental harness for investigating whether the **existing Untapped.gg companion** can work with native macOS Slay the Spire 2.
 
-**Status: copy09 visibly renders reward badges on native macOS in the isolated test account.** The latest report reads Collision Course, Astral Pulse and Celestial Might in photographed order, confirms settings recovery and records the overlay show call. Labels appear as `?-Tier`, so actual ratings still need verification. Full geometry, longer sessions and normal Steam/Cloud progress are not established. The owner has selected existing main-account/Steam progress as the eventual target; the [migration plan](docs/Main-Account-Migration.md) starts with a read-only readiness check. The installed game and normal progress remain unchanged.
+**Status: copy09 visibly renders reward badges on native macOS in the isolated test account.** The latest report reads Collision Course, Astral Pulse and Celestial Might in photographed order, confirms settings recovery and records the overlay show call. Labels appear as `?-Tier`, so actual ratings still need verification. Full geometry, longer sessions and normal Steam/Cloud progress are not established. The owner has selected existing main-account/Steam progress as the eventual target; the [main-account launcher and activation proposal](docs/Main-Account-Migration.md) are now implemented and prepared, with live approval pending. The installed game and normal progress remain unchanged.
 
 ## What this repository provides
 
@@ -90,4 +90,6 @@ The [controlled-access review](docs/Controlled-Access-Plan.md) records exact rou
 
 ## Main-account and existing Steam progress
 
-The target is the owner's existing Steam progress, not permanent fresh test data. Run `python3 -m harness.main_account inspect` from this repository in the normal account for a fixed-field, metadata-only readiness report. It opens no save/Steam/account contents, launches no app and changes no data. Main-account execution remains disabled. The [migration plan](docs/Main-Account-Migration.md) covers separate copied apps, explicit save/Cloud behavior, future private backups, persistent preferences and staged longer use; the existing isolated launch commands are still test-account-only.
+The main launcher is implemented for the owner's existing Steam progress. `scripts/main_account.sh proposal` displays the prepared copied-app signing/access scope; signing and live use remain pending explicit activation. It verifies private progress backups before game start, rechecks sources after Steam opens, binds the copied game/current-user PID and expected native Steam account/profile, persists only validated overlay preferences, and permits4-hour companion sessions without a45-second post-auth cutoff. It never kills the game as a timeout/save strategy. The copied game uses normal current-user/Steam permissions; only the companion retains the strict outer sandbox/gateway. Authentication stays memory-only. See the [review and exact owner sequence](docs/Main-Account-Migration.md). Existing isolated commands remain test-account-only.
+
+The read-only `python3 -m harness.main_account inspect` still opens no save contents and enables no launch. Actual main-account Steam initialization, ratings, broader overlays and save/Cloud behavior require the first approved live check.

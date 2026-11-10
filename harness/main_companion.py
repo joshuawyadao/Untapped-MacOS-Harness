@@ -108,9 +108,10 @@ def supervise(process, attempt, seconds, should_stop=None, *, clock=time.monoton
                 if reason not in STOP_REASONS:
                     raise HarnessError("Unexpected game-stop result")
                 return reason, seen
-        if process.poll() is not None:
+        exit_code = process.poll()
+        if exit_code is not None:
             seen.update(_events(attempt))
-            return "COMPANION_EXITED", seen
+            return ("COMPANION_EXITED" if exit_code == 0 else "COMPANION_CRASHED"), seen
         remaining = deadline - clock()
         if remaining <= 0:
             return "SESSION_LIMIT_REACHED", seen
@@ -229,6 +230,7 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
     stage = "gateway"
     seen = set()
     terminated = False
+    companion_exit_code = None
     group_cleanup_complete = True
     saved = False
     removed = False
@@ -268,7 +270,11 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
                 if process is not None:
                     # Helpers may outlive an exited main process. Always reap the owned group.
                     try:
-                        terminated = process.poll() is None
+                        companion_exit_code = process.poll()
+                        terminated = companion_exit_code is None
+                        if companion_exit_code not in (None, 0) and failure_stage == "NONE":
+                            reason = "COMPANION_CRASHED"
+                            failure_stage = "PROCESS_EXIT"
                         cli.stop_probe(process)
                     except (Exception, KeyboardInterrupt):
                         group_cleanup_complete = False
@@ -316,6 +322,7 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
     safe = {"schema": 1, "mode": "MAIN_ACCOUNT_CONTROLLED_COMPANION",
             "reason": reason, "failure_stage": failure_stage, "preflight": preflight,
             "companion_started": process is not None, "companion_terminated": terminated,
+            "companion_exit_code": companion_exit_code,
             "companion_group_cleanup_complete": group_cleanup_complete,
             "authenticated": "authenticated" in seen,
             "steam_account_verified": "main-steam-verified" in seen and "main-steam-mismatch" not in seen,

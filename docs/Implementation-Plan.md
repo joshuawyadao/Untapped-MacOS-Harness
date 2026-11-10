@@ -17,8 +17,8 @@ Make main-account CLI exit status reflect safety-stop failures found in PR revie
 - [x] Provision the required macOS-style `/private/tmp` test root on the ephemeral Ubuntu runner, preserving namespace validation in production and tests.
 - [x] Record CI fixture requirements in CONTRIBUTING.md and validation in Verification.md; run affected/full tests and hygiene checks, commit and push.
 - [x] Confirm Ubuntu CI passes after fixture corrections; acknowledge the matching Codex finding after push.
-- [ ] Preserve the companion exit code before owned-group cleanup and report nonzero or signal exits as PROCESS_EXIT failures, retaining private evidence.
-- [ ] Add synthetic zero/nonzero/signal exit regressions and a CLI crash outcome case; update migration/verification docs, validate and save.
+- [x] Preserve the companion exit code before owned-group cleanup and report nonzero or signal exits as PROCESS_EXIT failures, retaining private evidence.
+- [x] Add synthetic zero/nonzero/signal exit regressions and a CLI crash outcome case; update migration/verification docs, validate and save.
 - [ ] Recheck Codex review, CI and mergeability; leave protected review-thread resolution and final merge to the owner unless explicitly authorized.
 
 ## Open questions

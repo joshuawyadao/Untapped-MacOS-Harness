@@ -207,6 +207,21 @@ class MainCompanionTests(unittest.TestCase):
         self.assertFalse(report["companion_terminated"])
         self.assertFalse(root.exists())
 
+    def test_process_exit_status_distinguishes_quit_from_crash(self):
+        for code in (0, 1, -11):
+            with self.subTest(exit_code=code), patch.object(FakeProcess, "poll", return_value=code):
+                report, _, _, terminate, diagnostic, root = self._run(
+                    FakeGateway(), stop=None, events={"authenticated", "main-steam-verified"})
+                self.assertEqual(report["companion_exit_code"], code)
+                self.assertEqual(report["reason"], "COMPANION_EXITED" if code == 0 else "COMPANION_CRASHED")
+                self.assertEqual(report["failure_stage"], "NONE" if code == 0 else "PROCESS_EXIT")
+                self.assertEqual(root.exists(), code != 0)
+                self.assertEqual(report["private_attempt_retained"], code != 0)
+                self.assertTrue(report["companion_group_cleanup_complete"])
+                self.assertFalse(report["companion_terminated"])
+                terminate.assert_called_once()
+                diagnostic.assert_called_once()
+
     def test_bad_stop_reason_fails_closed(self):
         with patch.object(companion, "_events", return_value=set()):
             with self.assertRaises(HarnessError):

@@ -182,7 +182,7 @@ class MainLauncherTests(unittest.TestCase):
     def test_cli_start_only_accepts_normal_stop_reasons(self):
         args = ["start", "--approve-main-account-launch", "--confirm-cloud-synced", "--confirm-steam-account"]
         outcomes = {"GAME_EXIT": 0, "COMPANION_EXITED": 0, "SESSION_LIMIT_REACHED": 0,
-                    "TARGET_CONFLICT": 1, "STEAM_ACCOUNT_MISMATCH": 1,
+                    "TARGET_CONFLICT": 1, "STEAM_ACCOUNT_MISMATCH": 1, "COMPANION_CRASHED": 1,
                     "UNKNOWN": 1, None: 1}
         for reason, expected in outcomes.items():
             with self.subTest(reason=reason):

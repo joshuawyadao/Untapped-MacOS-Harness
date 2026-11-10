@@ -364,7 +364,10 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
                 try:
                     current = _target(executable, process.pid)
                     if current is None:
-                        return "GAME_EXIT"
+                        exit_code = process.poll()
+                        if exit_code is None:
+                            return "TARGET_CONFLICT"
+                        return "GAME_EXIT" if exit_code == 0 else "GAME_CRASHED"
                     if current != pid:
                         return "TARGET_CONFLICT"
                 except (HarnessError, OSError):
@@ -374,10 +377,12 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
             report = main_companion.run(companion_session, _private(root / "preferences"),
                        target_pid=pid, target_game=executable, expected_steam_id=binding["steam_id"],
                        expected_profile=binding["profile"], seconds=seconds, should_stop=stop_reason)
+        game_exit_code = process.poll()
         result = {"mode": "MAIN_ACCOUNT_STEAM_PROGRESS", "backup": backup_summary,
                   "steam_initialization_observed": True, "cloud_store_enabled_logged": True,
                   "cloud_freshness": "OWNER_CONFIRMED_NOT_INDEPENDENTLY_VERIFIED",
-                  "companion": report, "game_left_running": process.poll() is None,
+                  "companion": report, "game_left_running": game_exit_code is None,
+                  "game_exit_code": game_exit_code,
                   "installed_game_modified": False, "save_restore_performed": False}
         _write(attempt / "summary.json", result)
         return result
@@ -424,6 +429,7 @@ def main(argv=None):
         if args.command == "start":
             companion = result.get("companion", {})
             healthy = (companion.get("authenticated") is True
+                       and result.get("game_exit_code") in (None, 0)
                        and companion.get("steam_account_verified") is True
                        and companion.get("reason") in ("GAME_EXIT", "COMPANION_EXITED", "SESSION_LIMIT_REACHED")
                        and companion.get("failure_stage") == "NONE"

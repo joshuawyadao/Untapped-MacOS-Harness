@@ -59,6 +59,8 @@ The launcher returns success only after authentication, Steam-account verificati
 
 A companion exit with a nonzero status or signal is reported as `COMPANION_CRASHED` at `PROCESS_EXIT` and retains private attempt evidence. The diagnostic includes `companion_exit_code` observed before supervisor cleanup (`null` if still running then); a supervisor-requested termination is not classified as a spontaneous crash. Owned helper-group cleanup still runs for exited companions.
 
+The launcher summary also records `game_exit_code` (`null` while its game process is still running). A missing target with a known nonzero or signal exit is `GAME_CRASHED` at `GAME_PROCESS_EXIT`, retaining private companion evidence; disappearance without a known exit status is a target conflict. A nonzero game exit always makes the CLI fail, including when it is first observed after companion shutdown. Normal exit0 remains distinct from a crash. The launcher never terminates the game or restores progress to handle these failures.
+
 ### Backup and rollback boundary
 
 Backups are local owned0700 directories with0600 payload/receipt files. Copying uses held no-follow descriptors and refuses links, hardlinks, special files, wrong owners, overlaps, changes during copy and bounded size/depth/count violations. Current limits are2GiB,20,000 files,40,000 entries and depth16. The source is rechecked against the verified receipt after Steam opens and before launch. Incomplete backups have no success receipt. Private receipt hashes/relative names never enter the shared summary.

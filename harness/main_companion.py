@@ -19,7 +19,7 @@ from .gateway import Gateway
 
 MAX_SECONDS = 8 * 3600
 EVENT_NAMES = controlled.EVENTS | {"main-steam-verified", "main-steam-mismatch"}
-STOP_REASONS = {"GAME_EXIT", "TARGET_CONFLICT"}
+STOP_REASONS = {"GAME_EXIT", "GAME_CRASHED", "TARGET_CONFLICT"}
 
 
 def _private_directory(path):
@@ -258,6 +258,8 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
                     stage = "supervise"
                     reason, seen = supervise(process, root, seconds - (time.monotonic() - started),
                                              should_stop)
+                    if reason == "GAME_CRASHED":
+                        failure_stage = "GAME_PROCESS_EXIT"
                 elif preflight["passed"]:
                     reason = "SESSION_LIMIT_REACHED"
             except KeyboardInterrupt:

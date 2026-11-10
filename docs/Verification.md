@@ -435,3 +435,9 @@ Ubuntu CI initially reported7 failures and17 errors: the game fixture's hardcode
 ## Codex PR review: companion crash classification
 
 Codex reported two actionable findings: Ubuntu fixture portability (already corrected in cb7e29b and verified by passing CI), and a nonzero/signal companion exit incorrectly treated as a normal quit after authentication. The supervisor now distinguishes `COMPANION_CRASHED`; run diagnostics preserve the pre-cleanup exit code and mark `PROCESS_EXIT` failure while retaining private evidence. Cleanup still reaps the owned companion group, and the launcher returns nonzero. A still-running process stopped by the supervisor is not misclassified as a spontaneous crash. Synthetic tests cover normal0, failure1 and signal-11 outcomes and launcher rejection. The regression failed before implementation; all239 local tests, repository checks and whitespace checks now pass. A focused independent review found no further actionable issues. No live companion/game or progress operation ran.
+
+## Follow-up Codex review: game crash classification
+
+Marking PR2 ready triggered an additional Codex review of71afd93. It found that a copied-game crash could still look like normal game exit. The launcher now records `game_exit_code`, classifies a disappeared target with nonzero/signal status as `GAME_CRASHED`, and treats disappearance without a confirmed exit as `TARGET_CONFLICT`. Companion supervision accepts the crash reason, retains private evidence and completes owned-group cleanup. The CLI also rejects a nonzero game exit first observed after a normal companion stop. No game termination or save restore was introduced.
+
+Synthetic regressions failed before implementation and now cover exit0, exit1, signal-11, unknown status, retained evidence, and late crash reporting. All242 local tests pass, including53 focused main-account cases; repository/Markdown and whitespace checks pass. No live app, game, save or Cloud operation ran.

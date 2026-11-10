@@ -222,6 +222,17 @@ class MainCompanionTests(unittest.TestCase):
                 terminate.assert_called_once()
                 diagnostic.assert_called_once()
 
+    def test_game_crash_retains_evidence_and_cleans_only_the_companion(self):
+        report, _, _, terminate, diagnostic, root = self._run(
+            FakeGateway(), stop="GAME_CRASHED", events={"authenticated", "main-steam-verified"})
+        self.assertEqual(report["reason"], "GAME_CRASHED")
+        self.assertEqual(report["failure_stage"], "GAME_PROCESS_EXIT")
+        self.assertTrue(report["private_attempt_retained"])
+        self.assertTrue(root.exists())
+        self.assertTrue(report["companion_group_cleanup_complete"])
+        terminate.assert_called_once()
+        diagnostic.assert_called_once()
+
     def test_bad_stop_reason_fails_closed(self):
         with patch.object(companion, "_events", return_value=set()):
             with self.assertRaises(HarnessError):

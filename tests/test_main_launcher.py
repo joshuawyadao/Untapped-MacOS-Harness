@@ -196,6 +196,37 @@ class MainLauncherTests(unittest.TestCase):
                      contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(launcher.main(args), expected)
 
+    def test_game_disappearance_preserves_exit_status_and_rejects_crashes(self):
+        for exit_code, reason in ((0, "GAME_EXIT"), (1, "GAME_CRASHED"),
+                                  (-11, "GAME_CRASHED"), (None, "TARGET_CONFLICT")):
+            with self.subTest(exit_code=exit_code):
+                _, process, _, _, companion = self.patches()
+                process.poll.return_value = exit_code
+                def finish(*args, **kwargs):
+                    return {"reason": kwargs["should_stop"](), "authenticated": True,
+                            "steam_account_verified": True, "failure_stage": "NONE",
+                            "gateway_cleanup_complete": True, "companion_group_cleanup_complete": True}
+                companion.side_effect = finish
+                with patch.object(launcher, "_target", return_value=None), contextlib.redirect_stdout(io.StringIO()):
+                    result = self.start()
+                self.assertEqual(result["game_exit_code"], exit_code)
+                self.assertEqual(result["companion"]["reason"], reason)
+                self.assertEqual(result["game_left_running"], exit_code is None)
+                with patch.object(launcher.sys.stdin, "isatty", return_value=True), \
+                     patch.object(launcher, "start", return_value=result), contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(launcher.main(["start"]), 0 if exit_code == 0 else 1)
+                process.kill.assert_not_called()
+                process.terminate.assert_not_called()
+
+    def test_cli_rejects_game_crash_observed_after_normal_companion_stop(self):
+        result = {"game_exit_code": -11, "companion": {
+            "reason": "COMPANION_EXITED", "authenticated": True, "steam_account_verified": True,
+            "failure_stage": "NONE", "gateway_cleanup_complete": True,
+            "companion_group_cleanup_complete": True}}
+        with patch.object(launcher.sys.stdin, "isatty", return_value=True), \
+             patch.object(launcher, "start", return_value=result), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(launcher.main(["start"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

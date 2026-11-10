@@ -20,9 +20,9 @@ Make main-account CLI exit status reflect safety-stop failures found in PR revie
 - [x] Preserve the companion exit code before owned-group cleanup and report nonzero or signal exits as PROCESS_EXIT failures, retaining private evidence.
 - [x] Add synthetic zero/nonzero/signal exit regressions and a CLI crash outcome case; update migration/verification docs, validate and save.
 - [x] Resolve the two addressed threads and mark the PR ready with explicit owner authorization; preserve the unmerged PR.
-- [ ] Preserve the copied game's observed exit code and distinguish normal exit, abnormal exit and disappearance without a known exit status.
-- [ ] Propagate GAME_CRASHED through companion supervision, retain failure evidence, and reject nonzero game exits at the CLI even if detected after companion shutdown.
-- [ ] Add synthetic game exit/CLI regressions, update Main-Account-Migration.md and Verification.md, run focused/full checks, commit and push.
+- [x] Preserve the copied game's observed exit code and distinguish normal exit, abnormal exit and disappearance without a known exit status.
+- [x] Propagate GAME_CRASHED through companion supervision, retain failure evidence, and reject nonzero game exits at the CLI even if detected after companion shutdown.
+- [x] Add synthetic game exit/CLI regressions, update Main-Account-Migration.md and Verification.md, run focused/full checks, commit and push.
 - [ ] Recheck the completed automatic review, CI and mergeability; resolve addressed feedback and leave the final merge to the owner.
 
 ## Open questions

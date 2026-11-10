@@ -1,21 +1,18 @@
 # Plan
 
-Make all default tier lists load reliably by bounding the companion's startup request queue and retrying transient public tier-list failures without expanding network access.
+Make main-account CLI exit status reflect safety-stop failures found in PR review, using explicit successful stop reasons and synthetic regressions.
 
 ## Scope
-- In: Shared bounded client queue, finite retries for reviewed public tier GETs, regression coverage, explicitly recorded adapter hash migration for the installed main-account copies, and companion-only rollout.
-- Out: New routes, account/token retries, fabricated tier metadata, signing changes, game restarts, save or Steam Cloud changes.
+- In: Launcher outcome classification, CLI regression tests, migration/verification documentation, and Brooks review history.
+- Out: Live launches, installed companion changes, process termination changes, saves, Cloud operations, or broader refactoring. The previous tier-list queue milestone is complete and recorded in Verification.md.
 
 ## Action items
-- [x] Trace the six reset downloads to the gateway's eight-handler cap and reproduce the ninth-request failure with a fake upstream.
-- [x] Checkpoint this plan before implementation.
-- [x] Add a shared bounded FIFO queue below the eight-handler cap; consume bounded response bodies before releasing slots; retry only transient public tier GET failures with finite backoff.
-- [x] Cover startup bursts, body completion, overflow, retries/exhaustion, permanent errors and non-idempotent requests using synthetic Node fixtures.
-- [x] Preserve pinned-policy checks and original approvals; record and verify the exact old/new adapter hashes when updating the two installed manifests, leaving signed payloads and gateway unchanged.
-- [x] Run focused and full tests, syntax/repository checks, update Controlled-Access-Plan, Main-Account-Migration and Verification, then commit and push.
-- [x] Reopen only the supervised companion when the verified game is still present, or provide the existing launcher command; require owner sign-in and report live verification separately.
+- [x] Review main_launcher.py, main_companion.py, tests/test_main_launcher.py, Main-Account-Migration.md and Verification.md.
+- [ ] Checkpoint this plan before implementation.
+- [ ] Require a known successful stop reason in the CLI alongside authentication, account verification and cleanup.
+- [ ] Cover target conflict, mismatch, unknown/missing reasons, and supported successful stops using synthetic CLI results.
+- [ ] Document exit-status semantics and review evidence; record the sampled Brooks review.
+- [ ] Run focused and full tests, repository/whitespace/syntax checks, commit and push; recheck Codex review, CI and mergeability.
 
 ## Open questions
-- None. Queueing and retries remain within the already approved public tier-list access.
-
-Result:237 tests pass. The verified companion alone was reopened beside the retained game; all12 genuine tier-list metadata entries and nonempty item caches are present, with zero pending lists in every character and Colorless. Owner sign-in is confirmed; live authentication, exact Steam/profile verification, reader connection and overlay-ready events are present.
+- None. Safety-stop failures must return nonzero; normal game/companion exit and the session limit retain existing successful behavior when all other checks pass.

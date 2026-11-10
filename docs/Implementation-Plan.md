@@ -1,19 +1,19 @@
 # Plan
 
-Fix the STS2 settings-page crash caused by incomplete tier-list metadata, preserving offline UI assets and all-character selections.
+Make all default tier lists load reliably by bounding the companion's startup request queue and retrying transient public tier-list failures without expanding network access.
 
 ## Scope
-- In: Reproduce the actual bundled tier comparator exception; supply a truthful temporary display name in fresh profile entries; regression tests using the native comparator boundary and synthetic entries; preserve minimal persisted preferences, docs and branch save.
-- Out: Altering the live game or Steam progress, expanding API/network permissions, inventing ratings, changing selected authors or automatically signing in.
+- In: Shared bounded client queue, finite retries for reviewed public tier GETs, regression coverage, explicitly recorded adapter hash migration for the installed main-account copies, and companion-only rollout.
+- Out: New routes, account/token retries, fabricated tier metadata, signing changes, game restarts, save or Steam Cloud changes.
 
 ## Action items
-- [x] Confirm the live sanitized TypeError and trace the native comparator and asynchronous metadata-refresh behavior.
-- [x] Checkpoint the plan and add a failing regression for incomplete tier-list sorting/rendering.
-- [x] Give fresh-profile tier selections a temporary loading name without adding ratings, author, keyCards or gameVersion; retain native metadata refresh and strip the placeholder on preference harvest.
-- [x] Verify actual bundled renderer execution against incomplete fixtures, run focused/full tests and unchanged signed-payload checks, and apply the fix on the next companion session.
-- [x] Update verification/migration docs with the regression and limits, save/push, and give exact restart instructions while leaving the active game owner-controlled.
+- [x] Trace the six reset downloads to the gateway's eight-handler cap and reproduce the ninth-request failure with a fake upstream.
+- [ ] Checkpoint this plan before implementation.
+- [ ] Add a shared bounded FIFO queue below the eight-handler cap; consume bounded response bodies before releasing slots; retry only transient public tier GET failures with finite backoff.
+- [ ] Cover startup bursts, body completion, overflow, retries/exhaustion, permanent errors and non-idempotent requests using synthetic Node fixtures.
+- [ ] Preserve pinned-policy checks and original approvals; record and verify the exact old/new adapter hashes when updating the two installed manifests, leaving signed payloads and gateway unchanged.
+- [ ] Run focused and full tests, syntax/repository checks, update Controlled-Access-Plan, Main-Account-Migration and Verification, then commit and push.
+- [ ] Reopen only the supervised companion when the verified game is still present, or provide the existing launcher command; require owner sign-in and report live verification separately.
 
 ## Open questions
-- None. This is a regression fix within the authorized companion UI repair and signing scope.
-
-Result: the exact native comparator reproduces the pre-fix TypeError and passes on fixed synthetic seed output. Temporary display names are fresh-profile-only and preserve genuine refresh; signed assets remain unchanged. Full-suite/save results are recorded in Verification.md. The supervised companion is reopened beside the retained game; manual owner sign-in/settings visual confirmation remains.
+- None. Queueing and retries remain within the already approved public tier-list access.

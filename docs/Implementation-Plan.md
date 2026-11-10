@@ -16,7 +16,10 @@ Make main-account CLI exit status reflect safety-stop failures found in PR revie
 - [x] Correct the game fixture UID and connection-refused errno to match the host without weakening expected behavior.
 - [x] Provision the required macOS-style `/private/tmp` test root on the ephemeral Ubuntu runner, preserving namespace validation in production and tests.
 - [x] Record CI fixture requirements in CONTRIBUTING.md and validation in Verification.md; run affected/full tests and hygiene checks, commit and push.
-- [ ] Recheck Codex review, CI and mergeability.
+- [x] Confirm Ubuntu CI passes after fixture corrections; acknowledge the matching Codex finding after push.
+- [ ] Preserve the companion exit code before owned-group cleanup and report nonzero or signal exits as PROCESS_EXIT failures, retaining private evidence.
+- [ ] Add synthetic zero/nonzero/signal exit regressions and a CLI crash outcome case; update migration/verification docs, validate and save.
+- [ ] Recheck Codex review, CI and mergeability; leave protected review-thread resolution and final merge to the owner unless explicitly authorized.
 
 ## Open questions
 - None. Safety-stop failures must return nonzero; normal game/companion exit and the session limit retain existing successful behavior when all other checks pass.

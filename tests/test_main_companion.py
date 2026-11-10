@@ -81,7 +81,7 @@ class MainCompanionTests(unittest.TestCase):
         self.assertEqual(process.waits, [])
 
     def _run(self, gateway, *, stop="GAME_EXIT", events=None, launch_error=None,
-             harvest_error=None, cleanup_error=None, order=None):
+             harvest_error=None, cleanup_error=None, order=None, ui_version=None, seed=None):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         base = Path(temp.name).resolve()
@@ -109,19 +109,26 @@ class MainCompanionTests(unittest.TestCase):
         with patch.object(companion.platform, "system", return_value="Darwin"), \
              patch.object(companion, "_target_environment", return_value={}), \
              patch.object(companion.controlled, "proposal", return_value={}), \
-             patch.object(companion.cli, "_validate_launch_copy", return_value=(session, {"main_steam_guard_version": 1}, session / "Companion.app")), \
+             patch.object(companion.cli, "_validate_launch_copy", return_value=(session, {"main_steam_guard_version": 1, "ui_assets_version": ui_version}, session / "Companion.app")), \
              patch.object(companion, "Gateway", return_value=gateway), \
              patch.object(companion, "_clone", return_value=root) as clone, \
              patch.object(companion, "_launch", launch), \
              patch.object(companion, "_events", return_value=events or set()), \
              patch.object(companion.cli, "stop_probe", side_effect=cleanup) as terminate, \
-             patch.object(companion.main_preferences, "seed"), \
+             patch.object(companion.main_preferences, "seed", seed or Mock()), \
              patch.object(companion.main_preferences, "harvest", side_effect=harvest), \
              patch.object(companion, "_diagnostic") as diagnostic:
             report = companion.run(session, prefs, target_pid=123,
                                    target_game=Path("/synthetic/game"), expected_steam_id="12345678901234567",
                                    expected_profile=0, should_stop=lambda: stop)
         return report, clone, launch, terminate, diagnostic, root
+
+    def test_both_ui_versions_preserve_default_character_tier_seeding(self):
+        for version, expected in ((None, False), (1, True), (2, True)):
+            with self.subTest(version=version):
+                seed = Mock()
+                self._run(FakeGateway(), ui_version=version, seed=seed)
+                self.assertEqual(seed.call_args.kwargs['enable_default_tiers'], expected)
 
     def test_preflight_failure_never_opens_app(self):
         gateway = FakeGateway({"passed": False, "requests_attempted": 0, "results": []})

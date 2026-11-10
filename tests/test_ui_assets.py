@@ -2,6 +2,8 @@
 
 import json
 import io
+import base64
+import re
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -17,6 +19,7 @@ def fixture():
                     if path != "untapped-companion/sts2/sts2-hover-tip.webp")
     shared = ('React.createElement(Check, { className: "fal fa-check", color: checkColor, disabled })')
     overlay = ('`https://static.untapped.gg/untapped-companion/sts2/icon_${currentColor}.webp` '
+               '`https://sts2json.untapped.gg/art/intents/${assetName}.webp` '
                'const backgroundUrl = "https://static.untapped.gg/untapped-companion/sts2/sts2-hover-tip.webp"; '
                'const HoverTipBackground = qe.div`\n\tposition: absolute;')
     css = "const css = `\n\t@import url('https://fonts.googleapis.com/css2?x');\n" + "\n".join(
@@ -39,6 +42,65 @@ def fake_download(url):
 
 
 class AssetsTests(unittest.TestCase):
+    def test_all_damage_icon_variants_are_embedded_without_changing_surrounding_logic(self):
+        source = 'before(' + ui_assets.INTENT_ANCHOR + ')after'
+        calls = []
+        def download(url):
+            calls.append(url)
+            return fake_download(url) + url.encode()
+        patched, hashes = ui_assets._patch_intents(source, download)
+        self.assertEqual(calls, [ui_assets.INTENT_ORIGIN + p for p in ui_assets.INTENT_PATHS])
+        self.assertEqual(set(hashes), set(ui_assets.INTENT_PATHS))
+        match = re.fullmatch(r'before\((\(.*\)\[assetName\])\)after', patched)
+        self.assertIsNotNone(match)
+        assets = json.loads(match[1][1:-len(')[assetName]')])
+        self.assertEqual(set(assets), {f'intent_attack_{i}' for i in range(1, 6)})
+        for path in ui_assets.INTENT_PATHS:
+            data = assets[Path(path).stem]
+            self.assertTrue(data.startswith('data:image/webp;base64,'))
+            self.assertEqual(base64.b64decode(data.split(',', 1)[1]),
+                             fake_download(ui_assets.INTENT_ORIGIN + path) + (ui_assets.INTENT_ORIGIN + path).encode())
+
+    def test_intent_upgrade_preserves_existing_assets_original_binding_and_failure_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session = Path(directory).resolve()
+            session.chmod(0o700)
+            target = session / 'Companion.app/Contents/Resources/app.asar'
+            target.parent.mkdir(parents=True)
+            original = synthetic_archive({ui_assets.OVERLAY: ui_assets.INTENT_ANCHOR.encode(),
+                                          'existing-ui': b'embedded artwork'})
+            target.write_bytes(original)
+            manifest = {'schema': 1, 'main_steam_guard_version': 1, 'ui_assets_version': 1,
+                        'patched_asar_sha256': sha256(original), 'base_patched_asar_sha256': 'original-base',
+                        'ui_asset_sha256': {'legacy.webp': 'legacy-hash'}, 'patched_entries': ['existing-ui']}
+            manifest_path = session / 'manifest.json'
+            manifest_path.write_text(json.dumps(manifest))
+            before_manifest = manifest_path.read_bytes()
+            with self.assertRaises(OSError):
+                ui_assets.prepare(session, download=lambda _: (_ for _ in ()).throw(OSError('offline')))
+            self.assertEqual(target.read_bytes(), original)
+            self.assertEqual(manifest_path.read_bytes(), before_manifest)
+            calls = []
+            def download(url):
+                calls.append(url)
+                return fake_download(url)
+            ui_assets.prepare(session, download=download)
+            saved = json.loads(manifest_path.read_text())
+            self.assertEqual(saved['ui_assets_version'], 2)
+            self.assertEqual(saved['base_patched_asar_sha256'], 'original-base')
+            self.assertEqual(saved['ui_asset_sha256']['legacy.webp'], 'legacy-hash')
+            self.assertEqual(set(saved['patched_entries']), {'existing-ui', ui_assets.OVERLAY})
+            self.assertEqual(Archive(target.read_bytes()).read('existing-ui'), b'embedded artwork')
+            self.assertEqual(calls, [ui_assets.INTENT_ORIGIN + p for p in ui_assets.INTENT_PATHS])
+            with self.assertRaises(HarnessError):
+                ui_assets.prepare(session, download=download)
+
+    def test_intent_anchor_changes_fail_before_any_download(self):
+        for source in ('unrelated', ui_assets.INTENT_ANCHOR * 2):
+            with patch.object(ui_assets, '_download') as download, self.assertRaises(HarnessError):
+                ui_assets._patch_intents(source, download)
+            download.assert_not_called()
+
     def test_prepare_preserves_archive_mode_and_previous_signed_receipt(self):
         with tempfile.TemporaryDirectory() as directory:
             session = Path(directory).resolve()
@@ -66,7 +128,7 @@ class AssetsTests(unittest.TestCase):
         replacements, hashes = ui_assets._patch(original, fake_download)
         rewritten = Archive(original.rewrite(replacements))
         self.assertEqual(rewritten.read("other.txt"), b"untouched")
-        self.assertEqual(len(hashes), len(ui_assets.IMAGE_PATHS) + len(ui_assets.CSS_PATHS) + 1)
+        self.assertEqual(len(hashes), len(ui_assets.IMAGE_PATHS) + len(ui_assets.CSS_PATHS) + len(ui_assets.INTENT_PATHS) + 1)
         self.assertIn(b"data:image/webp;base64,", rewritten.read(ui_assets.OVERLAY))
         self.assertIn(b"background-color: #161a1d", rewritten.read(ui_assets.OVERLAY))
         self.assertIn('children: "✓"'.encode(), rewritten.read(ui_assets.SHARED))
@@ -112,11 +174,25 @@ class AssetsTests(unittest.TestCase):
 
     def test_download_refuses_unreviewed_destinations_before_network(self):
         for url in ("https://evil.example/icon.png", ui_assets.STATIC + "other.png",
+                    ui_assets.INTENT_ORIGIN + "art/intents/intent_attack_6.webp",
+                    ui_assets.INTENT_ORIGIN + ui_assets.IMAGE_PATHS[0],
+                    ui_assets.STATIC + ui_assets.INTENT_PATHS[0],
+                    ui_assets.INTENT_ORIGIN + ui_assets.INTENT_PATHS[0] + '?account=secret',
                     ui_assets.STATIC + ui_assets.IMAGE_PATHS[0] + "?uid=1",
                     ui_assets.STATIC + "fontawesome/webfonts/fa-unknown-400.woff2",
                     "http://static.untapped.gg/" + ui_assets.IMAGE_PATHS[0]):
             with self.subTest(url=url), self.assertRaises(HarnessError):
                 ui_assets._download(url, opener=object())
+
+    def test_fixed_intent_urls_use_validated_public_download(self):
+        for path in ui_assets.INTENT_PATHS:
+            url = ui_assets.INTENT_ORIGIN + path
+            response = io.BytesIO(fake_download(url))
+            response.status = 200
+            response.headers = {'Content-Type': 'image/webp'}
+            response.geturl = lambda: url
+            with patch('urllib.request.OpenerDirector.open', return_value=response):
+                self.assertEqual(ui_assets._download(url), fake_download(url))
 
     def test_pinned_anchor_and_asset_bounds_fail_closed(self):
         archive = fixture()

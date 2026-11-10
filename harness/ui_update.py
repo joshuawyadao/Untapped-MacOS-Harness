@@ -13,6 +13,8 @@ from .asar import HarnessError, sha256
 
 UPDATE_DIRECTORY = 'companion-ui'
 RECEIPT = 'companion-ui.json'
+CURRENT_DIRECTORY = 'companion-ui-v2'
+CURRENT_RECEIPT = 'companion-ui-v2.json'
 
 
 def _manifest(session):
@@ -21,7 +23,8 @@ def _manifest(session):
 
 
 def _matches(manifest, base):
-    return (manifest.get('ui_assets_version') == 1
+    return (type(manifest.get('ui_assets_version')) is int
+            and manifest['ui_assets_version'] in (1, 2)
             and manifest.get('base_patched_asar_sha256') == base.get('patched_asar_sha256')
             and all(manifest.get(key) == base.get(key) for key in (
                 'main_steam_guard_version', 'controlled_access_version',
@@ -32,17 +35,24 @@ def selected_session(root):
     """Select only a complete, signed update bound to the retained original."""
     from . import main_launcher
     base = root / 'companion'
-    receipt = root / RECEIPT
+    current = root / CURRENT_RECEIPT
+    is_current = current.exists() or current.is_symlink()
+    receipt = current if is_current else root / RECEIPT
     if not receipt.exists() and not receipt.is_symlink():
         return base
     record = main_launcher._read(receipt)
-    updated = main_launcher._private(root / UPDATE_DIRECTORY)
+    version = 2 if is_current else 1
+    record_version = record.get('ui_assets_version', None if is_current else 1)
+    updated = main_launcher._private(root / (CURRENT_DIRECTORY if is_current else UPDATE_DIRECTORY))
     manifest = _manifest(updated)
-    if (record.get('schema') != 1 or not _matches(manifest, _manifest(base))
+    if (type(record_version) is not int or record_version != version
+            or manifest.get('ui_assets_version') != version
+            or record.get('schema') != 1 or not _matches(manifest, _manifest(base))
             or record.get('patched_asar_sha256') != manifest.get('patched_asar_sha256')
             or record.get('base_patched_asar_sha256') != manifest.get('base_patched_asar_sha256')):
         raise HarnessError('UI update receipt does not match the original companion')
     controlled.proposal(updated)
+    main_launcher._read(updated / 'signing.json')
     cli._validate_launch_copy(updated)
     return updated
 
@@ -80,14 +90,18 @@ def install_main():
     root, _, _ = main_launcher._prepared()
     if not (root / 'activation.json').is_file():
         raise HarnessError('Activate the existing main setup before installing a UI update')
-    if (root / RECEIPT).exists() or (root / RECEIPT).is_symlink():
-        selected_session(root)
+    source = selected_session(root)
+    if _manifest(source).get('ui_assets_version') == ui_assets.VERSION:
         return {'ui_update_installed': True, 'already_installed': True}
-    destination = root / UPDATE_DIRECTORY
+    destination = root / CURRENT_DIRECTORY
     if destination.exists() or destination.is_symlink():
         raise HarnessError('An incomplete UI update exists; preserve it for inspection')
-    source = root / 'companion'
+    base = root / 'companion'
+    base_manifest = _manifest(base)
+    controlled.proposal(base)
+    cli._validate_launch_copy(base)
     controlled.proposal(source)
+    main_launcher._read(source / 'signing.json')
     cli._validate_launch_copy(source)
     before = _tree(source / 'Companion.app')
     stage = Path(tempfile.mkdtemp(prefix='ui-preparation-', dir=root))
@@ -98,7 +112,7 @@ def install_main():
     _only_changes(before, _tree(stage / 'Companion.app'), set())
     ui_assets.prepare(stage)
     manifest = _manifest(stage)
-    if not _matches(manifest, _manifest(source)):
+    if manifest.get('ui_assets_version') != ui_assets.VERSION or not _matches(manifest, base_manifest):
         raise HarnessError('UI assets changed the controlled policy or base binding')
     asar = 'Contents/Resources/app.asar'
     _only_changes(before, _tree(stage / 'Companion.app'), {asar})
@@ -127,13 +141,25 @@ def install_main():
     controlled.proposal(stage)
     # Revalidate the source after the potentially slow public-asset downloads.
     cli._validate_launch_copy(source)
+    controlled.proposal(source)
     _only_changes(before, _tree(source / 'Companion.app'), set())
-    stage.rename(destination)
-    main_launcher._write(root / RECEIPT, {'schema': 1,
+    cli._validate_launch_copy(base)
+    controlled.proposal(base)
+    if _manifest(base) != base_manifest or selected_session(root) != source:
+        raise HarnessError('UI update source changed during preparation')
+    # A separate immutable receipt leaves the legacy selection available until
+    # the complete version-2 payload and receipt are published. Directory rename
+    # also prevents concurrent preparations from replacing the same destination.
+    main_launcher._write(stage / 'selection.json', {'schema': 1,
+        'ui_assets_version': ui_assets.VERSION,
         'base_patched_asar_sha256': manifest['base_patched_asar_sha256'],
         'patched_asar_sha256': manifest['patched_asar_sha256']})
+    stage.rename(destination)
+    if (root / CURRENT_RECEIPT).exists() or (root / CURRENT_RECEIPT).is_symlink():
+        raise HarnessError('UI update selection already exists')
+    (destination / 'selection.json').rename(root / CURRENT_RECEIPT)
     selected_session(root)
-    return {'ui_update_installed': True, 'effective': 'NEXT_MAIN_LAUNCH',
+    return {'ui_update_installed': True, 'ui_assets_version': ui_assets.VERSION, 'effective': 'NEXT_MAIN_LAUNCH',
             'current_session_changed': False, 'game_or_saves_modified': False,
             'runtime_network_expanded': False}
 

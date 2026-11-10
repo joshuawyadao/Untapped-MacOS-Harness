@@ -8,12 +8,12 @@ Repair the attack-summary image placeholder by embedding the five pinned public 
 
 ## Action items
 - [x] Trace AttackSummary/AttackIntentIcon and review ui_assets.py, ui_update.py, their tests and UI rollout documentation.
-- [ ] Checkpoint this plan before implementation.
-- [ ] Add a fixed five-image allowlist and guarded intent URL replacement; support fresh preparation and incremental upgrade from UI version 1.
-- [ ] Install UI version 2 alongside the retained version 1 copy and atomically select only a completely verified signed update; preserve rollback and policy bindings.
-- [ ] Add regressions for all five images, download/anchor failures, legacy selection, upgrade failure and completed-update selection.
-- [ ] Run targeted/full tests, bundle syntax checks, repository checks and a real private-copy preparation with payload/signature verification.
-- [ ] Activate the prepared update for the next normal launch without restarting the current game; record live visual validation as pending until a combat encounter.
+- [x] Checkpoint this plan before implementation.
+- [x] Add a fixed five-image allowlist and guarded intent URL replacement; support fresh preparation and incremental upgrade from UI version 1.
+- [x] Install UI version 2 alongside the retained version 1 copy and atomically select only a completely verified signed update; preserve rollback and policy bindings.
+- [x] Add regressions for all five images, download/anchor failures, legacy selection, upgrade failure and completed-update selection.
+- [x] Run targeted/full tests, bundle syntax checks, repository checks and a real private-copy preparation with payload/signature verification.
+- [x] Activate the prepared update for the next normal launch without restarting the current game; record live visual validation as pending until a combat encounter.
 - [ ] Update migration, architecture and verification docs; save/push the refinement branch.
 
 ## Open questions

@@ -24,6 +24,10 @@ GLOBAL = "dist/renderer/assets/index-FOxynWcw.js"
 OVERLAY = "dist/renderer/assets/Sts2Overlay-DPeYNPLb.js"
 ENTRIES = (MAIN, SHARED, GLOBAL, OVERLAY)
 STATIC = "https://static.untapped.gg/"
+INTENT_ORIGIN = "https://sts2json.untapped.gg/"
+INTENT_PATHS = tuple(f"art/intents/intent_attack_{i}.webp" for i in range(1, 6))
+INTENT_ANCHOR = '`https://sts2json.untapped.gg/art/intents/${assetName}.webp`'
+VERSION = 2
 CHARACTERS = ("ironclad", "silent", "regent", "necrobinder", "defect")
 IMAGE_PATHS = (
     *(f"untapped-companion/sts2/icon_{name}.webp" for name in CHARACTERS),
@@ -60,10 +64,12 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 def _download(url, *, opener=None):
     parsed = urllib.parse.urlsplit(url)
     path = parsed.path.lstrip("/")
-    valid_image = path in IMAGE_PATHS
-    valid_css = path in CSS_PATHS
-    valid_font = path in FONT_PATHS
-    if (parsed.scheme != "https" or parsed.netloc != "static.untapped.gg" or
+    static_host = parsed.netloc == "static.untapped.gg"
+    valid_image = (static_host and path in IMAGE_PATHS or
+                   parsed.netloc == "sts2json.untapped.gg" and path in INTENT_PATHS)
+    valid_css = static_host and path in CSS_PATHS
+    valid_font = static_host and path in FONT_PATHS
+    if (parsed.scheme != "https" or
             parsed.query or parsed.fragment or not (valid_image or valid_css or valid_font)):
         raise HarnessError("Public UI asset is outside the fixed allowlist")
     opener = opener or urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
@@ -101,29 +107,53 @@ def _replace_once(value, old, new):
     return value.replace(old, new, 1)
 
 
+def _patch_intents(overlay, download):
+    # Only the image source changes. Keep the vendor's damage thresholds, hit
+    # counting, numeric display and styles byte-for-byte intact.
+    if overlay.count(INTENT_ANCHOR) != 1:
+        raise HarnessError("Pinned attack intent image anchor changed")
+    started = time.monotonic()
+    assets, hashes = {}, {}
+    total = 0
+    for path in INTENT_PATHS:
+        if time.monotonic() - started > MAX_SECONDS:
+            raise HarnessError("Attack intent preparation deadline exceeded")
+        raw = download(INTENT_ORIGIN + path)
+        total += len(raw)
+        if total > MAX_TOTAL or time.monotonic() - started > MAX_SECONDS:
+            raise HarnessError("Attack intent assets exceed preparation budget")
+        hashes[path] = sha256(raw)
+        assets[Path(path).stem] = _data_uri(raw, "image/webp")
+    return _replace_once(overlay, INTENT_ANCHOR,
+                         "(" + json.dumps(assets, separators=(",", ":")) + ")[assetName]"), hashes
+
+
 def _patch(archive, download=_download):
     contents = {name: archive.read(name).decode("utf-8") for name in ENTRIES}
     started = time.monotonic()
     requests = 0
 
-    def get_asset(path):
-        nonlocal requests
+    def get_url(url):
+        nonlocal requests, total
         requests += 1
         if requests > MAX_REQUESTS or time.monotonic() - started > MAX_SECONDS:
             raise HarnessError("Public UI asset request budget exceeded")
-        value = download(STATIC + path)
+        value = download(url)
+        total += len(value)
+        if total > MAX_TOTAL:
+            raise HarnessError("Public UI assets exceed total size")
         if time.monotonic() - started > MAX_SECONDS:
             raise HarnessError("Public UI asset deadline exceeded")
         return value
+
+    def get_asset(path):
+        return get_url(STATIC + path)
 
     image_assets = {}
     total = 0
     hashes = {}
     for path in IMAGE_PATHS:
         raw = get_asset(path)
-        total += len(raw)
-        if total > MAX_TOTAL:
-            raise HarnessError("Public UI assets exceed total size")
         hashes[path] = sha256(raw)
         image_assets[path] = _data_uri(raw, "image/webp" if path.endswith(".webp") else "image/png")
     main = contents[MAIN]
@@ -153,18 +183,12 @@ def _patch(archive, download=_download):
     font_assets = {}
     for css_path in CSS_PATHS:
         raw = get_asset(css_path)
-        total += len(raw)
-        if total > MAX_TOTAL:
-            raise HarnessError("Public UI assets exceed total size")
         hashes[css_path] = sha256(raw)
         css = raw.decode("utf-8")
         for relative in sorted(set(FONT_URL.findall(css))):
             font_path = "fontawesome/" + relative[3:]
             if font_path not in font_assets:
                 font = get_asset(font_path)
-                total += len(font)
-                if total > MAX_TOTAL:
-                    raise HarnessError("Public UI assets exceed total size")
                 font_assets[font_path] = font
                 hashes[font_path] = sha256(font)
             mime = "font/woff2" if font_path.endswith("woff2") else "font/woff" if font_path.endswith("woff") else "font/ttf"
@@ -186,6 +210,8 @@ def _patch(archive, download=_download):
         raise HarnessError("Pinned global stylesheet anchor changed")
     at += len(marker)
     contents[GLOBAL] = contents[GLOBAL][:at] + "\n\t" + css + contents[GLOBAL][at:]
+    contents[OVERLAY], intent_hashes = _patch_intents(contents[OVERLAY], get_url)
+    hashes.update(intent_hashes)
     return {name: value.encode("utf-8") for name, value in contents.items()}, hashes
 
 
@@ -205,20 +231,30 @@ def prepare(session, *, download=_download):
     manifest = cli.read_json(manifest_path)
     before = archive_path.read_bytes()
     old_hash = sha256(before)
+    version = manifest.get("ui_assets_version")
     if (manifest.get("schema") != 1 or manifest.get("main_steam_guard_version") != 1 or
-            manifest.get("patched_asar_sha256") != old_hash or manifest.get("ui_assets_version") is not None):
+            manifest.get("patched_asar_sha256") != old_hash or
+            (version is not None and (type(version) is not int or version != 1))):
         raise HarnessError("UI asset base copy is unsupported")
     archive = Archive(before)
-    replacements, hashes = _patch(archive, download)
+    if version == 1:
+        if not isinstance(manifest.get("base_patched_asar_sha256"), str):
+            raise HarnessError("UI asset original binding missing")
+        overlay, intent_hashes = _patch_intents(archive.read(OVERLAY).decode("utf-8"), download)
+        replacements = {OVERLAY: overlay.encode("utf-8")}
+        hashes = {**manifest.get("ui_asset_sha256", {}), **intent_hashes}
+    else:
+        replacements, hashes = _patch(archive, download)
     result = archive.rewrite(replacements)
     rewritten = Archive(result)
     for name, content in replacements.items():
         if rewritten.read(name) != content:
             raise HarnessError("UI asset rewrite failed validation")
     updated = copy.deepcopy(manifest)
-    updated.update(ui_assets_version=1, base_patched_asar_sha256=old_hash,
+    updated.update(ui_assets_version=VERSION,
+                   base_patched_asar_sha256=manifest["base_patched_asar_sha256"] if version == 1 else old_hash,
                    patched_asar_sha256=sha256(result), ui_asset_sha256=hashes,
-                   patched_entries=sorted(set(manifest["patched_entries"]) | set(ENTRIES)))
+                   patched_entries=sorted(set(manifest["patched_entries"]) | set(replacements)))
     temporary = archive_path.with_suffix(".ui-temp")
     with temporary.open("xb") as output:
         output.write(result)
@@ -228,7 +264,7 @@ def prepare(session, *, download=_download):
     if signed:
         prior = session / "signing.json"
         prior.replace(session / "previous-signing.json")
-    return {"ui_assets_version": 1, "asset_count": len(hashes), "patched_asar_sha256": updated["patched_asar_sha256"]}
+    return {"ui_assets_version": VERSION, "asset_count": len(hashes), "patched_asar_sha256": updated["patched_asar_sha256"]}
 
 
 def main(argv=None):

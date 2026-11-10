@@ -1,29 +1,19 @@
 # Plan
 
-Make main-account CLI exit status reflect safety-stop failures found in PR review, using explicit successful stop reasons and synthetic regressions.
+Trace and repair missing starting-relic tier badges in a separate worktree, preserving the current PR branch and existing Steam, signing and network boundaries.
 
 ## Scope
-- In: Launcher outcome classification, CLI regression tests, migration/verification documentation, Brooks review history, and the observed Ubuntu CI fixture failures.
-- Out: Live launches, installed companion changes, process termination changes, saves, Cloud operations, or broader refactoring. The previous tier-list queue milestone is complete and recorded in Verification.md.
+- In: Native starting-choice layout, current tier-list state, renderer visibility/geometry, a narrow verified fix, regression tests and isolated companion validation.
+- Out: Changes to the existing PR branch or its preparation workflow, PR creation/merge, statistics API access, game/save mutations, fabricated tiers and automatic login.
 
 ## Action items
-- [x] Review main_launcher.py, main_companion.py, tests/test_main_launcher.py, Main-Account-Migration.md and Verification.md.
-- [x] Checkpoint this plan before implementation.
-- [x] Require a known successful stop reason in the CLI alongside authentication, account verification and cleanup.
-- [x] Cover target conflict, mismatch, unknown/missing reasons, and supported successful stops using synthetic CLI results.
-- [x] Document exit-status semantics and review evidence; record the sampled Brooks review.
-- [x] Run launcher regressions and all238 local tests, commit and push the safety-stop correction.
-- [x] Correct the game fixture UID and connection-refused errno to match the host without weakening expected behavior.
-- [x] Provision the required macOS-style `/private/tmp` test root on the ephemeral Ubuntu runner, preserving namespace validation in production and tests.
-- [x] Record CI fixture requirements in CONTRIBUTING.md and validation in Verification.md; run affected/full tests and hygiene checks, commit and push.
-- [x] Confirm Ubuntu CI passes after fixture corrections; acknowledge the matching Codex finding after push.
-- [x] Preserve the companion exit code before owned-group cleanup and report nonzero or signal exits as PROCESS_EXIT failures, retaining private evidence.
-- [x] Add synthetic zero/nonzero/signal exit regressions and a CLI crash outcome case; update migration/verification docs, validate and save.
-- [x] Resolve the two addressed threads and mark the PR ready with explicit owner authorization; preserve the unmerged PR.
-- [x] Preserve the copied game's observed exit code and distinguish normal exit, abnormal exit and disappearance without a known exit status.
-- [x] Propagate GAME_CRASHED through companion supervision, retain failure evidence, and reject nonzero game exits at the CLI even if detected after companion shutdown.
-- [x] Add synthetic game exit/CLI regressions, update Main-Account-Migration.md and Verification.md, run focused/full checks, commit and push.
-- [ ] Recheck the completed automatic review, CI and mergeability; resolve addressed feedback and leave the final merge to the owner.
+- [x] Create codex/sts2-starting-relic-badges from44c014c in a separate managed worktree; leave the original checkout unchanged.
+- [ ] Checkpoint this plan and trace native choice IDs/geometry through IPC, tier merging and renderer gates.
+- [ ] Build a deterministic failing replay at the actual faulty boundary, or add bounded public-choice diagnostics if live state is necessary.
+- [ ] Implement the smallest compatibility fix, preserving login/Steam identity guards and all network restrictions.
+- [ ] Test missing/invalid geometry, tier coverage and unrelated reward paths, then run the full harness suite and repository checks.
+- [ ] Validate patched bundle syntax and payload changes; stage any runtime update separately without disturbing PR preparation or the game.
+- [ ] Update architecture/verification and rollout docs, save/push only the focused branch, and record live versus replay evidence explicitly.
 
 ## Open questions
-- None. Safety-stop failures must return nonzero; normal game/companion exit and the session limit retain existing successful behavior when all other checks pass.
+- None. The current PR continues independently; this branch initially depends on44c014c and can be rebased after that PR merges.

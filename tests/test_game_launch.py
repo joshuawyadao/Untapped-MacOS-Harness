@@ -16,6 +16,7 @@ from harness import game_launch as game
 
 class GameLaunchTests(unittest.TestCase):
     def setUp(self):
+        self.uid = os.getuid()
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
@@ -35,7 +36,7 @@ class GameLaunchTests(unittest.TestCase):
             "version": game.VERSION, "commit": game.COMMIT,
         }))
         self.platform_patch = mock.patch.object(game.platform, "system", return_value="Darwin")
-        self.uid_patch = mock.patch.object(game.os, "getuid", return_value=501)
+        self.uid_patch = mock.patch.object(game.os, "getuid", return_value=self.uid)
         self.pwd_patch = mock.patch.object(game.pwd, "getpwuid", return_value=SimpleNamespace(pw_name="sts2test", pw_dir=str(self.home)))
         self.hash_patch = mock.patch.object(game, "ASSEMBLY_HASH", game.digest(self.assembly))
         self.protected_patch = mock.patch.object(game, "PROTECTED_HOME", self.original)
@@ -129,8 +130,8 @@ class GameLaunchTests(unittest.TestCase):
     def test_monitor_allows_own_game_child_but_rejects_other_group(self):
         app = self.session / "SlayTheSpire2.app"
         process = mock.Mock(pid=1234)
-        own = f"1235 1234 501 {app / game.EXECUTABLE} --nomods"
-        other = f"1236 1236 501 {app / game.EXECUTABLE} --nomods"
+        own = f"1235 1234 {self.uid} {app / game.EXECUTABLE} --nomods"
+        other = f"1236 1236 {self.uid} {app / game.EXECUTABLE} --nomods"
         self.assertTrue(game.supervised_game(own, process, app))
         self.assertFalse(game.supervised_game(other, process, app))
 

@@ -19,6 +19,8 @@ git diff --check
 
 The local hook blocks pushes to `main`. Repository hygiene checks examine tracked files, so rerun after staging new files. They detect common sensitive paths, private-key material, large files, and broken relative Markdown links; they are not a complete secret scanner. The test suite uses synthetic archives and Node stubs. Passing tests or `CI Verify` does not prove companion startup or game integration.
 
+The Ubuntu CI runner provisions `/private/tmp` with sticky world-writable permissions to exercise the harness's fixed macOS temporary namespace using synthetic fixtures. Ownership fixtures use the actual test user's UID, and transport fixtures use the host's `errno` constants. Production ownership, canonical-path and private-directory checks remain enforced; Linux CI does not establish native macOS compatibility.
+
 ## Make a change
 
 1. Start a focused branch from the latest `main`; use `feat/`, `fix/`, or `docs/` with a short description.

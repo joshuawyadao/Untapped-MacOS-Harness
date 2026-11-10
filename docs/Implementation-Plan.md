@@ -13,9 +13,9 @@ Make main-account CLI exit status reflect safety-stop failures found in PR revie
 - [x] Cover target conflict, mismatch, unknown/missing reasons, and supported successful stops using synthetic CLI results.
 - [x] Document exit-status semantics and review evidence; record the sampled Brooks review.
 - [x] Run launcher regressions and all238 local tests, commit and push the safety-stop correction.
-- [ ] Correct the game fixture UID and connection-refused errno to match the host without weakening expected behavior.
-- [ ] Provision the required macOS-style `/private/tmp` test root on the ephemeral Ubuntu runner, preserving namespace validation in production and tests.
-- [ ] Record CI fixture requirements in CONTRIBUTING.md and validation in Verification.md; run affected/full tests and hygiene checks, commit and push.
+- [x] Correct the game fixture UID and connection-refused errno to match the host without weakening expected behavior.
+- [x] Provision the required macOS-style `/private/tmp` test root on the ephemeral Ubuntu runner, preserving namespace validation in production and tests.
+- [x] Record CI fixture requirements in CONTRIBUTING.md and validation in Verification.md; run affected/full tests and hygiene checks, commit and push.
 - [ ] Recheck Codex review, CI and mergeability.
 
 ## Open questions

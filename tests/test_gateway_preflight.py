@@ -1,4 +1,5 @@
 import http.client
+import errno
 import json
 import threading
 import time
@@ -147,12 +148,12 @@ class GatewayPreflightTests(unittest.TestCase):
         gateway = Gateway(transport=lambda *_: None)
         for _ in range(34):
             gateway._record_failure("private.example/secret", "bad-stage", time.monotonic() - 9999,
-                                    OSError(61, "secret"))
+                                    OSError(errno.ECONNREFUSED, "secret"))
         self.assertEqual(len(gateway.failure_details), 32)
         self.assertEqual(gateway.failure_overflow, 2)
         self.assertEqual(gateway.failure_details[0], {"route": "denied", "stage": "LOCAL_REQUEST",
                                                        "elapsed_ms": 300000, "transport_error": "CONNECTION_REFUSED",
-                                                       "os_errno": 61})
+                                                       "os_errno": errno.ECONNREFUSED})
         self.assertEqual(exception_fields(AttributeError("secret")), {"transport_error": "RESPONSE_INTERFACE_ERROR"})
 
     def test_close_drains_failure_before_snapshot(self):

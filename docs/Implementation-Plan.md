@@ -14,7 +14,7 @@ Repair the attack-summary image placeholder by embedding the five pinned public 
 - [x] Add regressions for all five images, download/anchor failures, legacy selection, upgrade failure and completed-update selection.
 - [x] Run targeted/full tests, bundle syntax checks, repository checks and a real private-copy preparation with payload/signature verification.
 - [x] Activate the prepared update for the next normal launch without restarting the current game; record live visual validation as pending until a combat encounter.
-- [ ] Update migration, architecture and verification docs; save/push the refinement branch.
+- [x] Update migration, architecture and verification docs; prepare the verified refinement branch for final save/push. Live combat confirmation remains pending the next normal launch.
 
 ## Open questions
 - None. Existing copied-companion repair/signing authorization applies; the running session remains untouched.

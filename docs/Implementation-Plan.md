@@ -1,21 +1,19 @@
 # Plan
 
-Make all default tier lists load reliably by bounding the companion's startup request queue and retrying transient public tier-list failures without expanding network access.
+Trace and repair missing starting-relic tier badges in a separate worktree, preserving the current PR branch and existing Steam, signing and network boundaries.
 
 ## Scope
-- In: Shared bounded client queue, finite retries for reviewed public tier GETs, regression coverage, explicitly recorded adapter hash migration for the installed main-account copies, and companion-only rollout.
-- Out: New routes, account/token retries, fabricated tier metadata, signing changes, game restarts, save or Steam Cloud changes.
+- In: Native starting-choice layout, current tier-list state, renderer visibility/geometry, a narrow verified fix, regression tests and isolated companion validation.
+- Out: Changes to the existing PR branch or its preparation workflow, PR creation/merge, statistics API access, game/save mutations, fabricated tiers and automatic login.
 
 ## Action items
-- [x] Trace the six reset downloads to the gateway's eight-handler cap and reproduce the ninth-request failure with a fake upstream.
-- [x] Checkpoint this plan before implementation.
-- [x] Add a shared bounded FIFO queue below the eight-handler cap; consume bounded response bodies before releasing slots; retry only transient public tier GET failures with finite backoff.
-- [x] Cover startup bursts, body completion, overflow, retries/exhaustion, permanent errors and non-idempotent requests using synthetic Node fixtures.
-- [x] Preserve pinned-policy checks and original approvals; record and verify the exact old/new adapter hashes when updating the two installed manifests, leaving signed payloads and gateway unchanged.
-- [x] Run focused and full tests, syntax/repository checks, update Controlled-Access-Plan, Main-Account-Migration and Verification, then commit and push.
-- [x] Reopen only the supervised companion when the verified game is still present, or provide the existing launcher command; require owner sign-in and report live verification separately.
+- [x] Create codex/sts2-starting-relic-badges from44c014c in a separate managed worktree; leave the original checkout unchanged.
+- [ ] Checkpoint this plan and trace native choice IDs/geometry through IPC, tier merging and renderer gates.
+- [ ] Build a deterministic failing replay at the actual faulty boundary, or add bounded public-choice diagnostics if live state is necessary.
+- [ ] Implement the smallest compatibility fix, preserving login/Steam identity guards and all network restrictions.
+- [ ] Test missing/invalid geometry, tier coverage and unrelated reward paths, then run the full harness suite and repository checks.
+- [ ] Validate patched bundle syntax and payload changes; stage any runtime update separately without disturbing PR preparation or the game.
+- [ ] Update architecture/verification and rollout docs, save/push only the focused branch, and record live versus replay evidence explicitly.
 
 ## Open questions
-- None. Queueing and retries remain within the already approved public tier-list access.
-
-Result:237 tests pass. The verified companion alone was reopened beside the retained game; all12 genuine tier-list metadata entries and nonempty item caches are present, with zero pending lists in every character and Colorless. Owner sign-in is confirmed; live authentication, exact Steam/profile verification, reader connection and overlay-ready events are present.
+- None. The current PR continues independently; this branch initially depends on44c014c and can be rebased after that PR merges.

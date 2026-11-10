@@ -18,4 +18,4 @@ Make all default tier lists load reliably by bounding the companion's startup re
 ## Open questions
 - None. Queueing and retries remain within the already approved public tier-list access.
 
-Result:237 tests pass. The verified companion alone was reopened beside the retained game; all12 genuine tier-list metadata entries and nonempty item caches are present, with zero pending lists in every character and Colorless. Owner sign-in is still required for this fresh overlay session.
+Result:237 tests pass. The verified companion alone was reopened beside the retained game; all12 genuine tier-list metadata entries and nonempty item caches are present, with zero pending lists in every character and Colorless. Owner sign-in is confirmed; live authentication, exact Steam/profile verification, reader connection and overlay-ready events are present.

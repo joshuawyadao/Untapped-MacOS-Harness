@@ -1,5 +1,7 @@
 # Verification and reward milestone
 
+For the November 10, 2026 starting-relic check, see [Starting-relic badge investigation](Starting-Relic-Diagnosis.md). The owner confirmed three visible named-tier badges (“Inconsistent”) after native IDs, tier coverage and actual DOM rectangles were verified. No rendering patch was required for that observation.
+
 This record distinguishes static inspection, startup, game detection, reader attachment, state reading, and overlay display. Each requires separate evidence. The pinned user-supplied companion was `3.12.3-latest` with `app.asar` SHA-256 `ca3a2e6a6f728b2d635abfc70a5434d4107438b8d801a650357989e8442d798c`.
 
 | Milestone | Result through the November 3, 2026 observation | Evidence or next check |

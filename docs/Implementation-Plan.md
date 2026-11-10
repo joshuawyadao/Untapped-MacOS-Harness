@@ -1,20 +1,20 @@
 # Plan
 
-Repair the attack-summary image placeholder by embedding the five pinned public intent icons and safely upgrading existing offline UI copies for the next normal launch.
+Build a dedicated macOS Dock launcher that runs the verified game and companion through their existing checks, replaces Terminal prompts with native controls, and allows the companion to follow the game's lifetime.
 
 ## Scope
-- In: Fixed intent-image downloads at preparation time, local data-URI replacement, versioned UI update installation/selection, regression tests and documentation.
-- Out: Damage calculation changes, live game interruption, save/Steam changes, authentication changes, runtime network expansion and other dynamic artwork.
+- In: Native launcher app, private line-delimited worker protocol, GUI Steam/Cloud confirmations, manual sign-in button, game-lifetime supervision, exclusive session lock, build/install workflow and regression tests.
+- Out: Steam Play interception, automatic credentials/Terms, saved credentials, game/source/signing changes, relaxed identity/network checks and claims of unattended reliability.
 
 ## Action items
-- [x] Trace AttackSummary/AttackIntentIcon and review ui_assets.py, ui_update.py, their tests and UI rollout documentation.
-- [x] Checkpoint this plan before implementation.
-- [x] Add a fixed five-image allowlist and guarded intent URL replacement; support fresh preparation and incremental upgrade from UI version 1.
-- [x] Install UI version 2 alongside the retained version 1 copy and atomically select only a completely verified signed update; preserve rollback and policy bindings.
-- [x] Add regressions for all five images, download/anchor failures, legacy selection, upgrade failure and completed-update selection.
-- [x] Run targeted/full tests, bundle syntax checks, repository checks and a real private-copy preparation with payload/signature verification.
-- [x] Activate the prepared update for the next normal launch without restarting the current game; record live visual validation as pending until a combat encounter.
-- [x] Update migration, architecture and verification docs; prepare the verified refinement branch for final save/push. Live combat confirmation remains pending the next normal launch.
+- [x] Review main launcher/supervisor, migration and verification docs, asset update selection and existing orchestration tests.
+- [ ] Checkpoint this plan before implementation.
+- [ ] Add explicit game-lifetime duration with required target callback; preserve finite CLI defaults and failure/cleanup behavior.
+- [ ] Build the native app and private worker protocol with Start, Steam-ready, Sign in and Stop companion controls; launch Steam after backup and preserve owner Cloud/account confirmation.
+- [ ] Validate private sign-in URLs and open them only on the owner's Sign in action; prevent simultaneous launcher workers and never stop the game on app exit.
+- [ ] Add tests for game-lifetime stop reasons, GUI protocol, cancellation, duplicate starts, validation failure and safe sign-in handling.
+- [ ] Compile/sign and install the launcher as a separate user app; inspect startup UI without launching a game automatically.
+- [ ] Run focused/full tests and repository checks; document real-use limits, manual login and initial live-launch validation; save/push the refinement branch.
 
 ## Open questions
-- None. Existing copied-companion repair/signing authorization applies; the running session remains untouched.
+- None. Owner selected a dedicated Dock app. Steam/Cloud readiness remains an explicit native confirmation because the current launcher cannot independently prove freshness.

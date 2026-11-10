@@ -55,6 +55,8 @@ Each companion run uses a new short private tmp copy to retain the known-working
 
 Owned process-group cleanup includes helpers after the main companion exits. Successful private attempts are removed after preference harvest; failures retain private evidence and produce a fixed-stage `sts2main-controlled.*.json` diagnostic after gateway drain. Shared output contains no Steam IDs, save paths/fingerprints, account values or raw exceptions. Cleanup failures are reported as failures. Native termination is not called a verified graceful Quit.
 
+The launcher returns success only after authentication, Steam-account verification and complete cleanup, with a normal game exit, companion exit or session limit. Target conflicts, account mismatches and unknown or missing stop reasons return a nonzero status even if authentication and cleanup succeeded.
+
 ### Backup and rollback boundary
 
 Backups are local owned0700 directories with0600 payload/receipt files. Copying uses held no-follow descriptors and refuses links, hardlinks, special files, wrong owners, overlaps, changes during copy and bounded size/depth/count violations. Current limits are2GiB,20,000 files,40,000 entries and depth16. The source is rechecked against the verified receipt after Steam opens and before launch. Incomplete backups have no success receipt. Private receipt hashes/relative names never enter the shared summary.

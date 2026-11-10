@@ -8,10 +8,10 @@ Make main-account CLI exit status reflect safety-stop failures found in PR revie
 
 ## Action items
 - [x] Review main_launcher.py, main_companion.py, tests/test_main_launcher.py, Main-Account-Migration.md and Verification.md.
-- [ ] Checkpoint this plan before implementation.
-- [ ] Require a known successful stop reason in the CLI alongside authentication, account verification and cleanup.
-- [ ] Cover target conflict, mismatch, unknown/missing reasons, and supported successful stops using synthetic CLI results.
-- [ ] Document exit-status semantics and review evidence; record the sampled Brooks review.
+- [x] Checkpoint this plan before implementation.
+- [x] Require a known successful stop reason in the CLI alongside authentication, account verification and cleanup.
+- [x] Cover target conflict, mismatch, unknown/missing reasons, and supported successful stops using synthetic CLI results.
+- [x] Document exit-status semantics and review evidence; record the sampled Brooks review.
 - [ ] Run focused and full tests, repository/whitespace/syntax checks, commit and push; recheck Codex review, CI and mergeability.
 
 ## Open questions

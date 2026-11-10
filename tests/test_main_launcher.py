@@ -179,6 +179,23 @@ class MainLauncherTests(unittest.TestCase):
              contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(launcher.main(args), 1)
 
+    def test_cli_start_only_accepts_normal_stop_reasons(self):
+        args = ["start", "--approve-main-account-launch", "--confirm-cloud-synced", "--confirm-steam-account"]
+        outcomes = {"GAME_EXIT": 0, "COMPANION_EXITED": 0, "SESSION_LIMIT_REACHED": 0,
+                    "TARGET_CONFLICT": 1, "STEAM_ACCOUNT_MISMATCH": 1,
+                    "UNKNOWN": 1, None: 1}
+        for reason, expected in outcomes.items():
+            with self.subTest(reason=reason):
+                companion = {"authenticated": True, "steam_account_verified": True,
+                             "failure_stage": "NONE", "gateway_cleanup_complete": True,
+                             "companion_group_cleanup_complete": True}
+                if reason is not None:
+                    companion["reason"] = reason
+                with patch.object(launcher.sys.stdin, "isatty", return_value=True), \
+                     patch.object(launcher, "start", return_value={"companion": companion}), \
+                     contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(launcher.main(args), expected)
+
 
 if __name__ == "__main__":
     unittest.main()

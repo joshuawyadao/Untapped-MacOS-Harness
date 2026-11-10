@@ -425,6 +425,7 @@ def main(argv=None):
             companion = result.get("companion", {})
             healthy = (companion.get("authenticated") is True
                        and companion.get("steam_account_verified") is True
+                       and companion.get("reason") in ("GAME_EXIT", "COMPANION_EXITED", "SESSION_LIMIT_REACHED")
                        and companion.get("failure_stage") == "NONE"
                        and companion.get("gateway_cleanup_complete") is True
                        and companion.get("companion_group_cleanup_complete") is True)

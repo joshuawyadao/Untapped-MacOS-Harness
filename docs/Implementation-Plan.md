@@ -1,19 +1,20 @@
 # Plan
 
-Trace the reported missing starting-relic tier badges in a separate worktree, preserving the current PR branch and existing Steam, signing and network boundaries. Live verification confirmed visible named-tier badges without a rendering change; finish with the evidence record rather than a speculative repair.
+Repair the attack-summary image placeholder by embedding the five pinned public intent icons and safely upgrading existing offline UI copies for the next normal launch.
 
 ## Scope
-- In: Native starting-choice layout, current tier-list state, renderer visibility/geometry, isolated companion validation and documentation of the verified result. A code fix and regression tests are conditional on a reproduced defect.
-- Out: Changes to the existing PR branch or its preparation workflow, PR creation/merge, statistics API access, game/save mutations, fabricated tiers and automatic login.
+- In: Fixed intent-image downloads at preparation time, local data-URI replacement, versioned UI update installation/selection, regression tests and documentation.
+- Out: Damage calculation changes, live game interruption, save/Steam changes, authentication changes, runtime network expansion and other dynamic artwork.
 
 ## Action items
-- [x] Create codex/sts2-starting-relic-badges from 44c014c in a separate managed worktree; leave the original checkout unchanged.
-- [x] Checkpoint this plan and trace native choice IDs/geometry through IPC, tier merging and renderer gates.
-- [x] Add bounded public-choice diagnostics for native geometry, tier coverage, renderer gates and DOM/window measurements.
-- [x] Resolve the implementation decision: three correctly sized, visible badge elements and owner-confirmed “Inconsistent” labels establish working named-tier badges. No rendering repair is justified; no application code changes.
-- [x] Validate diagnostic bundle syntax, signatures and allowed payload changes in separate temporary copies; retain installed selection and game unchanged.
-- [x] Record live evidence and the initial diagnostic selector limitation. No regression tests added or full suite rerun because the final repository change is documentation only; use repository hygiene and diff checks.
-- [x] Prepare the focused documentation branch for the final save/push step. Architecture and rollout behavior are unchanged; verification links to the focused evidence. The final save result is reported separately.
+- [x] Trace AttackSummary/AttackIntentIcon and review ui_assets.py, ui_update.py, their tests and UI rollout documentation.
+- [ ] Checkpoint this plan before implementation.
+- [ ] Add a fixed five-image allowlist and guarded intent URL replacement; support fresh preparation and incremental upgrade from UI version 1.
+- [ ] Install UI version 2 alongside the retained version 1 copy and atomically select only a completely verified signed update; preserve rollback and policy bindings.
+- [ ] Add regressions for all five images, download/anchor failures, legacy selection, upgrade failure and completed-update selection.
+- [ ] Run targeted/full tests, bundle syntax checks, repository checks and a real private-copy preparation with payload/signature verification.
+- [ ] Activate the prepared update for the next normal launch without restarting the current game; record live visual validation as pending until a combat encounter.
+- [ ] Update migration, architecture and verification docs; save/push the refinement branch.
 
 ## Open questions
-- None. The current PR continues independently; this branch initially depends on 44c014c and can be rebased after that PR merges.
+- None. Existing copied-companion repair/signing authorization applies; the running session remains untouched.

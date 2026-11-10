@@ -3,7 +3,7 @@
 Make main-account CLI exit status reflect safety-stop failures found in PR review, using explicit successful stop reasons and synthetic regressions.
 
 ## Scope
-- In: Launcher outcome classification, CLI regression tests, migration/verification documentation, and Brooks review history.
+- In: Launcher outcome classification, CLI regression tests, migration/verification documentation, Brooks review history, and the observed Ubuntu CI fixture failures.
 - Out: Live launches, installed companion changes, process termination changes, saves, Cloud operations, or broader refactoring. The previous tier-list queue milestone is complete and recorded in Verification.md.
 
 ## Action items
@@ -12,7 +12,11 @@ Make main-account CLI exit status reflect safety-stop failures found in PR revie
 - [x] Require a known successful stop reason in the CLI alongside authentication, account verification and cleanup.
 - [x] Cover target conflict, mismatch, unknown/missing reasons, and supported successful stops using synthetic CLI results.
 - [x] Document exit-status semantics and review evidence; record the sampled Brooks review.
-- [ ] Run focused and full tests, repository/whitespace/syntax checks, commit and push; recheck Codex review, CI and mergeability.
+- [x] Run launcher regressions and all238 local tests, commit and push the safety-stop correction.
+- [ ] Correct the game fixture UID and connection-refused errno to match the host without weakening expected behavior.
+- [ ] Provision the required macOS-style `/private/tmp` test root on the ephemeral Ubuntu runner, preserving namespace validation in production and tests.
+- [ ] Record CI fixture requirements in CONTRIBUTING.md and validation in Verification.md; run affected/full tests and hygiene checks, commit and push.
+- [ ] Recheck Codex review, CI and mergeability.
 
 ## Open questions
 - None. Safety-stop failures must return nonzero; normal game/companion exit and the session limit retain existing successful behavior when all other checks pass.

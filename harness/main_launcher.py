@@ -311,8 +311,10 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
     if (activation.get("schema") != 1 or activation.get("copied_apps_signed") is not True
             or activation.get("proposal_sha256") != sha256((root / "main-proposal.json").read_bytes())):
         _fail("ACTIVATION_REQUIRED")
+    from .ui_update import selected_session
+    companion_session = selected_session(root)
     game_debug.verify(root / "game")
-    cli._validate_launch_copy(root / "companion")
+    cli._validate_launch_copy(companion_session)
     _closed()
     if confirm_steam is None:
         _fail("INTERACTIVE_TERMINAL_REQUIRED")
@@ -330,7 +332,9 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
     # Opening Steam can update the installed build while the owner confirms it.
     _source(home)
     game_debug.verify(root / "game")
-    cli._validate_launch_copy(root / "companion")
+    if selected_session(root) != companion_session:
+        _fail("PREPARATION_INVALID")
+    cli._validate_launch_copy(companion_session)
     try:
         progress_backup.assert_source_unchanged(home / main_account.DATA_RELATIVE, backup)
     except (HarnessError, OSError):
@@ -367,7 +371,7 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
                     return "TARGET_CONFLICT"
                 return None
 
-            report = main_companion.run(root / "companion", _private(root / "preferences"),
+            report = main_companion.run(companion_session, _private(root / "preferences"),
                        target_pid=pid, target_game=executable, expected_steam_id=binding["steam_id"],
                        expected_profile=binding["profile"], seconds=seconds, should_stop=stop_reason)
         result = {"mode": "MAIN_ACCOUNT_STEAM_PROGRESS", "backup": backup_summary,

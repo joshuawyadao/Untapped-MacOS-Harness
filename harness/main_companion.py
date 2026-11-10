@@ -248,7 +248,8 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
                     stage = "clone"
                     root = _clone(session, manifest)
                     stage = "seed"
-                    main_preferences.seed(root / "profile", preferences_dir)
+                    main_preferences.seed(root / "profile", preferences_dir,
+                                          enable_default_tiers=manifest.get("ui_assets_version") == 1)
                     stage = "launch"
                     process = _launch(root, gateway, target_environment,
                                       expected_steam_id, expected_profile)

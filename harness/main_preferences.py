@@ -169,14 +169,45 @@ def _write_at(root_fd, names, value):
                 pass
 
 
-def seed(profile, preferences_dir):
+# Public UUIDs from the pinned companion's bundled defaultTierLists.
+DEFAULT_TIERS = {
+    "baalorlord": dict(zip(("ironclad", "silent", "regent", "necrobinder", "defect"), (
+        "004de170-026a-4dd4-a280-3b904be0b5d6", "6d61ea21-0552-4c49-8bb5-a5c15530fc00",
+        "0e6c1e23-bec6-4887-a9e0-dbf49ede974d", "43d0b41f-7d6d-4ce9-928e-c1310a413983",
+        "5a512e04-4583-4a16-9271-d46864c6cb4c"))),
+    "jorbs": dict(zip(("ironclad", "silent", "regent", "necrobinder", "defect"), (
+        "6b3390b7-bcbc-4ebc-ae78-ae9a400c66dc", "2cd72d4b-eeb4-42ab-89ca-4ac682137672",
+        "c47dbfda-4983-4107-8c9c-c33d5ae32b23", "3ae661e6-6190-4a45-b00e-63e8400fff94",
+        "5f8d3e04-1f50-4b56-b51a-d8650b000ce3"))),
+}
+
+
+def _fill_default_tiers(tiers):
+    # Prefer the already selected bundled author. Preserve every enabled custom list.
+    author = max(DEFAULT_TIERS, key=lambda name: sum(
+        tiers.get(uuid, {}).get("isEnabled") is True for uuid in DEFAULT_TIERS[name].values()))
+    covered = {entry["color"] for entry in tiers.values() if entry["isEnabled"]}
+    result = dict(tiers)
+    for color, uuid in DEFAULT_TIERS[author].items():
+        if color not in covered:
+            result[uuid] = {"uuid": uuid, "color": color, "isEnabled": True}
+    if len(result) > 128:
+        raise HarnessError("Default tier lists exceed preference limit")
+    return result
+
+
+def seed(profile, preferences_dir, *, enable_default_tiers=False):
     """Seed only previously harvested local choices into a fresh profile."""
     with _anchor(profile) as profile_fd, _anchor(preferences_dir) as preferences_fd:
         persisted = _read_at(preferences_fd, ("preferences.json",))
-        if persisted is None:
-            return {"settings_seeded": False, "tier_lists_seeded": 0, "terms_seeded": False}
         settings = _safe_settings(persisted.get("config")) if isinstance(persisted, dict) else {}
         tiers = _safe_tiers(persisted.get("tier_lists")) if isinstance(persisted, dict) else {}
+        migrated = isinstance(persisted, dict) and persisted.get("default_tiers_version") == 1
+        if enable_default_tiers and not migrated:
+            tiers = _fill_default_tiers(tiers)
+            migrated = True
+        if migrated:
+            _write_at(profile_fd, ("harness-default-tiers.json",), {"version": 1})
         if settings:
             _write_at(profile_fd, ("config.json",), settings)
         if tiers:
@@ -190,7 +221,9 @@ def harvest(profile, preferences_dir):
     with _anchor(profile) as profile_fd, _anchor(preferences_dir) as preferences_fd:
         config = _safe_settings(_read_at(profile_fd, ("config.json",)))
         tiers = _safe_tiers(_read_at(profile_fd, ("sts2", "tier-lists", "index.json")))
-        _write_at(preferences_fd, ("preferences.json",),
-                  {"schema": 1, "config": config, "tier_lists": tiers})
+        saved = {"schema": 1, "config": config, "tier_lists": tiers}
+        if _read_at(profile_fd, ("harness-default-tiers.json",)) == {"version": 1}:
+            saved["default_tiers_version"] = 1
+        _write_at(preferences_fd, ("preferences.json",), saved)
     return {"settings_saved": bool(config.get("sts2")), "tier_lists_saved": len(tiers),
             "terms_saved": config.get("acceptedTOS") is True}

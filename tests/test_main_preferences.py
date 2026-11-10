@@ -21,6 +21,40 @@ class PreferencesTests(unittest.TestCase):
         self.profile.mkdir(mode=0o700)
         self.preferences.mkdir(mode=0o700)
 
+    def test_default_lists_fill_all_characters_once_and_preserve_custom_choices(self):
+        custom = "123e4567-e89b-12d3-a456-426614174000"
+        baalo = prefs.DEFAULT_TIERS["baalorlord"]
+        initial = {custom: {"uuid": custom, "color": "silent", "isEnabled": True},
+                   baalo["ironclad"]: {"uuid": baalo["ironclad"], "color": "ironclad", "isEnabled": True}}
+        (self.preferences / "preferences.json").write_text(json.dumps({"tier_lists": initial}))
+        prefs.seed(self.profile, self.preferences, enable_default_tiers=True)
+        index = self.profile / "sts2/tier-lists/index.json"
+        tiers = json.loads(index.read_text())
+        self.assertEqual({row["color"] for row in tiers.values() if row["isEnabled"]},
+                         {"ironclad", "silent", "regent", "necrobinder", "defect"})
+        self.assertEqual(tiers[custom], initial[custom])
+        self.assertNotIn(baalo["silent"], tiers)
+        self.assertFalse((self.profile / "config.json").exists())
+        tiers[baalo["regent"]]["isEnabled"] = False
+        index.write_text(json.dumps(tiers))
+        prefs.harvest(self.profile, self.preferences)
+        fresh = self.profile.parent / "next-profile"
+        fresh.mkdir(mode=0o700)
+        prefs.seed(fresh, self.preferences, enable_default_tiers=True)
+        next_tiers = json.loads((fresh / "sts2/tier-lists/index.json").read_text())
+        self.assertFalse(next_tiers[baalo["regent"]]["isEnabled"])
+        self.assertEqual(json.loads((self.preferences / "preferences.json").read_text())["default_tiers_version"], 1)
+
+    def test_default_lists_prefer_existing_jorbs_and_refuse_overflow(self):
+        jorbs = prefs.DEFAULT_TIERS["jorbs"]
+        initial = {jorbs["silent"]: {"uuid": jorbs["silent"], "color": "silent", "isEnabled": True}}
+        self.assertEqual(set(prefs._fill_default_tiers(initial)), set(jorbs.values()))
+        full = {f"123e4567-e89b-12d3-a456-{i:012d}": {
+            "uuid": f"123e4567-e89b-12d3-a456-{i:012d}", "color": "colorless", "isEnabled": False}
+            for i in range(128)}
+        with self.assertRaises(HarnessError):
+            prefs._fill_default_tiers(full)
+
     def test_first_run_does_not_accept_terms_or_create_config(self):
         result = prefs.seed(self.profile, self.preferences)
         self.assertFalse(result["terms_seeded"])

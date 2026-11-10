@@ -132,3 +132,11 @@ Game/owner exit, mismatch, conflicts, Ctrl+C and deadline stop only owned compan
 
 
 The owner subsequently approved the main copied-app activation. Both signatures/entitlements/runtime flags and proposal binding verified, with only the allowed outer signing files changed. The installed game and copied native payloads are unchanged. No real progress was read or backed up and no app/Steam network session ran during activation; the next step is the normal-account interactive start sequence rather than further signing approval.
+
+## Offline UI assets and companion update selection
+
+`ui_assets.py` applies four exact renderer edits to a verified private copy: fixed public images become data URIs, FontAwesome styles/fonts are embedded after preserved CSS imports, checkboxes use a visible text tick, and the commentary panel has an opaque color/border fallback. Fixed HTTPS destinations, no redirects/proxy/cookies, media/magic checks, per-item/total bytes, request count and elapsed-time checks bound preparation. No third-party assets are committed. Runtime API/gateway rules remain fixed.
+
+`ui_update.py` clones the existing verified locally signed companion, compares the full app tree, applies those renderer edits, reseals only the outer bundle with its unchanged five entitlements, and verifies the native signature/payloads. Only ASAR, outer executable and CodeResources may differ. The original signed source is rechecked before publishing a completion record. `main_launcher.start` selects the complete `companion-ui` record and rechecks selection before game startup. Existing running profiles keep their previous bytes.
+
+For an updated main companion, `main_preferences.seed` fills uncovered character colors once using the pinned bundled default tier UUIDs. Existing enabled/custom lists survive; native refresh supplies genuine metadata. A private per-profile migration marker is harvested into the sanitized preference record, preventing later user choices from being overwritten on every launch. No account values, tokens or tier content are persisted.

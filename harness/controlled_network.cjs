@@ -127,6 +127,63 @@ function requestEnvelope(input, init = {}) {
   return { url, method: method.toUpperCase(), headers, body };
 }
 
+const MAX_RESPONSE = 8 * 1024 * 1024;
+const MAX_REQUEST = 32768; // Match the gateway's envelope limit before queueing.
+const MAX_IN_FLIGHT = 4; // Leave room for the gateway's other local callers (limit: eight).
+const MAX_WAITING = 128;
+const QUEUE_TIMEOUT_MS = 60000;
+const RETRY_DELAYS_MS = [250, 750];
+
+function publicTierRead(envelope) {
+  if (envelope.method !== "GET" || envelope.body !== null) return false;
+  let url;
+  try { url = new URL(envelope.url); } catch (_) { return false; }
+  if (url.protocol !== "https:" || url.host !== "api.sts2.untapped.gg" ||
+      url.username || url.password || url.hash ||
+      !/^\/api\/v1\/tier-lists\/[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\/resolve\/$/.test(url.pathname)) {
+    return false;
+  }
+  if (!url.search) return true;
+  const pairs = [...url.searchParams];
+  return pairs.length === 1 && pairs[0][0] === "game_version" &&
+    /^[A-Za-z0-9][A-Za-z0-9._+-]{0,79}$/.test(pairs[0][1]);
+}
+
+function transientFailure(error) {
+  return error && (["ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "EPIPE"].includes(error.code) ||
+    ["request-timeout", "body-timeout"].includes(error.type));
+}
+
+function boundedQueue() {
+  let active = 0;
+  const waiting = [];
+  function start(entry) {
+    active += 1;
+    clearTimeout(entry.timer);
+    Promise.resolve().then(entry.run).then(entry.resolve, entry.reject).finally(() => {
+      active -= 1;
+      if (waiting.length) start(waiting.shift());
+    });
+  }
+  return function submit(run) {
+    return new Promise((resolve, reject) => {
+      const entry = { run, resolve, reject, timer: null };
+      if (active < MAX_IN_FLIGHT && waiting.length === 0) {
+        start(entry);
+      } else if (waiting.length >= MAX_WAITING) {
+        reject(new Error("Controlled fetch queue full"));
+      } else {
+        entry.timer = setTimeout(() => {
+          const index = waiting.indexOf(entry);
+          if (index >= 0) waiting.splice(index, 1);
+          reject(new Error("Controlled fetch queue timed out"));
+        }, QUEUE_TIMEOUT_MS);
+        waiting.push(entry);
+      }
+    });
+  };
+}
+
 function privateUrlFile(fs, path, profile, url) {
   if (typeof profile !== "string" || !path.isAbsolute(profile)) throw new Error("Invalid controlled profile");
   const dir = fs.lstatSync(profile);
@@ -165,6 +222,7 @@ function install({ electron, fs, path, profile, gatewayUrl, gatewayKey, original
     throw new Error("Invalid controlled network configuration");
   }
   const cached = new WeakMap();
+  const submit = boundedQueue();
   electron.shell.openExternal = async function manualSignIn(target) {
     const url = oauthAddress(target);
     privateUrlFile(fs, path, profile, url);
@@ -178,17 +236,47 @@ function install({ electron, fs, path, profile, gatewayUrl, gatewayKey, original
       const wrapped = function controlledFetch(input, init) {
         const envelope = requestEnvelope(input, init);
         const payload = JSON.stringify(envelope);
-        if (Buffer.byteLength(payload, "utf8") > 8 * 1024 * 1024) {
+        if (Buffer.byteLength(payload, "utf8") > MAX_REQUEST) {
           throw new TypeError("Fetch request too large");
         }
-        return fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Harness-Key": gatewayKey },
-          body: payload,
-          redirect: "manual",
-          timeout: 15000,
-          size: 8 * 1024 * 1024,
-        });
+        const retryable = publicTierRead(envelope);
+        async function attempt() {
+          const response = await submit(async () => {
+            const original = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-Harness-Key": gatewayKey },
+              body: payload,
+              redirect: "manual",
+              timeout: 15000,
+              size: MAX_RESPONSE,
+            });
+            // A fetch promise resolves before its body finishes. Keep the gateway
+            // slot until the body has been bounded and fully received.
+            const body = await original.buffer();
+            if (!Buffer.isBuffer(body) || body.length > MAX_RESPONSE) {
+              throw new TypeError("Controlled response too large");
+            }
+            return new fetch.Response(body, {
+              status: original.status, statusText: original.statusText,
+              headers: original.headers, url: original.url,
+              size: MAX_RESPONSE,
+            });
+          });
+          return response;
+        }
+        return (async () => {
+          for (let index = 0; ; index += 1) {
+            try {
+              const response = await attempt();
+              if (!retryable || ![502, 503, 504].includes(response.status) ||
+                  index === RETRY_DELAYS_MS.length) return response;
+            } catch (error) {
+              if (!retryable || !transientFailure(error) ||
+                  index === RETRY_DELAYS_MS.length) throw error;
+            }
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS_MS[index]));
+          }
+        })();
       };
       Object.assign(wrapped, fetch);
       wrapped.default = wrapped;

@@ -19,7 +19,7 @@ from .gateway import Gateway
 
 MAX_SECONDS = 8 * 3600
 EVENT_NAMES = controlled.EVENTS | {"main-steam-verified", "main-steam-mismatch"}
-STOP_REASONS = {"GAME_EXIT", "GAME_CRASHED", "TARGET_CONFLICT"}
+STOP_REASONS = {"GAME_EXIT", "GAME_CRASHED", "TARGET_CONFLICT", "OWNER_STOP"}
 
 
 def _private_directory(path):
@@ -96,7 +96,9 @@ def _events(attempt):
 
 def supervise(process, attempt, seconds, should_stop=None, *, clock=time.monotonic):
     """Poll the owned companion only. Authentication never shortens the run."""
-    deadline = clock() + seconds
+    if seconds is None and not callable(should_stop):
+        raise HarnessError("Unlimited companion supervision requires a stop callback")
+    deadline = None if seconds is None else clock() + seconds
     seen = set()
     while True:
         seen.update(_events(attempt))
@@ -112,11 +114,11 @@ def supervise(process, attempt, seconds, should_stop=None, *, clock=time.monoton
         if exit_code is not None:
             seen.update(_events(attempt))
             return ("COMPANION_EXITED" if exit_code == 0 else "COMPANION_CRASHED"), seen
-        remaining = deadline - clock()
-        if remaining <= 0:
+        remaining = None if deadline is None else deadline - clock()
+        if remaining is not None and remaining <= 0:
             return "SESSION_LIMIT_REACHED", seen
         try:
-            process.wait(timeout=min(0.5, remaining))
+            process.wait(timeout=0.5 if remaining is None else min(0.5, remaining))
         except subprocess.TimeoutExpired:
             pass
 
@@ -201,13 +203,15 @@ def _diagnostic(safe):
 
 
 def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: Path,
-        expected_steam_id: str, expected_profile: int, seconds: int = 14400,
-        should_stop=None):
+        expected_steam_id: str, expected_profile: int, seconds=14400,
+        should_stop=None, on_companion_ready=None):
     """Start one private signed copy; never signal or modify the game process."""
     if platform.system() != "Darwin" or os.getuid() == 0 or os.getuid() != os.geteuid():
         raise HarnessError("Main-account companion requires unprivileged macOS")
-    if type(seconds) is not int or not 1 <= seconds <= MAX_SECONDS:
+    if seconds is not None and (type(seconds) is not int or not 1 <= seconds <= MAX_SECONDS):
         raise HarnessError("Companion duration must be 1–28800 seconds")
+    if seconds is None and not callable(should_stop):
+        raise HarnessError("Unlimited companion run requires a stop callback")
     if not isinstance(expected_steam_id, str) or not re.fullmatch(r"[0-9]{1,20}", expected_steam_id):
         raise HarnessError("Expected Steam identity is invalid")
     if type(expected_profile) is not int or not 0 <= expected_profile <= 99:
@@ -246,7 +250,7 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
                 preflight = controlled.sanitized_preflight(gateway.preflight())
                 baseline = dict(gateway.counts)
                 preflight_failures = len(gateway.failure_details)
-                if preflight["passed"] and time.monotonic() - started < seconds:
+                if preflight["passed"] and (seconds is None or time.monotonic() - started < seconds):
                     stage = "clone"
                     root = _clone(session, manifest)
                     stage = "seed"
@@ -255,8 +259,11 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
                     stage = "launch"
                     process = _launch(root, gateway, target_environment,
                                       expected_steam_id, expected_profile)
+                    if on_companion_ready is not None:
+                        on_companion_ready(root)
                     stage = "supervise"
-                    reason, seen = supervise(process, root, seconds - (time.monotonic() - started),
+                    remaining = None if seconds is None else seconds - (time.monotonic() - started)
+                    reason, seen = supervise(process, root, remaining,
                                              should_stop)
                     if reason == "GAME_CRASHED":
                         failure_stage = "GAME_PROCESS_EXIT"

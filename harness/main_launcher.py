@@ -299,11 +299,27 @@ def _wait_for_steam(process, executable, log, seconds=60):
 
 
 def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
-          seconds=DEFAULT_SECONDS, confirm_steam=None):
+          seconds=DEFAULT_SECONDS, confirm_steam=None, should_stop=None,
+          on_companion_ready=None):
     if not (approved and cloud_confirmed and account_confirmed):
         _fail("LIVE_CONFIRMATIONS_REQUIRED")
-    if type(seconds) is not int or not 60 <= seconds <= MAX_SECONDS:
+    if seconds is not None and (type(seconds) is not int or not 60 <= seconds <= MAX_SECONDS):
         _fail("PREPARATION_INVALID")
+    if should_stop is not None and not callable(should_stop):
+        _fail("PREPARATION_INVALID")
+
+    def owner_stop_reason():
+        if should_stop is None:
+            return None
+        reason = should_stop()
+        if reason not in (None, "OWNER_STOP"):
+            raise HarnessError("Unexpected owner-stop result")
+        return reason
+
+    def stop_before_launch():
+        if owner_stop_reason() == "OWNER_STOP":
+            raise KeyboardInterrupt
+
     root, home, binding = _prepared()
     if not (root / "activation.json").exists():
         _fail("ACTIVATION_REQUIRED")
@@ -328,6 +344,7 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
     except (HarnessError, OSError):
         _fail("BACKUP_FAILED")
     confirm_steam()
+    stop_before_launch()
     _steam_ready()
     # Opening Steam can update the installed build while the owner confirms it.
     _source(home)
@@ -356,6 +373,7 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
         with log.open("xb") as output:
             os.chmod(log, 0o600)
             _source(home)
+            stop_before_launch()
             process = subprocess.Popen(command, cwd=attempt, env=environment, stdout=output,
                                        stderr=subprocess.STDOUT, start_new_session=True)
             pid = _wait_for_steam(process, executable, log)
@@ -372,11 +390,12 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
                         return "TARGET_CONFLICT"
                 except (HarnessError, OSError):
                     return "TARGET_CONFLICT"
-                return None
+                return owner_stop_reason()
 
             report = main_companion.run(companion_session, _private(root / "preferences"),
                        target_pid=pid, target_game=executable, expected_steam_id=binding["steam_id"],
-                       expected_profile=binding["profile"], seconds=seconds, should_stop=stop_reason)
+                       expected_profile=binding["profile"], seconds=seconds, should_stop=stop_reason,
+                       on_companion_ready=on_companion_ready)
         game_exit_code = process.poll()
         result = {"mode": "MAIN_ACCOUNT_STEAM_PROGRESS", "backup": backup_summary,
                   "steam_initialization_observed": True, "cloud_store_enabled_logged": True,
@@ -406,7 +425,9 @@ def main(argv=None):
     start_parser.add_argument("--approve-main-account-launch", action="store_true")
     start_parser.add_argument("--confirm-cloud-synced", action="store_true")
     start_parser.add_argument("--confirm-steam-account", action="store_true")
-    start_parser.add_argument("--minutes", type=int, default=DEFAULT_SECONDS // 60)
+    duration = start_parser.add_mutually_exclusive_group()
+    duration.add_argument("--minutes", type=int)
+    duration.add_argument("--until-game-exit", action="store_true")
     args = parser.parse_args(argv)
     try:
         if args.command == "prepare":
@@ -424,14 +445,17 @@ def main(argv=None):
 
             result = start(approved=args.approve_main_account_launch,
                            cloud_confirmed=args.confirm_cloud_synced, account_confirmed=args.confirm_steam_account,
-                           seconds=args.minutes * 60, confirm_steam=confirm)
+                           seconds=None if args.until_game_exit else
+                           (DEFAULT_SECONDS if args.minutes is None else args.minutes * 60),
+                           confirm_steam=confirm)
         print(json.dumps(result, indent=2))
         if args.command == "start":
             companion = result.get("companion", {})
-            healthy = (companion.get("authenticated") is True
-                       and result.get("game_exit_code") in (None, 0)
-                       and companion.get("steam_account_verified") is True
-                       and companion.get("reason") in ("GAME_EXIT", "COMPANION_EXITED", "SESSION_LIMIT_REACHED")
+            reason = companion.get("reason")
+            healthy = (result.get("game_exit_code") in (None, 0)
+                       and reason in ("GAME_EXIT", "COMPANION_EXITED", "SESSION_LIMIT_REACHED", "OWNER_STOP")
+                       and (reason == "OWNER_STOP" or (companion.get("authenticated") is True
+                                                       and companion.get("steam_account_verified") is True))
                        and companion.get("failure_stage") == "NONE"
                        and companion.get("gateway_cleanup_complete") is True
                        and companion.get("companion_group_cleanup_complete") is True)

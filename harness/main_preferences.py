@@ -211,7 +211,12 @@ def seed(profile, preferences_dir, *, enable_default_tiers=False):
         if settings:
             _write_at(profile_fd, ("config.json",), settings)
         if tiers:
-            _write_at(profile_fd, ("sts2", "tier-lists", "index.json"), tiers)
+            # The vendor exposes this index before asynchronous metadata refresh
+            # and its settings comparator calls name.localeCompare directly.
+            # Supply only a temporary label; missing keyCards/gameVersion still
+            # trigger genuine refresh, and harvest drops the display name.
+            pending = {key: {**row, "name": "Loading tier list…"} for key, row in tiers.items()}
+            _write_at(profile_fd, ("sts2", "tier-lists", "index.json"), pending)
     return {"settings_seeded": bool(settings.get("sts2")), "tier_lists_seeded": len(tiers),
             "terms_seeded": settings.get("acceptedTOS") is True}
 

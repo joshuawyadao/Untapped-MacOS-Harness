@@ -397,3 +397,13 @@ An offline headless Chrome fixture rendered the actual embedded five character i
 The existing session continues using its earlier copy. Live updated companion rendering and all-character metadata refresh require the next normal launcher run; post-game Steam Cloud synchronization and full-run stability remain unverified.
 
 Final automated validation: all231 tests pass (13 new cases across asset preparation, update selection and character-list persistence). Node syntax, repository hygiene/Markdown links and whitespace checks pass. Independent review found CSS import ordering and font-request bounds issues; both were corrected before installation. Third-party assets, private profiles and preparation artifacts are excluded from Git.
+
+## Pending tier metadata settings crash — November 10, 2026
+
+After signing into the UI update, the owner reported a blank STS2 settings page. A bounded local log classifier found only the sanitized signature `TypeError: Cannot read properties of undefined (reading 'localeCompare')`; the current index had11 entries, three missing names. The native `TierListSettings` sorts the entire index immediately, while `verifyIndexIntegrity` starts metadata refreshes without awaiting them. Our minimal seeded selections lacked the name expected by the comparator.
+
+A Node replay using the exact bundled `DEFAULT_AUTHORS`, `isDefaultAuthor` and `sortTierLists` fails with the same exception on synthetic pre-fix entries (exit1) and succeeds on repaired seed output (exit0). Fresh profile entries now include the truthful temporary name `Loading tier list…`. No author/ratings are invented; missing keyCards/gameVersion still trigger native metadata refresh, and preference harvest strips the temporary name. Persisted preferences remain UUID/color/enabled only, plus the migration marker. This fixes both imported saved selections and all-character defaults before the first render; no signed ASAR or permissions change is required.
+
+Regression coverage first failed on the missing name, then passed after the seed fix, including sorting and harvest privacy. The original fixture-only visual check missed this asynchronous application-state race; it did not exercise the settings page's native tier comparator.
+
+All232 tests pass after the regression fix. The unchanged signed UI copy was validated and reopened under the existing supervisor beside the same verified running game; only the previous companion process group was terminated. New-profile tier entries all have string names, and startup reaches ready. The owner must manually sign in and confirm the settings page; there was no automated login, game restart or save operation. Repository/Markdown and whitespace checks pass.

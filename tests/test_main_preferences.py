@@ -21,6 +21,25 @@ class PreferencesTests(unittest.TestCase):
         self.profile.mkdir(mode=0o700)
         self.preferences.mkdir(mode=0o700)
 
+    def test_seeded_pending_names_are_safe_for_native_settings_sort_and_not_persisted(self):
+        prefs.seed(self.profile, self.preferences, enable_default_tiers=True)
+        index = self.profile / "sts2/tier-lists/index.json"
+        entries = json.loads(index.read_text())
+        self.assertEqual(len(entries), 5)
+        self.assertTrue(all(row.get("name") == "Loading tier list…" for row in entries.values()))
+        # Native verifyIndexIntegrity must still recognize incomplete metadata.
+        self.assertTrue(all("keyCards" not in row and "gameVersion" not in row for row in entries.values()))
+        import shutil, subprocess
+        if shutil.which("node"):
+            result = subprocess.run([shutil.which("node"), "-e",
+                "const entries=JSON.parse(process.argv[1]); entries.sort((a,b)=>a.name.localeCompare(b.name)); console.log(entries.length)",
+                json.dumps(list(entries.values()))], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "5")
+        prefs.harvest(self.profile, self.preferences)
+        saved = json.loads((self.preferences / "preferences.json").read_text())
+        self.assertTrue(all(set(row) == {"uuid", "color", "isEnabled"} for row in saved["tier_lists"].values()))
+
     def test_default_lists_fill_all_characters_once_and_preserve_custom_choices(self):
         custom = "123e4567-e89b-12d3-a456-426614174000"
         baalo = prefs.DEFAULT_TIERS["baalorlord"]
@@ -32,7 +51,7 @@ class PreferencesTests(unittest.TestCase):
         tiers = json.loads(index.read_text())
         self.assertEqual({row["color"] for row in tiers.values() if row["isEnabled"]},
                          {"ironclad", "silent", "regent", "necrobinder", "defect"})
-        self.assertEqual(tiers[custom], initial[custom])
+        self.assertEqual(tiers[custom], {**initial[custom], "name": "Loading tier list…"})
         self.assertNotIn(baalo["silent"], tiers)
         self.assertFalse((self.profile / "config.json").exists())
         tiers[baalo["regent"]]["isEnabled"] = False
@@ -92,7 +111,7 @@ class PreferencesTests(unittest.TestCase):
         tiers = json.loads((fresh / "sts2/tier-lists/index.json").read_text())
         self.assertTrue(tiers[identifier]["isEnabled"])
         self.assertFalse(tiers[disabled]["isEnabled"])
-        self.assertEqual(set(tiers[identifier]), {"uuid", "isEnabled", "color"})
+        self.assertEqual(set(tiers[identifier]), {"uuid", "isEnabled", "color", "name"})
 
     def test_symlink_and_oversize_input_rejected(self):
         outside = Path(self.temp.name) / "outside"

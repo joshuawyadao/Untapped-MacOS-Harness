@@ -1,49 +1,99 @@
 # Untapped MacOS Harness
 
-An unofficial compatibility harness aiming to make **Untapped.gg work with the macOS version of Slay the Spire 2**.
+An unofficial, experimental harness for investigating whether the **existing Untapped.gg companion** can work with native macOS Slay the Spire 2.
 
-**Status: initial development.** This repository currently contains the collaboration, security, and verification foundation. The harness has not been implemented, and working macOS compatibility has not yet been demonstrated.
+**Status: copy09 visibly renders reward badges on native macOS in the isolated test account.** The latest report reads Collision Course, Astral Pulse and Celestial Might in photographed order, confirms settings recovery and records the overlay show call. Labels appear as `?-Tier`, so actual ratings still need verification. Full geometry, longer sessions and normal Steam/Cloud progress are not established. The owner has selected existing main-account/Steam progress as the eventual target; the [main-account launcher and activation proposal](docs/Main-Account-Migration.md) are now implemented and prepared, with copied-app activation verified; the first live Steam session is still pending. The installed game and normal progress remain unchanged.
 
-## Project direction
+## What this repository provides
 
-The goal is to close the macOS compatibility gap described by the project owner and document a reproducible way to use Untapped.gg alongside Slay the Spire 2 on a Mac.
+The original Python 3.9+ CLI checks a user-supplied companion against one exact release, prepares a disposable copy with narrow STS2 changes, runs a bounded offline startup probe, and reports separate milestones. It never downloads or contains the game or companion. [Harness architecture](docs/Harness-Architecture.md) explains the patches and isolation; [verification](docs/Verification.md) records what was actually observed.
 
-The next milestones are to:
+Pinned companion: `3.12.3-latest`, `app.asar` SHA-256 `ca3a2e6a6f728b2d635abfc70a5434d4107438b8d801a650357989e8442d798c`. A new release requires a new inspection and pins. The official [Mac companion download](https://companion.untapped.gg/mac-releases/Untapped.gg+Companion+Stable+Installer.dmg) supplied the inspected artifact. Use your own lawful copy; keep its DMG, app, and the prepared session outside Git.
 
-1. Investigate how the existing companion integration detects and communicates with the game.
-2. Implement the smallest viable macOS compatibility path and document its architecture.
-3. Verify the integration on documented macOS, game, and companion versions.
-4. Publish setup instructions, test results, and a short demonstration.
+## Local diagnostic workflow
 
-Implementation language, supported macOS versions, and installation steps will be documented after the compatibility investigation. There is no installable harness release yet.
-
-## Explore the repository
-
-| Resource | Purpose |
-| --- | --- |
-| [Contributing](CONTRIBUTING.md) | Local setup, checks, and pull request workflow |
-| [Repository governance](docs/Repository-Governance.md) | Branch protection, CI, security, and maintainer operations |
-| [Security policy](SECURITY.md) | Private vulnerability reporting and handling sensitive data |
-| [Implementation plan](docs/Implementation-Plan.md) | Repository setup scope and validation record |
-| [MIT license](LICENSE) | Reuse terms for original project work |
-
-## Development
+From the repository root on macOS, with the official companion app mounted or otherwise available:
 
 ```sh
-git clone https://github.com/joshuawyadao/Untapped-MacOS-Harness.git
-cd Untapped-MacOS-Harness
-git config --local core.hooksPath .githooks
-git switch -c feat/describe-your-change
-python3 scripts/check_repository.py
-git diff --check
+python3 -m harness.cli inspect '/path/to/Untapped.gg Companion.app'
+python3 -m harness.cli prepare '/path/to/Untapped.gg Companion.app' /private/tmp/untapped-sts2-session
+python3 -m harness.cli launch /private/tmp/untapped-sts2-session --seconds 15
+python3 -m harness.cli status /private/tmp/untapped-sts2-session
 ```
 
-Git and Python 3.9 or newer are sufficient for the current repository checks. Application build and integration tests will be added with the harness implementation. The required `CI Verify` check currently validates repository hygiene and local documentation links; it does not verify game compatibility.
+`prepare` requires a **new** session path outside the repository and copies only the companion; it does not change the supplied app or the installed game. `launch` is single use per session and has a 1–60 second limit. It uses macOS `sandbox-exec` with local settings/logs, blocks real-home reads and writes outside the session, and permits only loopback networking. There is no unsandboxed fallback. A launch that does not reach `ready`, or reports a recognized startup blocker, returns a nonzero status. This probe does not launch the game or accept Untapped's terms.
 
-All changes enter `main` through a pull request with passing CI. See [Contributing](CONTRIBUTING.md) for the complete workflow.
+For a fresh, unlaunched session, `python3 -m harness.cli signing-proposal /private/tmp/untapped-sts2-session` prints the exact outer-companion signing command and prepares its entitlement plist without executing signing. `sign-copy` requires explicit owner approval and the `--approve-ad-hoc-signing` flag. It replaces only the disposable companion's outer signature with a local ad-hoc signature, preserves its original entitlements and Hardened Runtime, and records the resulting executable hash. It does not add game access or guarantee Gatekeeper acceptance. See [signing results](docs/Verification.md#companion-only-signing) and the [approved single-layer experiment](docs/Verification.md#approved-single-layer-experiment).
+
+After separate explicit approval of the Chromium child-sandbox tradeoff, the repeatable outer-only command is:
+
+```sh
+python3 -m harness.cli launch-outer /private/tmp/untapped-sts2-session --seconds 45 --approve-outer-sandbox-only
+```
+
+This requires the signed copy and rechecks its hashes/signature. Each run creates a new private `outer-attempt-*` profile and logs, retaining the outer home/write/network restrictions and allowing Unix sockets only inside that session. It prints `attempt_dir`; pass that path to `status` to inspect the run. Never open the copied app directly in Finder or through an automation API that can launch it: native Electron initialization precedes the JavaScript guard. Observe using non-launching inventory or manual interaction. Terms acceptance remains the user's decision.
+
+November 2 attempts record manual acceptance in separate private profiles. A new attempt does not inherit acceptance. The earlier copy04 stalled on anonymous-token retries; the latest copy05 reaches `CORE_INITIALIZED_LOGGED`. The coarser `TERMS_LOGGED` status alone does not distinguish accepted Terms from a still-open Terms screen. See the [runtime record](docs/Verification.md#successful-offline-core-initialization) for separate evidence.
+
+Current preparation also patches offline credential acquisition to return authentication unavailable before any credential read or anonymous-token request. This preserves Terms and the existing reader, creates no login/token, and keeps remote networking blocked. Copy05 was separately approved, signed, and launched in bounded protected attempts; the latest manual acceptance proceeds to logged Core initialization. Other vendor metrics requests still fail under the offline policy, so the outer restrictions remain necessary.
+
+For an independent reward comparison, manually transcribe the visible cards and normalized positions into a private JSON file, then compare it:
+
+```sh
+python3 -m harness.cli compare-reward /private/tmp/untapped-sts2-session /private/tmp/expected-reward.json --reward-index 0
+```
+
+See [verification](docs/Verification.md) for the exact JSON shape and evidence rules. A matching reward does not establish overlay display or adaptive advice. Use the verified separate-account workflow for live tests; a copied game alone does not isolate saves or Steam Cloud.
+
+## Project resources
+
+- [Contributing](CONTRIBUTING.md): development checks and PR workflow
+- [Harness architecture](docs/Harness-Architecture.md): copy boundary, patches, isolation, and rollback
+- [Verification](docs/Verification.md): observed results and reward comparison
+- [Repository governance](docs/Repository-Governance.md): CI, branch protection, and maintainer operations
+- [Security policy](SECURITY.md): handling sensitive material
+- [Implementation plan](docs/Implementation-Plan.md): task checklist and validation ledger
 
 ## Ownership and licensing
 
-Created and maintained by [Joshua Yadao](https://github.com/joshuawyadao) as an independent engineering project.
+Created and maintained by [Joshua Yadao](https://github.com/joshuawyadao) as an independent engineering project. Original harness code is covered by the [MIT License](LICENSE). Untapped.gg and Slay the Spire 2 belong to their respective owners. Their software, binaries, assets, account data, and trademarks are not covered by this repository's license. This project is not affiliated with or endorsed by them.
 
-Original project work is licensed under the [MIT License](LICENSE). Untapped.gg and Slay the Spire 2 belong to their respective owners. This project is not affiliated with or endorsed by them, and its license does not cover their software, game assets, or trademarks.
+## Isolated game first boot
+
+The approved test setup uses the [test-account runbook](docs/Test-Account-Runbook.md). `python3 -m harness.game_launch` prepares and launches only an unchanged pinned game copy in a separate standard macOS account. It refuses normal-account operation, checks copy hashes/signatures, blocks remote networking and normal-home access, and bounds the first probe to 60 seconds. Its report deliberately does not claim verified isolation. The prepared game-only transfer and manual script are outside Git.
+
+For later reader observation, `launch-outer --target-pid PID --target-game '/absolute/copied/game/executable'` validates user/path and supplies the target guard. New preparations reject STS2 attachment without this verified identity; startup-only probes still work. The changed companion requires a fresh signing proposal before use; the existing signed copy05 does not contain this guard.
+
+The explicit `--manual-play` option permits a maximum 900-second session for the owner-approved bounded play step. Default probes still stop at 60 seconds. The [runbook](docs/Test-Account-Runbook.md#prepared-reward-test-step) describes the staged play/observation scripts and signed target-guarded copy06. The debug-copy reader observation has now produced a real reward event; scaled geometry and overlay remain incomplete.
+
+Copy06's first native observation failed before JavaScript with Electron helper-app discovery failure. The [layout comparison runbook](docs/Test-Account-Runbook.md#helper-discovery-layout-comparison) stages the same signed bytes in a short private tmp session and runs a startup-only 45-second check with no game/Steam present. It reached Electron readiness and Terms with the companion window visible. Reward observations now use this private-tmp layout; actual debug-copy reward IDs/upgrades are now observed; full geometry and overlay remain unverified.
+
+Copy06 initialized Core and detected the game window, then our identity guard failed to execute `/bin/ps` inside the outer sandbox. No reader connection occurred. Copy07 replaces that command with an original same-user metadata helper, compiled privately with the installed Apple command-line tools and hash-checked before use. All 75 tests pass, including a native helper test; approved copy07 signing and transfer verification are complete; the debug-copy reader observation now records a real reward; geometry and overlay remain incomplete. See the [runbook](docs/Test-Account-Runbook.md#copy07-identity-check-retry).
+
+## Controlled attachment-access diagnostic
+
+Copy07 passed the identity guard but native `connect` returned false before any state was read. `python3 -m harness.attachment_diagnostic --run-original-fixtures` builds and signs only original inert fixtures, comparing target `get-task-allow` inside/outside the existing outer policy. Two native runs in UID501 denied the target without the entitlement (kernel code5) and allowed the entitled target (code0) under both policies. This supports testing the entitlement boundary; it does not establish actual game-reader compatibility. The [test-account command](docs/Test-Account-Runbook.md#original-process-attachment-diagnostic) confirms the matrix in UID502 before any separately approved game-copy signing.
+
+## Separate game-copy signing proposal
+
+`harness.game_debug` prepares only a fresh copy matching the complete original tree pin and produces an outer-only ad-hoc signing proposal with the original four game entitlements plus `com.apple.security.get-task-allow`, retaining Hardened Runtime. Signing requires separate owner approval and `--approve-debug-game-signing`; that exact operation is now approved, executed and verified. The prepared target is `/private/tmp/untapped-sts2-debug-game-01/SlayTheSpire2.app`.
+
+The guarded test uses a distinct `UntappedSTS2DebugGameSession` in `sts2test`, with a verified signing receipt and explicit `--debug-game` selection. Its native detection/connection/reward read is observed. It shares that account's existing test game data without importing normal-account saves. See the [verified setup and current workflow](docs/Test-Account-Runbook.md).
+
+The earlier copy07 capture omitted scaleX/scaleY; the authenticated08c reward capture includes them (baseline0.8). Independent rendered geometry still needs a full digital game-viewport screenshot. Do not certify displayed bounds by comparing raw hitboxes with painted artwork or by using reader coordinates as their own expected values. See the [native reward evidence and remaining gaps](docs/Verification.md#first-real-native-reward-state).
+
+## Prepared controlled sign-in setup
+
+Copy08 now includes a controlled manual OAuth/public-data path and scale-complete capture. The companion's remote-network denial stays in place; an original loopback gateway allows only reviewed account/token and public JSON/commentary/tier-list requests. Stats/gameplay-context POSTs, uploads, telemetry and artwork remain blocked. Browser sign-in is manual and outside that gateway; the vendor requests companion:full-access consent scope. Authenticated diagnostics exclude raw logs/account/token data.
+
+The [controlled-access review](docs/Controlled-Access-Plan.md) records exact routes, disclosures, bounded workflow and limits. All164 tests pass using synthetic fixtures and fake/local test servers. The authenticated08c reward report confirms genuine sign-in, reader connection and the three photographed cards, with no gateway failures; it also records a settings-property error. The older08b exception's cause remains unknown. Copy09's guarded settings patch accepts only the two pinned native store types, and its STS2-only UI change lets the owner choose **Slay the Spire 2 → Badges → Tiers** through the existing account gate. The public-data gateway, adapter and sandbox scope stay fixed. The next bounded owner test must confirm real settings recovery and a visible tier overlay; fixed lifecycle events cannot certify visibility. Independent geometry also remains unverified.
+
+## Main-account and existing Steam progress
+
+The main launcher is implemented for the owner's existing Steam progress. `scripts/main_account.sh proposal` displays the prepared copied-app signing/access scope; the copied apps are now signed and activation is verified. The first live Steam session awaits the owner-run start sequence. It verifies private progress backups before game start, rechecks sources after Steam opens, binds the copied game/current-user PID and expected native Steam account/profile, persists only validated overlay preferences, and permits4-hour companion sessions without a45-second post-auth cutoff. It never kills the game as a timeout/save strategy. The copied game uses normal current-user/Steam permissions; only the companion retains the strict outer sandbox/gateway. Authentication stays memory-only. See the [review and exact owner sequence](docs/Main-Account-Migration.md). Existing isolated commands remain test-account-only.
+
+The read-only `python3 -m harness.main_account inspect` still opens no save contents and enables no launch. Actual main-account Steam initialization, ratings, broader overlays and save/Cloud behavior require the first approved live check.
+
+## Main-account UI repair
+
+The owner has confirmed visible tier ratings in a main-account session with matching Steam/profile and reward-reader signals. The optional original `harness.ui_update --install-main` workflow installs a separate verified companion copy with offline character/game icons, icon fonts, visible checkbox ticks and opaque commentary backgrounds. Updated main sessions fill uncovered default tier lists across all five characters once, preserving imported selections and later changes. See the [main-account runbook](docs/Main-Account-Migration.md#offline-ui-repair-and-default-character-lists). Active sessions keep running until normal exit; Cloud sync and full-run stability remain separate checks.

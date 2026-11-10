@@ -2,7 +2,7 @@
 
 ## Purpose and current scope
 
-Untapped MacOS Harness aims to make Untapped.gg work with Slay the Spire 2 on macOS. The repository is public for portfolio visibility and collaboration. It currently contains repository infrastructure; no runnable harness or verified compatibility claim is included.
+Untapped MacOS Harness aims to make Untapped.gg work with Slay the Spire 2 on macOS. The repository is public for portfolio visibility and collaboration. It now contains an original diagnostic CLI and synthetic tests, but no verified end-to-end compatibility or installable release. See [architecture](Harness-Architecture.md) and [verification](Verification.md) for the actual evidence.
 
 Original project work uses the [MIT License](../LICENSE). Third-party software, assets, and trademarks remain subject to their owners' terms.
 
@@ -35,6 +35,8 @@ An empty root commit initialized `main` before these controls were enabled, beca
 
 ```sh
 git config --local core.hooksPath .githooks
+python3 -m unittest discover -s tests -v
+node --check harness/bootstrap.cjs
 python3 scripts/check_repository.py
 git diff --check
 ```
@@ -43,7 +45,7 @@ The hook blocks updates and deletions targeting `refs/heads/main`, including exp
 
 `scripts/check_repository.py` checks tracked files for common sensitive paths, private-key markers, files larger than 5 MiB, symlinks, and broken simple inline relative Markdown file links. Stage new files before running it. The link check does not validate remote URLs, headings, reference-style links, or arbitrary Markdown syntax. It does not replace secret scanning or manual review.
 
-The required [CI workflow](../.github/workflows/ci.yml) runs repository checks, committed whitespace checks, and hook syntax checks on all PRs targeting `main`, on pushes to `main`, and on manual dispatch. It uses a pinned checkout commit, read-only contents permission, no persisted checkout credentials, and a five-minute timeout. There are no path filters that would leave documentation PRs waiting for a skipped required check. Ubuntu is sufficient for the current checks; add macOS build and integration jobs when platform code exists, keeping `CI Verify` as the stable required result.
+The required [CI workflow](../.github/workflows/ci.yml) runs portable Python and stubbed Node bootstrap tests, Node syntax, repository checks, committed whitespace checks, and hook syntax checks on all PRs targeting `main`, on pushes to `main`, and on manual dispatch. It uses a pinned checkout commit, read-only contents permission, no persisted checkout credentials, and a five-minute timeout. There are no path filters that would leave documentation PRs waiting for a skipped required check. Ubuntu can test original harness behavior but cannot prove macOS companion startup or native game integration; retain `CI Verify` as the stable required result if adding macOS jobs.
 
 ## GitHub security controls
 
@@ -69,7 +71,7 @@ gh api repos/joshuawyadao/Untapped-MacOS-Harness/actions/permissions/workflow
 
 If CI fails, fix the cause on the feature branch and rerun it. If the branch falls behind, update it from `origin/main`, resolve conflicts, and wait for fresh checks. Avoid weakening protection to get a change through.
 
-Before presenting the harness as working on a resume, add a reproducible installation path, an architecture explanation, supported-version evidence, meaningful behavior tests, and an original demonstration with personal data removed.
+Before presenting the harness as working on a resume, demonstrate startup, game detection, reader attachment, a correctly matched real reward screen, overlay behavior, and a reproducible installation path. The current [verification record](Verification.md) does not support a working-compatibility claim. Keep any demonstration free of personal data and proprietary redistribution.
 
 ## References
 

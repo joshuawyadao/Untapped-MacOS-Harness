@@ -1,0 +1,127 @@
+/* Original harness bootstrap. Runs before vendor imports in the disposable copy. */
+(() => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const Module = require("node:module");
+  const electron = require("electron");
+  const profile = process.env.UC_TEST_SANDBOX_DIR;
+  if (process.env.UNTAPPED_HARNESS_OFFLINE !== "1" || !profile || !path.isAbsolute(profile)) {
+    throw new Error("Launch this disposable copy through the offline harness");
+  }
+  for (const key of ["home", "userData", "appData", "sessionData", "logs", "crashDumps", "temp"]) {
+    const destination = key === "home" || key === "userData" ? profile : path.join(profile, key);
+    fs.mkdirSync(destination, { recursive: true, mode: 0o700 });
+    electron.app.setPath(key, destination);
+  }
+  const controlled = process.env.UNTAPPED_HARNESS_CONTROLLED_ACCESS === "1";
+  // Do not access the macOS Keychain, including an existing Untapped service.
+  const credentials = new Map();
+  const credentialKey = (service, account) => JSON.stringify([service, account]);
+  const memoryKeytar = {
+    getPassword: async (service, account) => credentials.get(credentialKey(service, account)) ?? null,
+    setPassword: async (service, account, password) => { credentials.set(credentialKey(service, account), password); },
+    deletePassword: async (service, account) => credentials.delete(credentialKey(service, account)),
+    findCredentials: async (service) => controlled ? [...credentials.entries()].flatMap(([key, password]) => {
+      const [storedService, account] = JSON.parse(key);
+      return storedService === service ? [{ account, password }] : [];
+    }) : [],
+    findPassword: async () => null,
+  };
+  const originalLoad = Module._load;
+  let network = null;
+  if (controlled) {
+    const helper = path.join(profile, "controlled-network.cjs");
+    const info = fs.lstatSync(helper);
+    const expected = process.env.UNTAPPED_HARNESS_NETWORK_SHA256;
+    if (!info.isFile() || info.uid !== process.getuid() || info.nlink !== 1 ||
+        (info.mode & 0o7777) !== 0o600 || !/^[a-f0-9]{64}$/.test(expected || "") ||
+        require("node:crypto").createHash("sha256").update(fs.readFileSync(helper)).digest("hex") !== expected) {
+      throw new Error("Controlled network helper is missing or changed");
+    }
+    network = require(helper).install({ electron, fs, path, profile,
+      gatewayUrl: process.env.UNTAPPED_HARNESS_GATEWAY_URL,
+      gatewayKey: process.env.UNTAPPED_HARNESS_GATEWAY_KEY, originalLoad,
+      event: (name) => global.__untappedHarnessEvent(name) });
+  }
+  Module._load = function (request, parent, isMain) {
+    if (request === "keytar") return memoryKeytar;
+    if (network && request === "node-fetch") return network.loadFetch(parent, isMain);
+    return originalLoad.call(this, request, parent, isMain);
+  };
+  // No browser handoff, protocol registration, or login-item changes even via UI.
+  if (!controlled) electron.shell.openExternal = async () => { throw new Error("Offline harness blocks external links"); };
+  electron.app.setLoginItemSettings = () => {};
+  electron.app.setAsDefaultProtocolClient = () => false;
+  const events = path.join(profile, "events.jsonl");
+  const seen = new Set();
+  let rewards = 0;
+  global.__untappedHarnessEvent = (event) => {
+    if (!["bootstrap", "ready", "window-detected", "attach-attempt", "reader-connected", "manual-sign-in-ready", "authenticated", "settings-read", "overlay-ready", "overlay-show", "main-steam-verified", "main-steam-mismatch"].includes(event) || seen.has(event)) return;
+    seen.add(event);
+    fs.appendFileSync(events, JSON.stringify({ event, time: new Date().toISOString() }) + "\n", { mode: 0o600 });
+  };
+  global.__untappedHarnessMainSteamVerified = false;
+  global.__untappedHarnessCanShowSts2Overlay = () =>
+    process.env.UNTAPPED_HARNESS_MAIN_ACCOUNT !== "1" || global.__untappedHarnessMainSteamVerified;
+  global.__untappedHarnessAssertSteamSettings = (settings) => {
+    if (process.env.UNTAPPED_HARNESS_MAIN_ACCOUNT !== "1") return;
+    global.__untappedHarnessMainSteamVerified = false;
+    if (settings === null) return;
+    const expectedId = process.env.UNTAPPED_HARNESS_EXPECTED_STEAM_ID;
+    const expectedProfile = process.env.UNTAPPED_HARNESS_EXPECTED_PROFILE;
+    if (!controlled || !/^[1-9][0-9]{0,19}$/.test(expectedId || "") ||
+        !/^(0|[1-9][0-9]?)$/.test(expectedProfile || "") ||
+        !settings || settings.steamUserId !== expectedId ||
+        !Number.isInteger(settings.currentProfile) || settings.currentProfile !== Number(expectedProfile)) {
+      global.__untappedHarnessEvent("main-steam-mismatch");
+      throw new Error("Main harness Steam account or profile mismatch");
+    }
+    global.__untappedHarnessMainSteamVerified = true;
+    global.__untappedHarnessEvent("main-steam-verified");
+  };
+  global.__untappedHarnessAssertTargetPid = (pid) => {
+    const raw = process.env.UNTAPPED_HARNESS_TARGET_PID;
+    const rawUid = process.env.UNTAPPED_HARNESS_TARGET_UID;
+    const executable = process.env.UNTAPPED_HARNESS_TARGET_EXECUTABLE;
+    const expectedProbeHash = process.env.UNTAPPED_HARNESS_IDENTITY_SHA256;
+    if (typeof raw !== "string" || !/^[1-9][0-9]*$/.test(raw) ||
+        typeof rawUid !== "string" || !/^[1-9][0-9]*$/.test(rawUid) ||
+        typeof executable !== "string" || !path.isAbsolute(executable) ||
+        typeof expectedProbeHash !== "string" || !/^[a-f0-9]{64}$/.test(expectedProbeHash)) {
+      throw new Error("Complete harness target identity required before STS2 reader construction");
+    }
+    const expected = Number(raw);
+    const expectedUid = Number(rawUid);
+    if (!Number.isSafeInteger(expected) || !Number.isSafeInteger(pid) || pid <= 0 || pid !== expected ||
+        !Number.isSafeInteger(expectedUid) || typeof process.getuid !== "function" ||
+        expectedUid !== process.getuid()) {
+      throw new Error("Harness STS2 target PID mismatch");
+    }
+    const probe = path.join(profile, "target-identity");
+    const info = fs.lstatSync(probe);
+    if (!info.isFile() || info.uid !== process.getuid() || info.nlink !== 1 ||
+        (info.mode & 0o7777) !== 0o700) {
+      throw new Error("Harness identity helper is not a private owned regular executable");
+    }
+    const { createHash } = require("node:crypto");
+    if (createHash("sha256").update(fs.readFileSync(probe)).digest("hex") !== expectedProbeHash) {
+      throw new Error("Harness identity helper changed before target verification");
+    }
+    const { execFileSync } = require("node:child_process");
+    const row = execFileSync(probe, [String(pid)], {
+      encoding: "utf8", timeout: 2000, maxBuffer: 1024,
+    }).trim();
+    const identity = /^([0-9]+)\s+(.+)$/.exec(row);
+    if (!identity || Number(identity[1]) !== expectedUid || identity[2] !== executable) {
+      throw new Error("Harness STS2 target process changed before reader construction");
+    }
+  };
+  global.__untappedHarnessReward = (items) => {
+    if (items?.source !== "cardReward" || !Array.isArray(items.cards) || rewards >= 100) return;
+    const cards = items.cards.slice(0, 20).map(({ id, upgradeLevel, cx, cy, width, height, scaleX, scaleY }) => ({ id, upgradeLevel, cx, cy, width, height, scaleX, scaleY }));
+    fs.appendFileSync(events, JSON.stringify({ event: "reward", time: new Date().toISOString(), cards }) + "\n", { mode: 0o600 });
+    rewards++;
+  };
+  global.__untappedHarnessEvent("bootstrap");
+  electron.app.whenReady().then(() => global.__untappedHarnessEvent("ready"));
+})();

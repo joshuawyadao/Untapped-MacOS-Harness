@@ -31,3 +31,9 @@ jobs:
         run: git show --format= --check -m --first-parent HEAD
       - name: Check hook syntax
         run: sh -n .githooks/pre-push
+      - name: Check original bootstrap syntax
+        run: node --check harness/bootstrap.cjs
+      - name: Prepare macOS temporary-path fixture
+        run: sudo install -d -m 1777 /private/tmp
+      - name: Test harness with synthetic archives and events
+        run: python3 -m unittest discover -s tests -v

@@ -35,3 +35,7 @@ The native frontend communicates with the worker over bounded JSON lines. UI out
 The November 10, 2026 build compiled and passed native signature verification. The installed app window was inspected with Start Game enabled and sign-in/stop disabled while idle. All 272 regression tests passed, including new lifetime, cancellation, private URL, exclusive-lock and worker-protocol cases. Native Dock automation timed out, so pinning is left to the owner.
 
 The first complete real-game launch through the new app, browser login through its button, multi-hour sessions and quit behavior remain live checks. The earlier diagnostic session ended with a supervision failure whose underlying cause was not established; removing the duration limit does not resolve or conceal that separate issue. Private diagnostics and existing failure outcomes remain available.
+
+### Short live status messages
+
+The November 11 live-startup fix uses POSIX pipe reads so short prompts arrive while the worker waits for owner input, rather than only when the worker exits. Both interactive status delivery and final-message ordering have native regressions. If a startup is cancelled after Steam opens, leave any game quit normally, let Cloud synchronize, then quit Steam before retrying.

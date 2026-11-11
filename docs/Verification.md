@@ -467,3 +467,13 @@ These PR fixes do not replace a running installed app. Rebuild the launcher from
 PR-review validation: all 276 tests passed locally, including the Swift outcome regression; the complete multi-file AppKit launcher compiled successfully. The native regression was rerun after adding explicit close-request/failed-cleanup assertions.
 
 The output-ordering follow-up passed the native regression and complete AppKit compilation. Python behavior is unchanged from the 276-test pass; CI is rerun on each pushed head.
+
+## Live startup status repair — November 11, 2026
+
+The first startup of the rebuilt launcher appeared stuck on its initial checking message. Process/backup metadata showed that backup had completed and Steam was already open. A standalone Swift fixture using the actual `drainLauncherWorker` reader and a cat child reproduced the failure: `status_delivered_while_worker_waits: false`. The child emitted a short status then waited for input, isolating the problem from backup work and JSON parsing.
+
+The prior review fix used Foundation `read(upToCount: 4096)`, which withheld the short pipe message until EOF or a full read. The native reader now uses interrupt-safe POSIX reads to deliver available bytes immediately, retaining the single-producer EOF-before-finalization ordering. A new interactive native regression failed before the fix (`status_before_worker_exit=false, clean_exit=true`) and passed afterward. The existing twenty-process final-message ordering regression also passes.
+
+The stalled GUI worker was cancelled via Stop Companion and the app closed normally; no game was launched by the fixture or recovery. A signed updated launcher will replace the previous bundle after verification, retaining a private rollback copy. Steam may remain open from the cancelled attempt; the owner must allow Cloud synchronization and quit Steam before a fresh startup/backup.
+
+Validation: all 277 tests passed, including both native pipe/lifecycle cases; AppKit compilation and rebuilt app signing/verification passed. The ordinary suite invocation initially selected an incompatible Intel Node binary, while the prior Homebrew native Node path was absent. The successful run used a temporary Node-only shim around the already verified companion's embedded Node v22.21.1; no global package, runtime policy or repository dependency was changed.

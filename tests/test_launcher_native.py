@@ -60,3 +60,37 @@ class NativeOutcomeTests(unittest.TestCase):
             subprocess.run(['/usr/bin/swiftc','-swift-version','5','-module-cache-path',str(root/'modules'),str(source),str(script),'-o',str(exe)],check=True,capture_output=True)
             result=subprocess.run([str(exe)],check=True,capture_output=True,text=True)
             self.assertIn('Native outcome regressions passed',result.stdout)
+
+    def test_status_arrives_before_a_worker_waiting_for_input_exits(self):
+        source = Path(__file__).resolve().parents[1] / 'launcher/LauncherOutcome.swift'
+        checks = '''
+        import Foundation
+        let process = Process()
+        let input = Pipe(), output = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/bin/cat")
+        process.standardInput = input
+        process.standardOutput = output
+        try process.run()
+        let delivered = DispatchSemaphore(value: 0)
+        let drained = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            drainLauncherWorker(process: process, output: output.fileHandleForReading,
+                onChunk: { _ in delivered.signal() }, onReadError: {}, onExit: { _ in drained.signal() })
+        }
+        try input.fileHandleForWriting.write(contentsOf: Data("steam_confirmation".utf8))
+        let streamed = delivered.wait(timeout: .now() + 2) == .success
+        try input.fileHandleForWriting.close()
+        let completed = drained.wait(timeout: .now() + 3) == .success
+        if process.isRunning { process.terminate(); process.waitUntilExit() }
+        print("status_before_worker_exit=\\(streamed), clean_exit=\\(completed)")
+        exit(streamed && completed ? 0 : 1)
+        '''
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            script = root / 'main.swift'; script.write_text(checks)
+            exe = root / 'stream-tests'
+            subprocess.run(['/usr/bin/swiftc', '-swift-version', '5', '-module-cache-path', str(root/'modules'),
+                            str(source), str(script), '-o', str(exe)], check=True, capture_output=True)
+            result = subprocess.run([str(exe)], capture_output=True, text=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn('status_before_worker_exit=true, clean_exit=true', result.stdout)

@@ -101,7 +101,9 @@ class DesktopTests(unittest.TestCase):
             healthy = {'game_exit_code': 0, 'companion': {'reason': 'GAME_EXIT',
                 'failure_stage': 'NONE', 'gateway_cleanup_complete': True,
                 'companion_group_cleanup_complete': True}}
-            with patch.object(desktop.main_launcher, '_prepared', return_value=(root, None, None)), \
+            with patch.object(desktop.main_launcher, '_prepared', return_value=(root, None, None)) as prepared, \
+                 patch.object(desktop.main_launcher, 'account', return_value=(os.getuid(), root)), \
+                 patch.object(desktop.main_launcher, '_private', return_value=root), \
                  patch.object(desktop.main_launcher, 'start', return_value=healthy) as start, \
                  patch('harness.keychain_store.KeychainStore') as store:
                 self.assertEqual(desktop.run_worker(io.StringIO(''), io.StringIO()), 0)
@@ -111,9 +113,12 @@ class DesktopTests(unittest.TestCase):
                     keychain_helper=Path('/private/fake'), keychain_sha256='a'*64), 0)
                 self.assertIs(start.call_args.kwargs['remember_store'], store.return_value)
                 start.reset_mock()
+                prepared.reset_mock()
+                prepared.side_effect = HarnessError('source game changed')
                 self.assertEqual(desktop.run_worker(io.StringIO(''), out, forget=True,
                     keychain_helper=Path('/private/fake'), keychain_sha256='a'*64), 0)
                 store.return_value.clear.assert_called_once_with()
+                prepared.assert_not_called()
                 start.assert_not_called()
                 self.assertEqual(json.loads(out.getvalue().splitlines()[-1])['event'], 'finished')
                 store.return_value.clear.side_effect = HarnessError('private-token')

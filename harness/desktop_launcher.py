@@ -149,7 +149,12 @@ def run_worker(stream=None, output=None, *, remember=False, forget=False, keycha
     stream = stream or sys.stdin
     root = None
     try:
-        root, _, _ = main_launcher._prepared()
+        if forget:
+            # Credential deletion must still work after a game update invalidates preparation.
+            _, home = main_launcher.account()
+            root = main_launcher._private(home / main_launcher.WORKSPACE_RELATIVE)
+        else:
+            root, _, _ = main_launcher._prepared()
         with session_lock(root):
             store = None
             if remember or forget:

@@ -10,7 +10,7 @@ The dedicated **Slay the Spire 2 + Untapped** app runs the prepared game copy wi
 4. To save your Untapped login, select **Remember my Untapped login** before starting (off by default). On the first start, click **Log in** in Untapped, then **Open Untapped Sign-in** in the launcher and complete the browser flow yourself. The button can be retried if the URL is not ready yet. Later starts with Remember enabled restore the saved login automatically; denied, expired or revoked credentials fall back to manual sign-in. Terms remain owner-controlled.
 5. Quit the game normally when finished and let Steam Cloud sync. **Stop Companion** or closing the launcher requests companion cleanup and leaves any running game open.
 
-While the launcher is idle, **Forget saved login** deletes its dedicated Keychain item and switches Remember off after successful deletion. Unchecking Remember skips Keychain access on future starts but does not delete a saved item. Steam account and Cloud confirmations still apply.
+While the launcher is idle, **Forget saved login** deletes its dedicated Keychain item and switches Remember off after successful deletion. Forget remains available if a game update invalidates launch preparation. Unchecking Remember skips Keychain access on future starts but does not delete a saved item. Steam account and Cloud confirmations still apply.
 
 To keep the launcher in the Dock, right-click its running Dock icon and choose **Options → Keep in Dock**. Pinning is a one-time action. Launching the ordinary Steam game directly does not automatically attach this harness.
 

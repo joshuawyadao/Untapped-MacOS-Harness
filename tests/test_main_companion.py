@@ -109,7 +109,7 @@ class MainCompanionTests(unittest.TestCase):
 
     def _run(self, gateway, *, stop="GAME_EXIT", events=None, launch_error=None,
              harvest_error=None, cleanup_error=None, order=None, ui_version=None, seed=None,
-             seconds=14400, on_companion_ready=None):
+             seconds=14400, on_companion_ready=None, remember_store=None):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         base = Path(temp.name).resolve()
@@ -122,7 +122,7 @@ class MainCompanionTests(unittest.TestCase):
         self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
         self.addCleanup(lambda: shutil.rmtree(root) if root.exists() else None)
         (root / "profile").mkdir(mode=0o700)
-        def launch_copy(*_args):
+        def launch_copy(*_args, **_kwargs):
             if order is not None:
                 order.append("launch")
             if launch_error:
@@ -155,7 +155,7 @@ class MainCompanionTests(unittest.TestCase):
             report = companion.run(session, prefs, target_pid=123,
                                    target_game=Path("/synthetic/game"), expected_steam_id="12345678901234567",
                                    expected_profile=0, seconds=seconds, should_stop=lambda: stop,
-                                   on_companion_ready=on_companion_ready)
+                                   on_companion_ready=on_companion_ready, remember_store=remember_store)
         return report, clone, launch, terminate, diagnostic, root
 
     def test_unlimited_run_reports_ready_root_after_launch(self):
@@ -330,3 +330,26 @@ class MainCompanionTests(unittest.TestCase):
             stream.symlink_to(outside)
             with self.assertRaises(HarnessError):
                 companion._events(root)
+
+    # Exercise broker lifetime through the real supervisor cleanup boundaries.
+    def test_broker_closes_after_companion_before_private_profile_removal(self):
+        order = []
+        broker = Mock()
+        broker.__enter__ = Mock(side_effect=lambda: order.append('broker_open'))
+        broker.close.side_effect = lambda: order.append('broker_close')
+        with patch('harness.remember_login.RememberBroker', return_value=broker):
+            report, _, launch, _, _, root = self._run(FakeGateway(), order=order, remember_store=Mock())
+        self.assertIs(launch.call_args.kwargs['remember'], broker)
+        self.assertEqual(order, ['broker_open', 'launch', 'group_cleanup', 'harvest', 'broker_close'])
+        self.assertEqual(report['failure_stage'], 'NONE')
+        self.assertFalse(root.exists())
+
+    def test_broker_cleanup_failure_retains_attempt_and_reports_failure(self):
+        broker = Mock()
+        broker.__enter__ = Mock()
+        broker.close.side_effect = HarnessError('private-token')
+        with patch('harness.remember_login.RememberBroker', return_value=broker):
+            report, _, _, _, _, root = self._run(FakeGateway(), remember_store=Mock())
+        self.assertEqual(report['failure_stage'], 'LOGIN_BRIDGE_CLEANUP')
+        self.assertTrue(root.exists())
+        self.assertNotIn('private-token', json.dumps(report))

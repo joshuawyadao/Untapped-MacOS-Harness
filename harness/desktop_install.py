@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from . import main_launcher, ui_update
+from . import main_launcher, login_update
 from .asar import HarnessError
 
 NAME = 'Slay the Spire 2 + Untapped.app'
@@ -18,7 +18,7 @@ REPO = Path(__file__).resolve().parents[1]
 def build(destination):
     os.umask(0o077)
     root, home, _ = main_launcher._prepared()
-    ui_update.selected_session(root)
+    login_update.selected_session(root)
     destination = Path(destination)
     if destination.exists() or destination.is_symlink():
         raise HarnessError('Launcher destination already exists; preserve the installed app')
@@ -38,7 +38,14 @@ def build(destination):
                 raise HarnessError('Unexpected runtime source')
             shutil.copyfile(source, runtime / 'harness' / source.name)
     python = str(Path(sys.executable).resolve(strict=True))
-    (resources / 'config.json').write_text(json.dumps({'python': python}))
+    helper = contents / 'MacOS/KeychainHelper'
+    subprocess.run(['/usr/bin/swiftc', '-swift-version', '5', '-module-cache-path', str(stage / 'modules'),
+                    '-framework', 'Security', str(REPO/'launcher/KeychainHelper.swift'), '-o', str(helper)], check=True)
+    helper.chmod(0o700)
+    subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', '--timestamp=none', str(helper)], check=True)
+    from .asar import sha256
+    (resources / 'config.json').write_text(json.dumps({'python': python,
+        'keychain_helper_sha256': sha256(helper.read_bytes())}))
     info = {'CFBundleExecutable': 'STS2Launcher', 'CFBundleIdentifier': 'local.untapped.sts2.launcher',
             'CFBundleName': 'Slay the Spire 2 + Untapped', 'CFBundlePackageType': 'APPL',
             'CFBundleShortVersionString': '1.0', 'CFBundleVersion': '1',
@@ -57,7 +64,7 @@ def build(destination):
     subprocess.run(['/usr/bin/swiftc', '-swift-version', '5', '-module-cache-path', str(stage / 'modules'),
                     '-framework', 'Cocoa', str(REPO / 'launcher/Launcher.swift'), str(REPO / 'launcher/LauncherOutcome.swift'), '-o', str(executable)], check=True)
     for p in app.rglob('*'):
-        p.chmod(0o700 if p.is_dir() or p == executable else 0o600)
+        p.chmod(0o700 if p.is_dir() or p in (executable, helper) else 0o600)
     app.chmod(0o700)
     subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', '--timestamp=none', str(app)], check=True)
     subprocess.run(['/usr/bin/codesign', '--verify', '--deep', '--strict', str(app)], check=True)

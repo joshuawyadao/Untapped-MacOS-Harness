@@ -130,7 +130,8 @@ def patched_entries(archive):
     store_helper = Path(__file__).with_name("sts2_store_compat.cjs").read_text()
     runtime = replace_once(runtime, RUNTIME_STORE_CLASS, store_helper + "\n" + RUNTIME_STORE_CLASS)
     settings_ui = patch_settings_ui(archive.read(SETTINGS_UI).decode())
-    bootstrap = Path(__file__).with_name("bootstrap.cjs").read_text()
+    from .remember_patch import inject
+    bootstrap = inject(Path(__file__).with_name("bootstrap.cjs").read_text())
     if not main.startswith('"use strict";\n'):
         raise HarnessError("Main entry lost its strict-mode directive")
     main = '"use strict";\n' + bootstrap + "\n" + main[len('"use strict";\n'):]

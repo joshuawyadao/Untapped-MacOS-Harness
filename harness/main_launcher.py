@@ -300,7 +300,7 @@ def _wait_for_steam(process, executable, log, seconds=60):
 
 def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
           seconds=DEFAULT_SECONDS, confirm_steam=None, should_stop=None,
-          on_companion_ready=None):
+          on_companion_ready=None, remember_store=None):
     if not (approved and cloud_confirmed and account_confirmed):
         _fail("LIVE_CONFIRMATIONS_REQUIRED")
     if seconds is not None and (type(seconds) is not int or not 60 <= seconds <= MAX_SECONDS):
@@ -327,7 +327,7 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
     if (activation.get("schema") != 1 or activation.get("copied_apps_signed") is not True
             or activation.get("proposal_sha256") != sha256((root / "main-proposal.json").read_bytes())):
         _fail("ACTIVATION_REQUIRED")
-    from .ui_update import selected_session
+    from .login_update import selected_session
     companion_session = selected_session(root)
     game_debug.verify(root / "game")
     cli._validate_launch_copy(companion_session)
@@ -395,7 +395,7 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
             report = main_companion.run(companion_session, _private(root / "preferences"),
                        target_pid=pid, target_game=executable, expected_steam_id=binding["steam_id"],
                        expected_profile=binding["profile"], seconds=seconds, should_stop=stop_reason,
-                       on_companion_ready=on_companion_ready)
+                       on_companion_ready=on_companion_ready, remember_store=remember_store)
         game_exit_code = process.poll()
         result = {"mode": "MAIN_ACCOUNT_STEAM_PROGRESS", "backup": backup_summary,
                   "steam_initialization_observed": True, "cloud_store_enabled_logged": True,

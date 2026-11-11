@@ -3,12 +3,18 @@ import Darwin
 import Foundation
 
 private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+    private enum WorkerMode { case start, forget }
+
+    private static let rememberLoginKey = "rememberUntappedLogin"
     private var window: NSWindow!
     private let statusLabel = NSTextField(labelWithString: "Ready to start Slay the Spire 2 and Untapped.")
     private let startButton = NSButton(title: "Start Game", target: nil, action: nil)
     private let signInButton = NSButton(title: "Open Untapped Sign-in", target: nil, action: nil)
     private let stopButton = NSButton(title: "Stop Companion", target: nil, action: nil)
+    private let rememberLoginCheckbox = NSButton(checkboxWithTitle: "Remember my Untapped login", target: nil, action: nil)
+    private let forgetLoginButton = NSButton(title: "Forget saved login", target: nil, action: nil)
     private var worker: Process?
+    private var workerMode: WorkerMode?
     private var input: FileHandle?
     private var output: FileHandle?
     private var pendingOutput = Data()
@@ -22,7 +28,7 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
         signal(SIGPIPE, SIG_IGN)
         NSApp.setActivationPolicy(.regular)
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 280),
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 340),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -34,10 +40,10 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
 
         let heading = NSTextField(labelWithString: "Slay the Spire 2 + Untapped")
         heading.font = .boldSystemFont(ofSize: 20)
-        let detail = NSTextField(wrappingLabelWithString: "Start launches your copied game and companion using your existing Steam progress. Sign in manually when Untapped is ready. Stopping the companion leaves the game open; quit the game normally.")
+        let detail = NSTextField(wrappingLabelWithString: "Start launches your copied game and companion using your existing Steam progress. Sign in manually the first time; if selected, Keychain stores your Untapped login tokens for automatic restoration on later starts. Stopping the companion leaves the game open; quit it normally.")
         detail.textColor = .secondaryLabelColor
         detail.preferredMaxLayoutWidth = 472
-        detail.maximumNumberOfLines = 4
+        detail.maximumNumberOfLines = 5
         statusLabel.preferredMaxLayoutWidth = 472
         statusLabel.lineBreakMode = .byWordWrapping
         statusLabel.maximumNumberOfLines = 3
@@ -52,11 +58,19 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
         stopButton.target = self
         stopButton.action = #selector(stopClicked)
         stopButton.isEnabled = false
+        rememberLoginCheckbox.target = self
+        rememberLoginCheckbox.action = #selector(rememberLoginChanged)
+        rememberLoginCheckbox.state = UserDefaults.standard.bool(forKey: Self.rememberLoginKey) ? .on : .off
+        forgetLoginButton.target = self
+        forgetLoginButton.action = #selector(forgetLoginClicked)
 
         let buttons = NSStackView(views: [startButton, signInButton, stopButton])
         buttons.orientation = .horizontal
         buttons.spacing = 10
-        let content = NSStackView(views: [heading, detail, statusLabel, buttons])
+        let loginControls = NSStackView(views: [rememberLoginCheckbox, forgetLoginButton])
+        loginControls.orientation = .horizontal
+        loginControls.spacing = 12
+        let content = NSStackView(views: [heading, detail, loginControls, statusLabel, buttons])
         content.orientation = .vertical
         content.alignment = .leading
         content.spacing = 14
@@ -83,11 +97,20 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
         alert.addButton(withTitle: "Cancel")
         alert.beginSheetModal(for: window) { [weak self] response in
             guard response == .alertFirstButtonReturn else { return }
-            self?.startWorker()
+            self?.startWorker(mode: .start)
         }
     }
 
-    private func startWorker() {
+    @objc private func rememberLoginChanged() {
+        UserDefaults.standard.set(rememberLoginCheckbox.state == .on, forKey: Self.rememberLoginKey)
+    }
+
+    @objc private func forgetLoginClicked() {
+        guard worker == nil else { return }
+        startWorker(mode: .forget)
+    }
+
+    private func startWorker(mode: WorkerMode) {
         guard worker == nil else { return }
         guard let resourceURL = Bundle.main.resourceURL else {
             showError("App resources are missing.")
@@ -107,11 +130,34 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
             return
         }
 
+        let needsKeychainHelper = mode == .forget || rememberLoginCheckbox.state == .on
+        var keychainArguments: [String] = []
+        if needsKeychainHelper {
+            guard let hash = config["keychain_helper_sha256"] as? String,
+                  hash.count == 64,
+                  hash.utf8.allSatisfy({ (48...57).contains($0) || (65...70).contains($0) || (97...102).contains($0) }),
+                  let executableURL = Bundle.main.executableURL else {
+                showError("The bundled Keychain helper configuration is invalid.")
+                return
+            }
+            let helperURL = executableURL.deletingLastPathComponent().appendingPathComponent("KeychainHelper")
+            guard FileManager.default.isExecutableFile(atPath: helperURL.path) else {
+                showError("The bundled Keychain helper is missing or cannot run.")
+                return
+            }
+            keychainArguments = ["--keychain-helper", helperURL.path, "--keychain-sha256", hash]
+        }
+
         let process = Process()
         let stdin = Pipe()
         let stdout = Pipe()
         process.executableURL = URL(fileURLWithPath: python)
-        process.arguments = ["-B", "-m", "harness.desktop_launcher", "--gui-worker"]
+        process.arguments = ["-B", "-m", "harness.desktop_launcher", "--gui-worker"] + keychainArguments
+        if mode == .forget {
+            process.arguments?.append("--forget-login")
+        } else if rememberLoginCheckbox.state == .on {
+            process.arguments?.append("--remember-login")
+        }
         process.currentDirectoryURL = runtimeURL
         process.standardInput = stdin
         process.standardOutput = stdout
@@ -130,15 +176,18 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
         }
 
         worker = process
+        workerMode = mode
         input = stdin.fileHandleForWriting
         output = stdout.fileHandleForReading
         pendingOutput.removeAll(keepingCapacity: true)
         stopping = false
         terminalOutcome = nil
         startButton.isEnabled = false
+        forgetLoginButton.isEnabled = false
+        rememberLoginCheckbox.isEnabled = false
         signInButton.isEnabled = false
-        stopButton.isEnabled = true
-        statusLabel.stringValue = "Checking the game, companion and progress backup…"
+        stopButton.isEnabled = mode == .start
+        statusLabel.stringValue = mode == .forget ? "Forgetting saved Untapped login…" : "Checking the game, companion and progress backup…"
 
         let readHandle = stdout.fileHandleForReading
         DispatchQueue.global(qos: .utility).async { [weak self] in
@@ -148,7 +197,9 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
                 DispatchQueue.main.async {
                     self?.requestStop()
                     self?.terminalOutcome = .error
-                    self?.statusLabel.stringValue = "Could not read the worker session report. Quit any running game normally."
+                    self?.statusLabel.stringValue = mode == .forget
+                        ? "Could not read the saved login removal report."
+                        : "Could not read the worker session report. Quit any running game normally."
                 }
             }, onExit: { terminated in
                 DispatchQueue.main.async { self?.workerExited(terminated) }
@@ -182,6 +233,7 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
         case "status":
             if let message = object["message"] as? String { statusLabel.stringValue = message }
         case "steam_confirmation":
+            guard workerMode == .start else { rejectWorkerOutput(); return }
             guard !stopping, steamAlert == nil else { return }
             let alert = NSAlert()
             alert.messageText = "Confirm Steam is ready"
@@ -200,13 +252,20 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
                 }
             }
         case "signin_ready":
+            guard workerMode == .start else { rejectWorkerOutput(); return }
             if !stopping {
                 signInButton.isEnabled = true
-                statusLabel.stringValue = "Untapped is ready. Click Log in in the companion, then use Open Untapped Sign-in here."
+                statusLabel.stringValue = rememberLoginCheckbox.state == .on
+                    ? "Untapped is ready. Saved login restores automatically. If asked, click Log in, then Open Untapped Sign-in here."
+                    : "Untapped is ready. Click Log in in the companion, then use Open Untapped Sign-in here."
             }
         case "finished":
             terminalOutcome = .finished
-            statusLabel.stringValue = (object["message"] as? String) ?? "Companion finished. The game remains open; quit it normally."
+            if workerMode == .forget {
+                statusLabel.stringValue = "Finishing saved login removal…"
+            } else {
+                statusLabel.stringValue = (object["message"] as? String) ?? "Companion finished. The game remains open; quit it normally."
+            }
             signInButton.isEnabled = false
             stopButton.isEnabled = false
         case "error":
@@ -219,12 +278,14 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
     }
 
     private func rejectWorkerOutput() {
-        statusLabel.stringValue = "The launcher worker sent an invalid event. Stopping the companion."
+        statusLabel.stringValue = workerMode == .forget
+            ? "The launcher worker sent an invalid saved login event."
+            : "The launcher worker sent an invalid event. Stopping the companion."
         requestStop()
     }
 
     @objc private func signInClicked() {
-        guard worker != nil, signInButton.isEnabled, !stopping else { return }
+        guard worker != nil, workerMode == .start, signInButton.isEnabled, !stopping else { return }
         send("sign_in")
     }
 
@@ -238,7 +299,9 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
         do {
             try input.write(contentsOf: Data(line.utf8))
         } catch {
-            statusLabel.stringValue = "The worker connection closed. The game remains open; quit it normally."
+            statusLabel.stringValue = workerMode == .forget
+                ? "The saved login worker connection closed."
+                : "The worker connection closed. The game remains open; quit it normally."
             requestStop()
         }
     }
@@ -248,7 +311,9 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
         stopping = true
         signInButton.isEnabled = false
         stopButton.isEnabled = false
-        statusLabel.stringValue = "Stopping the companion. The game remains open; quit it normally."
+        statusLabel.stringValue = workerMode == .forget
+            ? "Stopping saved login removal…"
+            : "Stopping the companion. The game remains open; quit it normally."
         if let alert = steamAlert { window.endSheet(alert.window, returnCode: .alertSecondButtonReturn) }
         send("stop")
         try? input?.close()
@@ -257,19 +322,37 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
 
     private func workerExited(_ process: Process) {
         guard worker === process else { return }
+        let mode = workerMode
+        let forgetSucceeded = mode == .forget && terminalOutcome == .finished
+            && process.terminationStatus == 0 && !stopping
         output?.readabilityHandler = nil
         try? output?.close()
         try? input?.close()
         output = nil
         input = nil
         worker = nil
+        workerMode = nil
         pendingOutput.removeAll()
         steamAlert = nil
         startButton.isEnabled = true
+        forgetLoginButton.isEnabled = true
+        rememberLoginCheckbox.isEnabled = true
         signInButton.isEnabled = false
         stopButton.isEnabled = false
-        statusLabel.stringValue = launcherFinalMessage(current: statusLabel.stringValue,
-            outcome: terminalOutcome, exitStatus: process.terminationStatus, stopping: stopping)
+        if mode == .forget {
+            if forgetSucceeded {
+                rememberLoginCheckbox.state = .off
+                UserDefaults.standard.set(false, forKey: Self.rememberLoginKey)
+                statusLabel.stringValue = "Saved Untapped login forgotten."
+            } else if terminalOutcome != .error {
+                statusLabel.stringValue = process.terminationStatus == 0
+                    ? "Saved login removal did not finish."
+                    : "Saved login removal failed with status \(process.terminationStatus)."
+            }
+        } else {
+            statusLabel.stringValue = launcherFinalMessage(current: statusLabel.stringValue,
+                outcome: terminalOutcome, exitStatus: process.terminationStatus, stopping: stopping)
+        }
         stopping = false
         if launcherShouldQuit(requested: quitAfterStop, outcome: terminalOutcome, exitStatus: process.terminationStatus) {
             NSApp.terminate(nil)
@@ -282,7 +365,7 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
     private func showError(_ message: String) {
         statusLabel.stringValue = message
         let alert = NSAlert()
-        alert.messageText = "Unable to start"
+        alert.messageText = "Launcher error"
         alert.informativeText = message
         alert.alertStyle = .critical
         alert.beginSheetModal(for: window)
@@ -291,9 +374,15 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         guard worker != nil else { return true }
         let alert = NSAlert()
-        alert.messageText = "Stop companion and close launcher?"
-        alert.informativeText = "The companion will stop. Slay the Spire 2 remains open; quit it normally."
-        alert.addButton(withTitle: "Stop Companion and Quit")
+        if workerMode == .forget {
+            alert.messageText = "Stop saved login removal and close launcher?"
+            alert.informativeText = "The saved login may remain in Keychain."
+            alert.addButton(withTitle: "Stop and Quit")
+        } else {
+            alert.messageText = "Stop companion and close launcher?"
+            alert.informativeText = "The companion will stop. Slay the Spire 2 remains open; quit it normally."
+            alert.addButton(withTitle: "Stop Companion and Quit")
+        }
         alert.addButton(withTitle: "Keep Launcher Open")
         alert.beginSheetModal(for: window) { [weak self] response in
             guard response == .alertFirstButtonReturn else { return }

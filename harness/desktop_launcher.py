@@ -139,11 +139,11 @@ class Controls:
 
     def companion_ready(self, attempt):
         self.profile = attempt / 'profile'
-        self.emit('status', 'Game and Untapped are running. Click Log in inside Untapped, then Open Untapped Sign-in here.')
+        self.emit('status', 'Game and Untapped are running. A remembered login restores automatically; otherwise click Log in in Untapped, then Open Untapped Sign-in.')
         self.emit('signin_ready')
 
 
-def run_worker(stream=None, output=None):
+def run_worker(stream=None, output=None, *, remember=False, forget=False, keychain_helper=None, keychain_sha256=None):
     os.umask(0o077)
     controls = Controls(output or sys.stdout)
     stream = stream or sys.stdin
@@ -151,6 +151,17 @@ def run_worker(stream=None, output=None):
     try:
         root, _, _ = main_launcher._prepared()
         with session_lock(root):
+            store = None
+            if remember or forget:
+                from .keychain_store import KeychainStore
+                controls.emit('status', 'Opening the harness login item in macOS Keychain…')
+                store = KeychainStore(keychain_helper, keychain_sha256,
+                    on_warning=lambda *args: controls.emit('status',
+                        'Saved login is unavailable. You can sign in manually; the game can keep running.'))
+                if forget:
+                    store.clear()
+                    controls.emit('finished', 'Saved Untapped login removed from macOS Keychain.')
+                    return 0
             # Preserve private evidence without forwarding paths, URLs or vendor logs to UI.
             import tempfile
             fd, _ = tempfile.mkstemp(prefix='desktop-', suffix='.log', dir=root / 'runs')
@@ -160,7 +171,7 @@ def run_worker(stream=None, output=None):
                 result = main_launcher.start(approved=True, cloud_confirmed=True, account_confirmed=True,
                     seconds=None, confirm_steam=controls.confirm_steam,
                     should_stop=lambda: 'OWNER_STOP' if controls.stop.is_set() else None,
-                    on_companion_ready=controls.companion_ready)
+                    on_companion_ready=controls.companion_ready, remember_store=store)
                 companion = result.get('companion', {})
                 healthy = (companion.get('reason') in {'GAME_EXIT', 'COMPANION_EXITED', 'OWNER_STOP'}
                            and companion.get('failure_stage') == 'NONE'
@@ -187,8 +198,14 @@ def run_worker(stream=None, output=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--gui-worker', action='store_true', required=True)
-    parser.parse_args()
-    return run_worker()
+    options = parser.add_mutually_exclusive_group()
+    options.add_argument('--remember-login', action='store_true')
+    options.add_argument('--forget-login', action='store_true')
+    parser.add_argument('--keychain-helper', type=Path)
+    parser.add_argument('--keychain-sha256')
+    args = parser.parse_args()
+    return run_worker(remember=args.remember_login, forget=args.forget_login,
+                      keychain_helper=args.keychain_helper, keychain_sha256=args.keychain_sha256)
 
 
 if __name__ == '__main__':

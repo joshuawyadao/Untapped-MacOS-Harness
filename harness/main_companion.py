@@ -147,7 +147,7 @@ def _clone(session, manifest):
         raise
 
 
-def _launch(root, gateway, target_environment, expected_steam_id, expected_profile):
+def _launch(root, gateway, target_environment, expected_steam_id, expected_profile, remember=None):
     profile = root / "profile"
     helper = profile / "controlled-network.cjs"
     adapter = Path(__file__).with_name("controlled_network.cjs").read_bytes()
@@ -169,6 +169,17 @@ def _launch(root, gateway, target_environment, expected_steam_id, expected_profi
         "UNTAPPED_HARNESS_EXPECTED_STEAM_ID": expected_steam_id,
         "UNTAPPED_HARNESS_EXPECTED_PROFILE": str(expected_profile),
     })
+    if remember is not None:
+        login_helper = Path(__file__).with_name("remember_keytar.cjs").read_bytes()
+        if (manifest.get("remember_login_version") != 1
+                or manifest.get("remember_login_helper_sha256") != sha256(login_helper)):
+            raise HarnessError("Companion lacks the reviewed remember-login bridge")
+        target = profile / "remember-keytar.cjs"
+        target.write_bytes(login_helper)
+        target.chmod(0o600)
+        environment.update(remember.environment)
+        environment.update({"UNTAPPED_HARNESS_REMEMBER_LOGIN": "1",
+                            "UNTAPPED_HARNESS_LOGIN_HELPER_SHA256": sha256(login_helper)})
     policy = root / "controlled.sb"
     real_home = Path(pwd.getpwuid(os.getuid()).pw_dir).resolve(strict=True)
     policy.write_text(cli.sandbox_profile(root, real_home)
@@ -204,7 +215,7 @@ def _diagnostic(safe):
 
 def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: Path,
         expected_steam_id: str, expected_profile: int, seconds=14400,
-        should_stop=None, on_companion_ready=None):
+        should_stop=None, on_companion_ready=None, remember_store=None):
     """Start one private signed copy; never signal or modify the game process."""
     if platform.system() != "Darwin" or os.getuid() == 0 or os.getuid() != os.geteuid():
         raise HarnessError("Main-account companion requires unprivileged macOS")
@@ -228,6 +239,7 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
     started = time.monotonic()
     root = None
     process = None
+    login_bridge = None
     gateway = None
     reason = "PREFLIGHT_FAILED"
     failure_stage = "NONE"
@@ -257,8 +269,16 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
                     main_preferences.seed(root / "profile", preferences_dir,
                                           enable_default_tiers=manifest.get("ui_assets_version") in (1, 2))
                     stage = "launch"
-                    process = _launch(root, gateway, target_environment,
-                                      expected_steam_id, expected_profile)
+                    if remember_store is not None:
+                        from .remember_login import RememberBroker
+                        login_bridge = RememberBroker(root, remember_store,
+                            on_warning=getattr(remember_store, "on_warning", None))
+                        login_bridge.__enter__()
+                        process = _launch(root, gateway, target_environment,
+                                          expected_steam_id, expected_profile, remember=login_bridge)
+                    else:
+                        process = _launch(root, gateway, target_environment,
+                                          expected_steam_id, expected_profile)
                     if on_companion_ready is not None:
                         on_companion_ready(root)
                     stage = "supervise"
@@ -302,6 +322,12 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
                         except Exception:
                             reason = "COMPANION_FAILED"
                             failure_stage = "HARVEST"
+                if login_bridge is not None:
+                    try:
+                        login_bridge.close()
+                    except Exception:
+                        reason = "COMPANION_FAILED"
+                        failure_stage = "LOGIN_BRIDGE_CLEANUP"
                 if root is not None and failure_stage == "NONE":
                     try:
                         # Only this exact private attempt root may be removed.

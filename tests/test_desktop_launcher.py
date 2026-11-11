@@ -74,6 +74,7 @@ class DesktopTests(unittest.TestCase):
             out=io.StringIO()
             def start(**kwargs):
                 self.assertIsNone(kwargs['seconds'])
+                self.assertIsNone(kwargs['remember_store'])
                 self.assertTrue(kwargs['approved'] and kwargs['cloud_confirmed'] and kwargs['account_confirmed'])
                 self.assertTrue(callable(kwargs['should_stop']))
                 kwargs['on_companion_ready'](root)
@@ -92,3 +93,33 @@ class DesktopTests(unittest.TestCase):
         with patch.object(desktop.subprocess,'run') as opened:
             with self.assertRaises(KeyboardInterrupt):controls.confirm_steam()
             opened.assert_not_called()
+
+
+    def test_remember_is_opt_in_and_forget_never_starts_game(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); (root / 'runs').mkdir()
+            healthy = {'game_exit_code': 0, 'companion': {'reason': 'GAME_EXIT',
+                'failure_stage': 'NONE', 'gateway_cleanup_complete': True,
+                'companion_group_cleanup_complete': True}}
+            with patch.object(desktop.main_launcher, '_prepared', return_value=(root, None, None)), \
+                 patch.object(desktop.main_launcher, 'start', return_value=healthy) as start, \
+                 patch('harness.keychain_store.KeychainStore') as store:
+                self.assertEqual(desktop.run_worker(io.StringIO(''), io.StringIO()), 0)
+                store.assert_not_called()
+                out = io.StringIO()
+                self.assertEqual(desktop.run_worker(io.StringIO(''), out, remember=True,
+                    keychain_helper=Path('/private/fake'), keychain_sha256='a'*64), 0)
+                self.assertIs(start.call_args.kwargs['remember_store'], store.return_value)
+                start.reset_mock()
+                self.assertEqual(desktop.run_worker(io.StringIO(''), out, forget=True,
+                    keychain_helper=Path('/private/fake'), keychain_sha256='a'*64), 0)
+                store.return_value.clear.assert_called_once_with()
+                start.assert_not_called()
+                self.assertEqual(json.loads(out.getvalue().splitlines()[-1])['event'], 'finished')
+                store.return_value.clear.side_effect = HarnessError('private-token')
+                out = io.StringIO()
+                self.assertEqual(desktop.run_worker(io.StringIO(''), out, forget=True,
+                    keychain_helper=Path('/private/fake'), keychain_sha256='a'*64), 1)
+                self.assertEqual(json.loads(out.getvalue().splitlines()[-1])['event'], 'error')
+                self.assertNotIn('private-token', out.getvalue())
+                start.assert_not_called()

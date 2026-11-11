@@ -108,14 +108,16 @@ class MainLauncherTests(unittest.TestCase):
     def test_unlimited_start_forwards_ready_callback_and_guarded_owner_stop(self):
         _, process, _, _, companion = self.patches()
         ready = Mock()
+        store = Mock()
         owner = Mock(side_effect=[None, None, "OWNER_STOP"])
         with patch.object(launcher, "_target", return_value=2468), \
              contextlib.redirect_stdout(io.StringIO()):
             launcher.start(approved=True, cloud_confirmed=True, account_confirmed=True,
                            confirm_steam=lambda: None, seconds=None, should_stop=owner,
-                           on_companion_ready=ready)
+                           on_companion_ready=ready, remember_store=store)
         self.assertIsNone(companion.call_args.kwargs["seconds"])
         self.assertIs(companion.call_args.kwargs["on_companion_ready"], ready)
+        self.assertIs(companion.call_args.kwargs["remember_store"], store)
         with patch.object(launcher, "_target", return_value=2468):
             self.assertEqual(companion.call_args.kwargs["should_stop"](), "OWNER_STOP")
         owner.assert_called()

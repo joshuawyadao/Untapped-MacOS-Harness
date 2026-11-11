@@ -12,7 +12,7 @@ Correct the remembered-login bridge's vendor service name and publish a verified
 - [x] Add a regression using the vendor service expression and actual launcher sandbox ID; watch persistence fail before correcting both broker/proxy service checks, retaining unrelated-service memory behavior.
 - [x] Publish a helper-pin revision derived from the verified UI source with a new selection receipt; retain v1 bytes/receipts, require matching policy/signature/base bindings and reject incomplete or mismatched updates.
 - [x] Run targeted contract/migration tests, original synthetic repro and full regression suite; verify the real copied bootstrap/ASAR, unchanged gateway rules and native app/helper signatures.
-- [ ] Build and replace the launcher only after the current session is closed; retain rollback copies, check runtime parity and idle controls, and leave initial real sign-in to the owner.
+- [x] Build and replace the launcher only after the current session is closed; retain rollback copies, check runtime parity and idle controls, and leave initial real sign-in to the owner.
 - [x] Update desktop, architecture/access and verification docs with cause, prevention and live-test limits; commit and push completed work.
 
 ## Open questions
@@ -27,4 +27,4 @@ Correct the remembered-login bridge's vendor service name and publish a verified
 
 - All 311 tests pass, including native launcher regressions and new legacy/v2 publication cases. Corrected helper SHA-256 is `8f750f2d036ca42a300066f227b3bf2b37bf4298527fbafb8da42dd33192a99a`. Signed local migration/build and owner-run save/restore remain next.
 
-- Native v2 migration and staged AppKit/helper build pass signature, payload, metadata and syntax checks. Real vendor contract matches both bridge constants; v1 ASAR remains byte-identical with unchanged gateway/adapter hashes. Installation awaits normal owner closure of the active game and launcher.
+- Native v2 migration and staged AppKit/helper build pass signature, payload, metadata and syntax checks. Real vendor contract matches both bridge constants; v1 ASAR remains byte-identical with unchanged gateway/adapter hashes. After the owner closed the game and launcher, the verified update was installed at the original Applications path with a rollback copy. Idle UI confirms Remember remains checked and Start/Forget are enabled. Real initial save and automatic restore remain owner-run validation steps.

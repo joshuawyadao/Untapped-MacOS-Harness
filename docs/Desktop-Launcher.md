@@ -51,3 +51,10 @@ The companion retains its outer sandbox, blocked direct Keychain access and fixe
 Automated tests use synthetic credentials and fake Keychain operations. Native compilation/signature and idle controls can be verified without touching Keychain. Initial real sign-in, Keychain consent and a later automatic restore are owner-run validation steps; a system Keychain prompt may require approval. No automatic browser login or password entry is performed.
 
 The November 11 remembered-login build is installed at the original user Applications path, with the preceding app retained for rollback. Its deep signature, signed helper hash and all 36 bundled runtime sources verified. The opened idle window displays Remember unchecked and Forget/Start enabled. The owner must enable Remember and sign in once, then verify automatic restoration on a later start; no real credentials were read or stored during installation.
+
+
+### Service-name correction
+
+The first remembered-login build used the wrong vendor keytar service name, so successful sign-in stayed in memory and did not reach Keychain. The corrected bridge matches Untapped's service under the launcher sandbox ID. The updater publishes `companion-login-v2.json` with the corrected helper hash and preserves the v1 copy/receipt; rerun the same `harness.login_update --install-main` command before rebuilding an older installation. Invalid or incomplete metadata is rejected.
+
+After the corrected launcher is installed, keep Remember enabled and sign in once more. The earlier session cannot supply a saved login because its save calls bypassed the bridge. Check the dedicated item's presence without printing credentials, then quit normally and start again to verify automatic restoration. Do not log out of Untapped between those starts: logout intentionally deletes the saved login. Steam/Cloud confirmations still apply.

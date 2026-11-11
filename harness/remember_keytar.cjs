@@ -1,7 +1,8 @@
 "use strict";
 
 const net = require("node:net");
-const SERVICE = "Untapped.gg Companion";
+// Match the vendor service under cli.launch_environment's sandbox ID.
+const SERVICE = "Untapped Companion native-sts2-harness";
 const MAX_MESSAGE = 64 * 1024;
 
 function create({ memoryKeytar, socketPath, capability }) {

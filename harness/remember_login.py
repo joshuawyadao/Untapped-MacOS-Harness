@@ -18,7 +18,8 @@ from .asar import HarnessError
 
 
 _MAX_MESSAGE = 64 * 1024
-_SERVICE = 'Untapped.gg Companion'
+# Pinned Services chunk: `Untapped Companion ${UC_TEST_SANDBOX_ID}`.
+_SERVICE = 'Untapped Companion native-sts2-harness'
 _ACCOUNT = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._%+\-]*@[A-Za-z0-9][A-Za-z0-9.\-]*\.[A-Za-z]{2,}$')
 
 

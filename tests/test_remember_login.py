@@ -11,7 +11,7 @@ from harness.asar import HarnessError
 from harness.remember_login import RememberBroker
 
 
-SERVICE = 'Untapped.gg Companion'
+SERVICE = 'Untapped Companion native-sts2-harness'
 ACCOUNT = 'person@example.test'
 
 
@@ -89,6 +89,7 @@ class RememberBrokerTests(unittest.TestCase):
         store = FakeStore()
         with RememberBroker(self.attempt, store) as broker:
             bad = [
+                {'op': 'set', 'service': 'Untapped.gg Companion', 'account': ACCOUNT, 'password': password()},
                 {'op': 'set', 'service': 'Steam', 'account': ACCOUNT, 'password': password()},
                 {'op': 'set', 'service': SERVICE, 'account': 'anonymous', 'password': password()},
                 {'op': 'set', 'service': SERVICE, 'account': ACCOUNT, 'password': 'plain'},

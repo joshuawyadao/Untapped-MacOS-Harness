@@ -45,11 +45,12 @@ class LoginUpdateTests(unittest.TestCase):
             **self.base_manifest,
             'patched_asar_sha256': 'login-asar',
             'remember_login_version': 1,
+            'remember_login_revision': 2,
             'remember_login_base_sha256': 'base-asar',
             'remember_login_helper_sha256': login_update.helper_hash(),
         }
         self.receipt = {
-            'schema': 1, 'base_sha256': 'base-asar',
+            'schema': 1, 'revision': 2, 'base_sha256': 'base-asar',
             'patched_asar_sha256': 'login-asar',
         }
         self.write(self.base / 'manifest.json', self.base_manifest)
@@ -72,6 +73,9 @@ class LoginUpdateTests(unittest.TestCase):
         return result, verify, policy
 
     def test_no_receipt_keeps_existing_ui_selection(self):
+        for child in self.selected.iterdir():
+            child.unlink()
+        self.selected.rmdir()
         result, verify, policy = self.select()
         self.assertEqual(result, self.base)
         verify.assert_not_called()
@@ -99,10 +103,11 @@ class LoginUpdateTests(unittest.TestCase):
         self.activate()
         for path, original, changes in (
             (self.root / login_update.RECEIPT, self.receipt,
-             [('schema', True), ('base_sha256', 'other'),
+             [('schema', True), ('revision', True), ('revision', 1), ('base_sha256', 'other'),
               ('patched_asar_sha256', 'other')]),
             (self.selected / 'manifest.json', self.login_manifest,
              [('remember_login_version', True), ('remember_login_version', 2),
+              ('remember_login_revision', True), ('remember_login_revision', 1),
               ('remember_login_base_sha256', 'other'),
               ('remember_login_helper_sha256', 'other'),
               ('patched_asar_sha256', 'other'),
@@ -202,14 +207,139 @@ class LoginUpdateTests(unittest.TestCase):
         self.assertEqual(manifest['patched_asar_sha256'], sha256(patched))
         self.assertEqual(manifest['remember_login_base_sha256'], self.base_manifest['patched_asar_sha256'])
         self.assertEqual(manifest['remember_login_helper_sha256'], login_update.helper_hash())
+        self.assertEqual(manifest['remember_login_revision'], 2)
         self.assertEqual(json.loads((self.root / login_update.RECEIPT).read_text()), {
-            'schema': 1, 'base_sha256': self.base_manifest['patched_asar_sha256'],
+            'schema': 1, 'revision': 2,
+            'base_sha256': self.base_manifest['patched_asar_sha256'],
             'patched_asar_sha256': sha256(patched),
         })
         signer.assert_called_once()
         self.assertIn('--entitlements', signer.call_args.args[0])
         selected, _, _ = self.select()
         self.assertEqual(selected, self.selected)
+
+    def _legacy_fixture(self):
+        legacy = self.root / login_update.LEGACY_DIRECTORY
+        legacy.mkdir(mode=0o700)
+        legacy_manifest = {
+            **self.base_manifest,
+            'patched_asar_sha256': 'legacy-asar',
+            'remember_login_version': 1,
+            'remember_login_base_sha256': self.base_manifest['patched_asar_sha256'],
+            'remember_login_helper_sha256': login_update.LEGACY_HELPER_SHA256,
+        }
+        self.write(legacy / 'manifest.json', legacy_manifest)
+        self.write(legacy / 'signing.json', {'schema': 1})
+        self.write(self.root / login_update.LEGACY_RECEIPT, {
+            'schema': 1,
+            'base_sha256': self.base_manifest['patched_asar_sha256'],
+            'patched_asar_sha256': 'legacy-asar',
+        })
+        legacy_payload = remember_patch.inject(
+            remember_patch.ANCHOR + '\n' + remember_patch.KEYTAR + '\n').encode()
+        (legacy / 'Companion.app/Contents/Resources').mkdir(parents=True)
+        (legacy / 'Companion.app/Contents/Resources/app.asar').write_bytes(legacy_payload)
+        return legacy, legacy_payload
+
+    def test_legacy_validated_but_not_selected_with_new_helper(self):
+        legacy, _ = self._legacy_fixture()
+        for child in self.selected.iterdir():
+            child.unlink()
+        self.selected.rmdir()
+        result, verify, policy = self.select()
+        self.assertEqual(result, self.base)
+        verify.assert_called_once_with(legacy)
+        policy.assert_called_once_with(legacy)
+        manifest = json.loads((legacy / 'manifest.json').read_text())
+        self.write(legacy / 'manifest.json', {
+            **manifest, 'remember_login_helper_sha256': login_update.helper_hash()})
+        with self.assertRaises(HarnessError):
+            self.select()
+
+    def test_current_preferred_and_changed_helper_fails_closed(self):
+        legacy, _ = self._legacy_fixture()
+        self.activate()
+        result, verify, policy = self.select()
+        self.assertEqual(result, self.selected)
+        verify.assert_called_once_with(self.selected)
+        policy.assert_called_once_with(self.selected)
+        self.assertTrue(legacy.is_dir())
+        current = json.loads((self.selected / 'manifest.json').read_text())
+        self.write(self.selected / 'manifest.json', {
+            **current, 'remember_login_helper_sha256': '0' * 64})
+        with self.assertRaises(HarnessError):
+            self.select()
+
+    def test_incomplete_current_directory_cannot_fall_back_to_legacy(self):
+        self._legacy_fixture()
+        with self.assertRaisesRegex(HarnessError, 'Incomplete'):
+            self.select()
+
+    def test_migration_preserves_legacy_bytes_and_is_idempotent(self):
+        source, original = self._install_fixture()
+        legacy, legacy_payload = self._legacy_fixture()
+        legacy_receipt = (self.root / login_update.LEGACY_RECEIPT).read_bytes()
+        legacy_manifest = (legacy / 'manifest.json').read_bytes()
+        with ExitStack() as stack:
+            self._install_patches(stack)
+            signer = stack.enter_context(patch.object(login_update.signing, '_run_codesign'))
+            result = login_update.install_main()
+            again = login_update.install_main()
+        self.assertEqual(result['effective'], 'NEXT_LAUNCH')
+        self.assertTrue(again['already_installed'])
+        signer.assert_called_once()
+        self.assertEqual((self.base / 'Companion.app/Contents/Resources/app.asar').read_bytes(), original)
+        self.assertEqual((legacy / 'Companion.app/Contents/Resources/app.asar').read_bytes(), legacy_payload)
+        self.assertEqual((legacy / 'manifest.json').read_bytes(), legacy_manifest)
+        self.assertEqual((self.root / login_update.LEGACY_RECEIPT).read_bytes(), legacy_receipt)
+        self.assertEqual((self.selected / 'Companion.app/Contents/Resources/app.asar').read_bytes(),
+                         legacy_payload)
+        self.assertEqual(self.select()[0], self.selected)
+
+    def test_migration_signing_failure_retains_legacy_selection(self):
+        self._install_fixture()
+        legacy, legacy_payload = self._legacy_fixture()
+        receipt = (self.root / login_update.LEGACY_RECEIPT).read_bytes()
+        with ExitStack() as stack:
+            self._install_patches(stack)
+            stack.enter_context(patch.object(login_update.signing, '_run_codesign',
+                                             side_effect=HarnessError('signing failed')))
+            with self.assertRaisesRegex(HarnessError, 'signing failed'):
+                login_update.install_main()
+        self.assertEqual((legacy / 'Companion.app/Contents/Resources/app.asar').read_bytes(), legacy_payload)
+        self.assertEqual((self.root / login_update.LEGACY_RECEIPT).read_bytes(), receipt)
+        self.assertFalse(self.selected.exists())
+        self.assertFalse((self.root / login_update.RECEIPT).exists())
+
+    def test_source_already_contains_current_hook_is_supported(self):
+        self._install_fixture()
+        self.write(self.base / 'manifest.json', {
+            **self.base_manifest,
+            'remember_login_version': 1,
+            'remember_login_helper_sha256': login_update.helper_hash(),
+        })
+        with ExitStack() as stack:
+            self._install_patches(stack)
+            signer = stack.enter_context(patch.object(login_update.signing, '_run_codesign'))
+            result = login_update.install_main()
+        self.assertTrue(result['already_installed'])
+        signer.assert_not_called()
+        self.assertFalse(self.selected.exists())
+
+    def test_tampered_legacy_prevents_migration_without_publication(self):
+        self._install_fixture()
+        legacy, _ = self._legacy_fixture()
+        manifest = json.loads((legacy / 'manifest.json').read_text())
+        self.write(legacy / 'manifest.json', {
+            **manifest, 'remember_login_helper_sha256': '0' * 64})
+        with ExitStack() as stack:
+            self._install_patches(stack)
+            signer = stack.enter_context(patch.object(login_update.signing, '_run_codesign'))
+            with self.assertRaises(HarnessError):
+                login_update.install_main()
+        signer.assert_not_called()
+        self.assertFalse(self.selected.exists())
+        self.assertFalse((self.root / login_update.RECEIPT).exists())
 
     def test_signing_failure_preserves_source_and_does_not_publish_receipt(self):
         _, original = self._install_fixture()

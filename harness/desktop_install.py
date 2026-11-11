@@ -55,7 +55,7 @@ def build(destination):
             info['CFBundleIconFile'] = 'Launcher.icns'
     (contents / 'Info.plist').write_bytes(plistlib.dumps(info))
     subprocess.run(['/usr/bin/swiftc', '-swift-version', '5', '-module-cache-path', str(stage / 'modules'),
-                    '-framework', 'Cocoa', str(REPO / 'launcher/Launcher.swift'), '-o', str(executable)], check=True)
+                    '-framework', 'Cocoa', str(REPO / 'launcher/Launcher.swift'), str(REPO / 'launcher/LauncherOutcome.swift'), '-o', str(executable)], check=True)
     for p in app.rglob('*'):
         p.chmod(0o700 if p.is_dir() or p == executable else 0o600)
     app.chmod(0o700)

@@ -8,10 +8,10 @@ Address PR #3's Brooks review by preserving native terminal failures after owner
 
 ## Action items
 - [x] Review both Brooks findings and current native/installer behavior; confirm CI Verify is the active ruleset requirement.
-- [ ] Checkpoint this plan before implementation.
-- [ ] Preserve worker terminal errors and abnormal exits when owner stop was requested; test the actual native outcome seam.
-- [ ] Add synthetic installer checks for source snapshot completeness, compile/sign failure and existing destination preservation.
-- [ ] Run native seam tests, launcher compilation, focused/full Python tests and repository checks.
+- [x] Checkpoint this plan before implementation.
+- [x] Preserve worker terminal errors and abnormal exits when owner stop was requested; test the actual native outcome seam.
+- [x] Add synthetic installer checks for source snapshot completeness, compile/sign failure and existing destination preservation.
+- [x] Run native seam tests, launcher compilation, focused/full Python tests and repository checks.
 - [ ] Update verification evidence and PR change ledger, commit/push the fix, request current-head Codex review and recheck CI/mergeability.
 
 ## Open questions

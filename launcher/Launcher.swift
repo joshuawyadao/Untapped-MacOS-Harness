@@ -15,7 +15,7 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
     private var steamAlert: NSAlert?
     private var stopping = false
     private var quitAfterStop = false
-    private var receivedTerminalEvent = false
+    private var terminalOutcome: LauncherTerminalOutcome?
     private let maximumLineBytes = 64 * 1024
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -134,7 +134,7 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
         output = stdout.fileHandleForReading
         pendingOutput.removeAll(keepingCapacity: true)
         stopping = false
-        receivedTerminalEvent = false
+        terminalOutcome = nil
         startButton.isEnabled = false
         signInButton.isEnabled = false
         stopButton.isEnabled = true
@@ -198,12 +198,12 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
                 statusLabel.stringValue = "Untapped is ready. Click Log in in the companion, then use Open Untapped Sign-in here."
             }
         case "finished":
-            receivedTerminalEvent = true
+            terminalOutcome = .finished
             statusLabel.stringValue = (object["message"] as? String) ?? "Companion finished. The game remains open; quit it normally."
             signInButton.isEnabled = false
             stopButton.isEnabled = false
         case "error":
-            receivedTerminalEvent = true
+            terminalOutcome = .error
             statusLabel.stringValue = (object["message"] as? String) ?? "The launcher worker reported an error."
             signInButton.isEnabled = false
         default:
@@ -261,15 +261,15 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
         startButton.isEnabled = true
         signInButton.isEnabled = false
         stopButton.isEnabled = false
-        if process.terminationStatus != 0 && !stopping && !receivedTerminalEvent {
-            statusLabel.stringValue = "Launcher worker exited with status \(process.terminationStatus). The game remains open; quit it normally."
-        } else if stopping {
-            statusLabel.stringValue = "Companion stopped. The game remains open; quit it normally."
-        } else if !receivedTerminalEvent {
-            statusLabel.stringValue = "Launcher worker finished. The game remains open; quit it normally."
-        }
+        statusLabel.stringValue = launcherFinalMessage(current: statusLabel.stringValue,
+            outcome: terminalOutcome, exitStatus: process.terminationStatus, stopping: stopping)
         stopping = false
-        if quitAfterStop { NSApp.terminate(nil) }
+        if launcherShouldQuit(requested: quitAfterStop, outcome: terminalOutcome, exitStatus: process.terminationStatus) {
+            NSApp.terminate(nil)
+        } else if quitAfterStop {
+            quitAfterStop = false
+            showError(statusLabel.stringValue)
+        }
     }
 
     private func showError(_ message: String) {
@@ -307,7 +307,12 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
     }
 }
 
-private let application = NSApplication.shared
-private let delegate = LauncherDelegate()
-application.delegate = delegate
-application.run()
+@main
+private enum LauncherApplication {
+    static func main() {
+        let application = NSApplication.shared
+        let delegate = LauncherDelegate()
+        application.delegate = delegate
+        application.run()
+    }
+}

@@ -1,27 +1,23 @@
 # Plan
 
-Add opt-in remembered Untapped login using a harness-specific macOS Keychain item and a private session credential bridge, preserving the confined companion and existing Steam/profile/network checks.
+Correct the remembered-login bridge's vendor service name and publish a verified launcher/companion update so a new sign-in can persist and the following start can restore it.
 
 ## Scope
-- In: Remember-login checkbox, idle Forget control, fixed-service Keychain helper, bounded private broker, global OAuth token restore/rotation/deletion, separately signed companion adaptation, regression tests and launcher installation.
-- Out: Reading existing Untapped/unrelated Keychain items, passwords, plaintext token files, tokens in process arguments/UI/logs, persistent browser profiles, Steam credentials, network expansion and automatic Terms acceptance.
+- In: Exact sandbox-specific vendor keytar service, independent contract regression, retained-copy helper-pin migration, signed launcher update, safe live verification and documentation.
+- Out: Restarting an active game, extracting current session tokens, unrelated Keychain items, network/sandbox expansion, automatic browser sign-in or Terms acceptance.
 
 ## Action items
-- [x] Trace the companion keytar/global OAuth contract, current memory-only bootstrap and controlled refresh route; inspect desktop, signing/update and credential tests/docs.
-- [x] Checkpoint this plan before implementation.
-- [x] Implement a fixed-service Security.framework helper and bounded host wrapper; default off until owner selects Remember login.
-- [x] Add a session-capability Unix-socket broker and memory-first keytar proxy; persist only global access/refresh tokens, handle invalid/revoked credentials and logout, and fall back to manual sign-in on Keychain failure.
-- [x] Adapt only the copied companion bootstrap with pinned helper validation, retaining its signature entitlements, original base/UI bindings and unchanged gateway/sandbox rules.
-- [x] Add native Remember/Forget controls, restore/persist integration and helper packaging/signing to the standalone launcher; prevent forgetting during active sessions.
-- [x] Test round-trip restart, refresh rotation, opt-out, invalid tokens, logout/forget, unsafe inputs and Keychain denial without real credentials; run native/full tests and inspect the staged app.
-- [x] Prepare/install verified updates when the current session is closed, retain rollback copies, and leave actual Keychain consent/initial sign-in to the owner.
-- [x] Update desktop, architecture, access and verification docs; save/push the branch with explicit live-validation limits.
+- [x] Trace the signed Services chunk and reproduce the service mismatch twice with a synthetic proxy/broker replay; read desktop, access/architecture and verification docs plus affected tests/updater.
+- [ ] Checkpoint this resolved plan on `codex/remember-untapped-login` before implementation.
+- [ ] Add a regression using the vendor service expression and actual launcher sandbox ID; watch persistence fail before correcting both broker/proxy service checks, retaining unrelated-service memory behavior.
+- [ ] Publish a helper-pin revision derived from the verified UI source with a new selection receipt; retain v1 bytes/receipts, require matching policy/signature/base bindings and reject incomplete or mismatched updates.
+- [ ] Run targeted contract/migration tests, original synthetic repro and full regression suite; verify the real copied bootstrap/ASAR, unchanged gateway rules and native app/helper signatures.
+- [ ] Build and replace the launcher only after the current session is closed; retain rollback copies, check runtime parity and idle controls, and leave initial real sign-in to the owner.
+- [ ] Update desktop, architecture/access and verification docs with cause, prevention and live-test limits; commit and push completed work.
 
 ## Open questions
-- None. The requested feature authorizes an opt-in harness-specific Keychain item; real tokens are saved only after the owner enables it and signs in.
+- None. The requested fix authorizes the bridge correction and launcher update. Active gameplay stays running until the owner closes it normally; a fresh manual sign-in is required because the current session never saved its credentials.
 
-## Validation notes
-- 303 tests pass using synthetic credentials and fake Keychain operations, including native live-status/lifecycle checks. Signature verification and Keychain I/O share one 20-second deadline; broker shutdown drains active writes and rejects queued rotations.
-- Native build/install and idle UI inspection are complete. Real Keychain consent, first save and later automatic restore remain owner-run checks.
-
-- Signed companion selection and actual 15099-entry comparison pass; only main bootstrap changed. AppKit/helper staged build and deep strict signature verification pass. After owner unlock, the old pending startup was cancelled before game creation, the idle launcher closed, and the verified update installed with a rollback copy. Idle UI inspection confirms the new controls and default-off checkbox; actual Keychain access is not performed during preparation.
+## Reproduction evidence
+- `/opt/homebrew/bin/python3 -B /private/tmp/repro-sts2-remember-service.py` returned exit 2 twice: `vendor_service_reaches_persistence=false`, fake saved-account count 0. It uses only synthetic credentials and an in-memory store.
+- The signed vendor Services chunk computes `Untapped Companion native-sts2-harness` from `UC_TEST_SANDBOX_ID`; both bridge components incorrectly matched `Untapped.gg Companion`. The owner's read-only real Keychain check succeeded but returned zero accounts. No live tokens were emitted or changed.

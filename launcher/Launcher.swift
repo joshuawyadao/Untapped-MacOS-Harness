@@ -140,12 +140,19 @@ private final class LauncherDelegate: NSObject, NSApplicationDelegate, NSWindowD
         stopButton.isEnabled = true
         statusLabel.stringValue = "Checking the game, companion and progress backup…"
 
-        output?.readabilityHandler = { [weak self] handle in
-            let data = handle.availableData
-            DispatchQueue.main.async { self?.receive(data) }
-        }
-        process.terminationHandler = { [weak self] terminated in
-            DispatchQueue.main.async { self?.workerExited(terminated) }
+        let readHandle = stdout.fileHandleForReading
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            drainLauncherWorker(process: process, output: readHandle, onChunk: { data in
+                DispatchQueue.main.async { self?.receive(data) }
+            }, onReadError: {
+                DispatchQueue.main.async {
+                    self?.requestStop()
+                    self?.terminalOutcome = .error
+                    self?.statusLabel.stringValue = "Could not read the worker session report. Quit any running game normally."
+                }
+            }, onExit: { terminated in
+                DispatchQueue.main.async { self?.workerExited(terminated) }
+            })
         }
     }
 

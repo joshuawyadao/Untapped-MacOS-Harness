@@ -26,6 +26,31 @@ class NativeOutcomeTests(unittest.TestCase):
         precondition(!launcherShouldQuit(requested: true, outcome: .finished, exitStatus: 1))
         precondition(launcherShouldQuit(requested: true, outcome: .finished, exitStatus: 0))
         precondition(!launcherShouldQuit(requested: false, outcome: .finished, exitStatus: 0))
+        // Delay every UI callback until the worker has already exited. The
+        // reader must still enqueue all status bytes before exit finalization.
+        for _ in 0..<20 {
+            let process = Process()
+            let pipe = Pipe()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/printf")
+            process.arguments = ["terminal-session-report"]
+            process.standardOutput = pipe
+            try process.run()
+            var pending: [() -> Void] = []
+            var received = Data()
+            var finalized = false
+            drainLauncherWorker(process: process, output: pipe.fileHandleForReading,
+                onChunk: { data in pending.append { precondition(!finalized); received.append(data) } },
+                onReadError: { preconditionFailure("Unexpected pipe read failure") },
+                onExit: { result in pending.append {
+                    precondition(String(data: received, encoding: .utf8) == "terminal-session-report")
+                    precondition(result.terminationStatus == 0)
+                    finalized = true
+                } })
+            precondition(!process.isRunning)
+            for callback in pending { callback() }
+            precondition(finalized)
+            try pipe.fileHandleForReading.close()
+        }
         print("Native outcome regressions passed")
         '''
         with tempfile.TemporaryDirectory() as directory:

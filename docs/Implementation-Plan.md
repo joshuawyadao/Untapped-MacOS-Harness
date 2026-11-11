@@ -12,6 +12,8 @@ Address PR #3's Brooks review by preserving native terminal failures after owner
 - [x] Preserve worker terminal errors and abnormal exits when owner stop was requested; test the actual native outcome seam.
 - [x] Add synthetic installer checks for source snapshot completeness, compile/sign failure and existing destination preservation.
 - [x] Run native seam tests, launcher compilation, focused/full Python tests and repository checks.
+- [x] Save the first validated native/installer review fix as df04836 and request current-head review.
+- [ ] Drain worker stdout through EOF before processing exit; test delayed status delivery using the actual native reader.
 - [ ] Update verification evidence and PR change ledger, commit/push the fix, request current-head Codex review and recheck CI/mergeability.
 
 ## Open questions

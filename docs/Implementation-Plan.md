@@ -1,20 +1,18 @@
 # Plan
 
-Address PR #3's Brooks review by preserving native terminal failures after owner stop and testing native outcome handling and installer publication before the final review/CI pass.
+Repair the desktop launcher's live status stream so Steam readiness prompts arrive while its worker is running, preserving ordered final output and game/account safety checks.
 
 ## Scope
-- In: Native finalization state, a testable outcome seam, installer completeness/failure tests, build integration and verification docs.
-- Out: Game launches, live app replacement, runtime policy changes, unrelated refactoring and resolving GitHub review threads without owner instruction.
+- In: Native pipe reader, interactive streaming regression, native build/validation, staged launcher update and verification docs.
+- Out: Backup/source/account checks, progress or game modifications, saved credentials, unrelated refactoring.
 
 ## Action items
-- [x] Review both Brooks findings and current native/installer behavior; confirm CI Verify is the active ruleset requirement.
-- [x] Checkpoint this plan before implementation.
-- [x] Preserve worker terminal errors and abnormal exits when owner stop was requested; test the actual native outcome seam.
-- [x] Add synthetic installer checks for source snapshot completeness, compile/sign failure and existing destination preservation.
-- [x] Run native seam tests, launcher compilation, focused/full Python tests and repository checks.
-- [x] Save the first validated native/installer review fix as df04836 and request current-head review.
-- [x] Drain worker stdout through EOF before processing exit; test delayed status delivery using the actual native reader.
-- [ ] Update verification evidence and PR change ledger, commit/push the fix, request current-head Codex review and recheck CI/mergeability.
+- [x] Reproduce the actual native reader failure using a cat child that emits one status line and remains open awaiting input: status_delivered_while_worker_waits=false.
+- [ ] Checkpoint this plan and preserve the existing installed session.
+- [ ] Test the ranked buffering hypothesis by replacing fill-oriented Foundation reads with interrupt-safe POSIX reads, retaining one ordered producer.
+- [ ] Add the interactive streaming case to the actual Swift regression alongside final-message/exit ordering; prove red then green.
+- [ ] Compile the app, run the native regression, full Python suite and repository checks; update verification and save/push this branch.
+- [ ] Build a signed update beside the installed app; request companion/launcher stop through normal controls before replacement, preserve a rollback copy, and verify the corrected UI can receive startup status.
 
 ## Open questions
-- None. The PR request authorizes narrow review fixes. Installed app replacement and live gameplay are not needed for this validation.
+- None. The isolated streaming fixture excludes backup and JSON parsing as causes; no game is launched by the fixture.

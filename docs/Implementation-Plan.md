@@ -1,18 +1,21 @@
 # Plan
 
-Repair the desktop launcher's live status stream so Steam readiness prompts arrive while its worker is running, preserving ordered final output and game/account safety checks.
+Add opt-in remembered Untapped login using a harness-specific macOS Keychain item and a private session credential bridge, preserving the confined companion and existing Steam/profile/network checks.
 
 ## Scope
-- In: Native pipe reader, interactive streaming regression, native build/validation, staged launcher update and verification docs.
-- Out: Backup/source/account checks, progress or game modifications, saved credentials, unrelated refactoring.
+- In: Remember-login checkbox, idle Forget control, fixed-service Keychain helper, bounded private broker, global OAuth token restore/rotation/deletion, separately signed companion adaptation, regression tests and launcher installation.
+- Out: Reading existing Untapped/unrelated Keychain items, passwords, plaintext token files, tokens in process arguments/UI/logs, persistent browser profiles, Steam credentials, network expansion and automatic Terms acceptance.
 
 ## Action items
-- [x] Reproduce the actual native reader failure using a cat child that emits one status line and remains open awaiting input: status_delivered_while_worker_waits=false.
-- [x] Checkpoint this plan and preserve the existing installed session.
-- [x] Test the ranked buffering hypothesis by replacing fill-oriented Foundation reads with interrupt-safe POSIX reads, retaining one ordered producer.
-- [x] Add the interactive streaming case to the actual Swift regression alongside final-message/exit ordering; prove red then green.
-- [x] Compile the app, run the native regression, full Python suite and repository checks; update verification and save/push this branch.
-- [x] Build/sign and install the update after cancelling the waiting worker through Stop Companion; preserve the previous app and verify installed signature/runtime files and idle UI. The interactive native regression establishes live status delivery; the owner runs the next actual Steam readiness sequence.
+- [x] Trace the companion keytar/global OAuth contract, current memory-only bootstrap and controlled refresh route; inspect desktop, signing/update and credential tests/docs.
+- [ ] Checkpoint this plan before implementation.
+- [ ] Implement a fixed-service Security.framework helper and bounded host wrapper; default off until owner selects Remember login.
+- [ ] Add a session-capability Unix-socket broker and memory-first keytar proxy; persist only global access/refresh tokens, handle invalid/revoked credentials and logout, and fall back to manual sign-in on Keychain failure.
+- [ ] Adapt only the copied companion bootstrap with pinned helper validation, retaining its signature entitlements, original base/UI bindings and unchanged gateway/sandbox rules.
+- [ ] Add native Remember/Forget controls, restore/persist integration and helper packaging/signing to the standalone launcher; prevent forgetting during active sessions.
+- [ ] Test round-trip restart, refresh rotation, opt-out, invalid tokens, logout/forget, unsafe inputs and Keychain denial without real credentials; run native/full tests and inspect the staged app.
+- [ ] Prepare/install verified updates when the current session is closed, retain rollback copies, and leave actual Keychain consent/initial sign-in to the owner.
+- [ ] Update desktop, architecture, access and verification docs; save/push the branch with explicit live-validation limits.
 
 ## Open questions
-- None. The isolated streaming fixture excludes backup and JSON parsing as causes; no game is launched by the fixture.
+- None. The requested feature authorizes an opt-in harness-specific Keychain item; real tokens are saved only after the owner enables it and signs in.

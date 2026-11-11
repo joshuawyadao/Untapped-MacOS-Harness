@@ -14,7 +14,7 @@ Add opt-in remembered Untapped login using a harness-specific macOS Keychain ite
 - [x] Adapt only the copied companion bootstrap with pinned helper validation, retaining its signature entitlements, original base/UI bindings and unchanged gateway/sandbox rules.
 - [x] Add native Remember/Forget controls, restore/persist integration and helper packaging/signing to the standalone launcher; prevent forgetting during active sessions.
 - [x] Test round-trip restart, refresh rotation, opt-out, invalid tokens, logout/forget, unsafe inputs and Keychain denial without real credentials; run native/full tests and inspect the staged app.
-- [ ] Prepare/install verified updates when the current session is closed, retain rollback copies, and leave actual Keychain consent/initial sign-in to the owner.
+- [x] Prepare/install verified updates when the current session is closed, retain rollback copies, and leave actual Keychain consent/initial sign-in to the owner.
 - [x] Update desktop, architecture, access and verification docs; save/push the branch with explicit live-validation limits.
 
 ## Open questions
@@ -22,6 +22,6 @@ Add opt-in remembered Untapped login using a harness-specific macOS Keychain ite
 
 ## Validation notes
 - 303 tests pass using synthetic credentials and fake Keychain operations, including native live-status/lifecycle checks. Signature verification and Keychain I/O share one 20-second deadline; broker shutdown drains active writes and rejects queued rotations.
-- Native build/install and idle UI inspection remain next. Real Keychain consent, first save and later automatic restore remain owner-run checks.
+- Native build/install and idle UI inspection are complete. Real Keychain consent, first save and later automatic restore remain owner-run checks.
 
-- Signed companion selection and actual 15099-entry comparison pass; only main bootstrap changed. AppKit/helper staged build and deep strict signature verification pass. Installed swap/idle UI inspection await unlocking the Mac; actual Keychain access is not performed during preparation.
+- Signed companion selection and actual 15099-entry comparison pass; only main bootstrap changed. AppKit/helper staged build and deep strict signature verification pass. After owner unlock, the old pending startup was cancelled before game creation, the idle launcher closed, and the verified update installed with a rollback copy. Idle UI inspection confirms the new controls and default-off checkbox; actual Keychain access is not performed during preparation.

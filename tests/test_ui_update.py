@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 import unittest
+from contextlib import ExitStack
 from pathlib import Path
 from unittest.mock import patch
 
@@ -27,6 +28,7 @@ class UiUpdateTests(unittest.TestCase):
                         'base_patched_asar_sha256': 'base', 'patched_asar_sha256': 'new'}
         self.write(self.base / 'manifest.json', self.manifest)
         self.write(self.new / 'manifest.json', self.updated)
+        self.write(self.new / 'signing.json', {'schema': 1})
 
     def write(self, path, data):
         path.write_text(json.dumps(data))
@@ -35,6 +37,48 @@ class UiUpdateTests(unittest.TestCase):
     def activate(self):
         self.write(self.root / ui_update.RECEIPT,
                    {'schema': 1, 'base_patched_asar_sha256': 'base', 'patched_asar_sha256': 'new'})
+
+    def activate_current(self):
+        current = self.root / ui_update.CURRENT_DIRECTORY
+        current.mkdir(mode=0o700)
+        self.write(current / 'manifest.json', {**self.updated, 'ui_assets_version': 2,
+                   'patched_asar_sha256': 'current'})
+        self.write(current / 'signing.json', {'schema': 1})
+        self.write(self.root / ui_update.CURRENT_RECEIPT,
+                   {'schema': 1, 'ui_assets_version': 2,
+                    'base_patched_asar_sha256': 'base', 'patched_asar_sha256': 'current'})
+        return current
+
+    def installation_fixture(self):
+        self.activate()
+        (self.root / 'activation.json').write_text('{}')
+        contents = self.new / 'Companion.app' / 'Contents'
+        (contents / 'Resources').mkdir(parents=True)
+        (contents / 'MacOS').mkdir()
+        (contents / '_CodeSignature').mkdir()
+        (contents / 'Resources' / 'app.asar').write_bytes(b'legacy asar')
+        (contents / ui_update.signing.EXECUTABLE).write_bytes(b'signed executable')
+        (contents / '_CodeSignature' / 'CodeResources').write_bytes(b'code resources')
+        return {name: (self.root / name).read_bytes() for name in (
+            ui_update.RECEIPT, ui_update.UPDATE_DIRECTORY + '/manifest.json',
+            ui_update.UPDATE_DIRECTORY + '/signing.json',
+            ui_update.UPDATE_DIRECTORY + '/Companion.app/Contents/Resources/app.asar')}
+
+    def fake_prepare_current(self, stage):
+        archive = stage / 'Companion.app/Contents/Resources/app.asar'
+        archive.write_bytes(b'current asar')
+        self.write(stage / 'manifest.json', {**self.updated, 'ui_assets_version': 2,
+                   'patched_asar_sha256': 'current'})
+        (stage / 'signing.json').rename(stage / 'previous-signing.json')
+
+    def install_patches(self, stack):
+        stack.enter_context(patch.object(main_launcher, '_prepared', return_value=(self.root, None, None)))
+        stack.enter_context(patch.object(ui_update.controlled, 'proposal'))
+        stack.enter_context(patch.object(ui_update.cli, '_validate_launch_copy'))
+        stack.enter_context(patch.object(ui_update.signing, '_entitlements'))
+        stack.enter_context(patch.object(ui_update.signing, 'verify_signed_copy'))
+        stack.enter_context(patch.object(ui_update.signing, '_check_payloads'))
+        return stack.enter_context(patch('harness.ui_assets.prepare', side_effect=self.fake_prepare_current))
 
     def test_unselected_or_partial_update_keeps_original(self):
         self.assertEqual(ui_update.selected_session(self.root), self.base)
@@ -48,6 +92,122 @@ class UiUpdateTests(unittest.TestCase):
             verify.side_effect = HarnessError('bad signature')
             with self.assertRaises(HarnessError):
                 ui_update.selected_session(self.root)
+
+    def test_legacy_receipt_accepts_explicit_assets_version_one(self):
+        self.activate()
+        self.write(self.root / ui_update.RECEIPT,
+                   {'schema': 1, 'ui_assets_version': 1,
+                    'base_patched_asar_sha256': 'base', 'patched_asar_sha256': 'new'})
+        with patch.object(ui_update.controlled, 'proposal'), patch.object(ui_update.cli, '_validate_launch_copy'):
+            self.assertEqual(ui_update.selected_session(self.root), self.new)
+
+    def test_complete_current_update_takes_precedence_over_legacy(self):
+        self.activate()
+        current = self.activate_current()
+        with patch.object(ui_update.controlled, 'proposal') as policy, patch.object(ui_update.cli, '_validate_launch_copy') as verify:
+            self.assertEqual(ui_update.selected_session(self.root), current)
+            policy.assert_called_once_with(current)
+            verify.assert_called_once_with(current)
+            verify.side_effect = HarnessError('bad signature')
+            with self.assertRaisesRegex(HarnessError, 'bad signature'):
+                ui_update.selected_session(self.root)
+
+    def test_incomplete_current_directory_does_not_replace_legacy(self):
+        self.activate()
+        current = self.root / ui_update.CURRENT_DIRECTORY
+        current.mkdir(mode=0o700)
+        self.write(current / 'manifest.json', {**self.updated, 'ui_assets_version': 2})
+        with patch.object(ui_update.controlled, 'proposal'), patch.object(ui_update.cli, '_validate_launch_copy'):
+            self.assertEqual(ui_update.selected_session(self.root), self.new)
+
+    def test_current_receipt_or_manifest_mismatch_fails_closed(self):
+        self.activate()
+        current = self.activate_current()
+        with patch.object(ui_update.controlled, 'proposal'), patch.object(ui_update.cli, '_validate_launch_copy'):
+            original = json.loads((current / 'manifest.json').read_text())
+            for key, value in (('ui_assets_version', 1), ('ui_assets_version', True),
+                               ('ui_assets_version', 2.0), ('ui_assets_version', None),
+                               ('base_patched_asar_sha256', 'other'),
+                               ('patched_asar_sha256', 'other'), ('controlled_gateway_sha256', 'other')):
+                with self.subTest(key=key):
+                    self.write(current / 'manifest.json', {**original, key: value})
+                    with self.assertRaises(HarnessError):
+                        ui_update.selected_session(self.root)
+            self.write(current / 'manifest.json', original)
+            missing_version = dict(original)
+            missing_version.pop('ui_assets_version')
+            self.write(current / 'manifest.json', missing_version)
+            with self.assertRaises(HarnessError):
+                ui_update.selected_session(self.root)
+            self.write(current / 'manifest.json', original)
+            (current / 'signing.json').unlink()
+            with self.assertRaises((OSError, HarnessError)):
+                ui_update.selected_session(self.root)
+            self.write(current / 'signing.json', {'schema': 1})
+            for record in ({'schema': 2, 'ui_assets_version': 2,
+                            'base_patched_asar_sha256': 'base', 'patched_asar_sha256': 'current'},
+                           {'schema': 1, 'ui_assets_version': 1,
+                            'base_patched_asar_sha256': 'base', 'patched_asar_sha256': 'current'},
+                           {'schema': 1, 'base_patched_asar_sha256': 'base',
+                            'patched_asar_sha256': 'current'}):
+                with self.subTest(record=record):
+                    self.write(self.root / ui_update.CURRENT_RECEIPT, record)
+                    with self.assertRaises(HarnessError):
+                        ui_update.selected_session(self.root)
+
+    def test_failed_upgrade_preserves_legacy_selection_and_receipt(self):
+        self.activate()
+        (self.root / 'activation.json').write_text('{}')
+        app = self.new / 'Companion.app'
+        app.mkdir()
+        (app / 'payload').write_bytes(b'legacy')
+        self.write(self.new / 'signing.json', {'schema': 1})
+        receipt = self.root / ui_update.RECEIPT
+        original_receipt = receipt.read_bytes()
+        with patch.object(main_launcher, '_prepared', return_value=(self.root, None, None)), \
+             patch.object(ui_update.controlled, 'proposal'), \
+             patch.object(ui_update.cli, '_validate_launch_copy'), \
+             patch('harness.ui_assets.prepare', side_effect=HarnessError('asset failure')):
+            self.assertEqual(ui_update.selected_session(self.root), self.new)
+            with self.assertRaisesRegex(HarnessError, 'asset failure'):
+                ui_update.install_main()
+            self.assertEqual(ui_update.selected_session(self.root), self.new)
+        self.assertEqual(receipt.read_bytes(), original_receipt)
+        self.assertFalse((self.root / ui_update.CURRENT_RECEIPT).exists())
+        self.assertFalse((self.root / ui_update.CURRENT_DIRECTORY).exists())
+
+    def test_install_publishes_current_receipt_and_preserves_legacy(self):
+        original = self.installation_fixture()
+        with ExitStack() as stack:
+            prepare = self.install_patches(stack)
+            stack.enter_context(patch.object(ui_update.signing, '_run_codesign'))
+            result = ui_update.install_main()
+            self.assertEqual(result['ui_assets_version'], 2)
+            current = self.root / ui_update.CURRENT_DIRECTORY
+            self.assertEqual(ui_update.selected_session(self.root), current)
+            self.assertEqual(json.loads((self.root / ui_update.CURRENT_RECEIPT).read_text()),
+                             {'schema': 1, 'ui_assets_version': 2,
+                              'base_patched_asar_sha256': 'base', 'patched_asar_sha256': 'current'})
+            self.assertEqual((current / 'Companion.app/Contents/Resources/app.asar').read_bytes(), b'current asar')
+            self.assertTrue((current / 'previous-signing.json').is_file())
+            self.assertTrue(ui_update.install_main()['already_installed'])
+            prepare.assert_called_once()
+        for name, data in original.items():
+            self.assertEqual((self.root / name).read_bytes(), data, name)
+
+    def test_signing_failure_keeps_legacy_selected(self):
+        original = self.installation_fixture()
+        with ExitStack() as stack:
+            self.install_patches(stack)
+            stack.enter_context(patch.object(ui_update.signing, '_run_codesign',
+                                            side_effect=HarnessError('signing failed')))
+            with self.assertRaisesRegex(HarnessError, 'signing failed'):
+                ui_update.install_main()
+            self.assertEqual(ui_update.selected_session(self.root), self.new)
+        for name, data in original.items():
+            self.assertEqual((self.root / name).read_bytes(), data, name)
+        self.assertFalse((self.root / ui_update.CURRENT_RECEIPT).exists())
+        self.assertFalse((self.root / ui_update.CURRENT_DIRECTORY).exists())
 
     def test_wrong_base_policy_version_or_receipt_fails_closed(self):
         self.activate()

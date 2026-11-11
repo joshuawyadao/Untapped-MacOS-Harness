@@ -80,8 +80,36 @@ class MainCompanionTests(unittest.TestCase):
                                                    should_stop=lambda: "GAME_EXIT")[0], "GAME_EXIT")
         self.assertEqual(process.waits, [])
 
+    def test_unlimited_supervision_waits_past_arbitrary_clock_until_owner_stops(self):
+        process = FakeProcess()
+        ticks = iter([0, 1000000, 2000000])
+        calls = iter([None, None, "OWNER_STOP"])
+        with patch.object(companion, "_events", return_value=set()):
+            reason, _ = companion.supervise(process, Path("/unused"), None,
+                                             should_stop=lambda: next(calls),
+                                             clock=lambda: next(ticks))
+        self.assertEqual(reason, "OWNER_STOP")
+        self.assertEqual(process.waits, [0.5, 0.5])
+
+    def test_unlimited_supervision_requires_stop_callback(self):
+        with self.assertRaises(HarnessError):
+            companion.supervise(FakeProcess(), Path("/unused"), None)
+
+    def test_unlimited_supervision_still_prioritizes_mismatch_and_process_exit(self):
+        process = FakeProcess()
+        with patch.object(companion, "_events", return_value={"main-steam-mismatch"}):
+            self.assertEqual(companion.supervise(process, Path("/unused"), None,
+                                                  should_stop=lambda: "OWNER_STOP")[0],
+                             "STEAM_ACCOUNT_MISMATCH")
+        process.alive = False
+        with patch.object(companion, "_events", return_value=set()):
+            self.assertEqual(companion.supervise(process, Path("/unused"), None,
+                                                  should_stop=lambda: None)[0],
+                             "COMPANION_EXITED")
+
     def _run(self, gateway, *, stop="GAME_EXIT", events=None, launch_error=None,
-             harvest_error=None, cleanup_error=None, order=None):
+             harvest_error=None, cleanup_error=None, order=None, ui_version=None, seed=None,
+             seconds=14400, on_companion_ready=None):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         base = Path(temp.name).resolve()
@@ -94,7 +122,13 @@ class MainCompanionTests(unittest.TestCase):
         self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
         self.addCleanup(lambda: shutil.rmtree(root) if root.exists() else None)
         (root / "profile").mkdir(mode=0o700)
-        launch = Mock(side_effect=launch_error) if launch_error else Mock(return_value=process)
+        def launch_copy(*_args):
+            if order is not None:
+                order.append("launch")
+            if launch_error:
+                raise launch_error
+            return process
+        launch = Mock(side_effect=launch_copy)
         def cleanup(_process):
             if order is not None:
                 order.append("group_cleanup")
@@ -109,19 +143,48 @@ class MainCompanionTests(unittest.TestCase):
         with patch.object(companion.platform, "system", return_value="Darwin"), \
              patch.object(companion, "_target_environment", return_value={}), \
              patch.object(companion.controlled, "proposal", return_value={}), \
-             patch.object(companion.cli, "_validate_launch_copy", return_value=(session, {"main_steam_guard_version": 1}, session / "Companion.app")), \
+             patch.object(companion.cli, "_validate_launch_copy", return_value=(session, {"main_steam_guard_version": 1, "ui_assets_version": ui_version}, session / "Companion.app")), \
              patch.object(companion, "Gateway", return_value=gateway), \
              patch.object(companion, "_clone", return_value=root) as clone, \
              patch.object(companion, "_launch", launch), \
              patch.object(companion, "_events", return_value=events or set()), \
              patch.object(companion.cli, "stop_probe", side_effect=cleanup) as terminate, \
-             patch.object(companion.main_preferences, "seed"), \
+             patch.object(companion.main_preferences, "seed", seed or Mock()), \
              patch.object(companion.main_preferences, "harvest", side_effect=harvest), \
              patch.object(companion, "_diagnostic") as diagnostic:
             report = companion.run(session, prefs, target_pid=123,
                                    target_game=Path("/synthetic/game"), expected_steam_id="12345678901234567",
-                                   expected_profile=0, should_stop=lambda: stop)
+                                   expected_profile=0, seconds=seconds, should_stop=lambda: stop,
+                                   on_companion_ready=on_companion_ready)
         return report, clone, launch, terminate, diagnostic, root
+
+    def test_unlimited_run_reports_ready_root_after_launch(self):
+        observed = []
+        order = []
+        report, _, launch, _, _, root = self._run(
+            FakeGateway(), seconds=None, stop="OWNER_STOP", order=order,
+            on_companion_ready=lambda path: (observed.append(path), order.append("ready")))
+        self.assertEqual(observed, [root])
+        self.assertEqual(order[:2], ["launch", "ready"])
+        self.assertEqual(report["reason"], "OWNER_STOP")
+        self.assertEqual(report["failure_stage"], "NONE")
+        self.assertFalse(root.exists())
+
+    def test_unlimited_run_requires_stop_callback_before_private_work(self):
+        with patch.object(companion.platform, "system", return_value="Darwin"), \
+             patch.object(companion, "_target_environment") as target:
+            with self.assertRaises(HarnessError):
+                companion.run(Path("/unused"), Path("/unused"), target_pid=1,
+                              target_game=Path("/unused"), expected_steam_id="123",
+                              expected_profile=0, seconds=None)
+        target.assert_not_called()
+
+    def test_both_ui_versions_preserve_default_character_tier_seeding(self):
+        for version, expected in ((None, False), (1, True), (2, True)):
+            with self.subTest(version=version):
+                seed = Mock()
+                self._run(FakeGateway(), ui_version=version, seed=seed)
+                self.assertEqual(seed.call_args.kwargs['enable_default_tiers'], expected)
 
     def test_preflight_failure_never_opens_app(self):
         gateway = FakeGateway({"passed": False, "requests_attempted": 0, "results": []})
@@ -164,7 +227,7 @@ class MainCompanionTests(unittest.TestCase):
         order = []
         report, _, _, terminate, diagnostic, root = self._run(
             FakeGateway(), harvest_error=RuntimeError("secret-token"), order=order)
-        self.assertEqual(order, ["group_cleanup", "harvest"])
+        self.assertEqual(order, ["launch", "group_cleanup", "harvest"])
         self.assertEqual(report["failure_stage"], "HARVEST")
         self.assertFalse(report["preferences_saved"])
         self.assertTrue(report["private_attempt_retained"])
@@ -177,7 +240,7 @@ class MainCompanionTests(unittest.TestCase):
         order = []
         report, _, _, terminate, _, root = self._run(
             FakeGateway(), cleanup_error=RuntimeError("secret-token"), order=order)
-        self.assertEqual(order, ["group_cleanup"])
+        self.assertEqual(order, ["launch", "group_cleanup"])
         self.assertEqual(report["reason"], "COMPANION_CLEANUP_FAILED")
         self.assertFalse(report["companion_group_cleanup_complete"])
         self.assertTrue(root.exists())

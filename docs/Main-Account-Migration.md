@@ -103,8 +103,26 @@ Finish the current game normally, wait for Steam Cloud to synchronize, and quit 
 
 Pending tier metadata: fresh profiles now give saved list selections a temporary `Loading tier list…` name while the native metadata request runs. This prevents Untapped's immediate settings-page sort from throwing on undefined names. Genuine refresh replaces the temporary label; it is never saved as a rating or persisted display name. An unavailable list may remain loading, but it should not blank the settings page. The signed UI update remains unchanged.
 
+### Attack-summary icons (UI version 2)
+
+The attack summary selects one of five intent images according to total damage. Those remote URLs were outside the first offline UI repair, causing a broken-image placeholder in combat, including multi-attacks. The version-2 preparer embeds all five images. Attack calculations, numeric labels and runtime network permissions are unchanged.
+
+Run `python3 -m harness.ui_update --install-main` from the version-2-aware refinement checkout to prepare/verify the separate signed update. It supports both the original companion and an existing version-1 UI copy. A completed `companion-ui-v2.json` selects `companion-ui-v2` for that launcher's next run; legacy `companion-ui` and its receipt are preserved. Failed preparations do not replace the previous selection. The install is idempotent and does not restart a running game or companion.
+
+Until merged, launch from `codex/companion-real-game-refinement`, not an older checkout of main. In this workspace, after normal game quit, completed Cloud synchronization and Steam quit, use:
+
+```sh
+"/Users/joshuawyadao/.codex/worktrees/sts2-starting-relic-badges/Untapped MacOS Harness/scripts/main_account.sh" start --approve-main-account-launch --confirm-cloud-synced --confirm-steam-account
+```
+
+The current session keeps its previous images. At the next combat encounter, verify the attack-summary icon visually; installation and image decoding alone do not establish live display. For a deliberate rollback after the companion exits, preserve the v2 receipt privately outside its selection path so the retained v1 receipt is selected; do not delete app copies or alter signing records.
+
 ### Tier-list queue repair
 
 Some temporary loading labels persisted because the initial default-list burst exceeded the gateway's eight active handlers and excess connections were reset. The repaired adapter queues all companion requests at four concurrent reads, holds each slot through body completion, and retries only temporary failures of public tier-resolve GETs (three attempts maximum). It preserves the genuine metadata refresh and existing selections; it does not import a deck or invent ratings. Permanent upstream errors can still leave a list unavailable.
 
 The reviewed adapter migration changes only helper hash fields in the retained base and UI manifests, preserving originals in a private update receipt and verifying signatures/payloads before and after. The original approval and game/save state remain unchanged. A running companion retains its old helper until restarted. Companion-only restart beside the verified existing game is supported by the established supervised workflow; the owner must sign in again. Otherwise use the existing main-account start command after normal game quit and Steam Cloud synchronization.
+
+## Dedicated desktop launcher
+
+The optional [desktop launcher](Desktop-Launcher.md) replaces Terminal interaction with native startup/Steam confirmations and a sign-in button. Desktop sessions follow game lifetime; the command-line default remains four hours unless `--until-game-exit` is selected. Existing source, backup, profile and controlled-access checks remain in place. The app bundles the refinement harness snapshot, so it does not depend on the checkout remaining on this branch. See the desktop runbook for installation, Dock pinning and pending live checks.

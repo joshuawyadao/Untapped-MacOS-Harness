@@ -105,6 +105,54 @@ class MainLauncherTests(unittest.TestCase):
         process.kill.assert_not_called()
         process.terminate.assert_not_called()
 
+    def test_unlimited_start_forwards_ready_callback_and_guarded_owner_stop(self):
+        _, process, _, _, companion = self.patches()
+        ready = Mock()
+        owner = Mock(side_effect=[None, None, "OWNER_STOP"])
+        with patch.object(launcher, "_target", return_value=2468), \
+             contextlib.redirect_stdout(io.StringIO()):
+            launcher.start(approved=True, cloud_confirmed=True, account_confirmed=True,
+                           confirm_steam=lambda: None, seconds=None, should_stop=owner,
+                           on_companion_ready=ready)
+        self.assertIsNone(companion.call_args.kwargs["seconds"])
+        self.assertIs(companion.call_args.kwargs["on_companion_ready"], ready)
+        with patch.object(launcher, "_target", return_value=2468):
+            self.assertEqual(companion.call_args.kwargs["should_stop"](), "OWNER_STOP")
+        owner.assert_called()
+        process.kill.assert_not_called()
+
+    def test_owner_stop_after_confirmation_prevents_game_launch(self):
+        _, _, popen, _, companion = self.patches()
+        with self.assertRaises(KeyboardInterrupt):
+            launcher.start(approved=True, cloud_confirmed=True, account_confirmed=True,
+                           confirm_steam=lambda: None, seconds=None,
+                           should_stop=lambda: "OWNER_STOP")
+        popen.assert_not_called()
+        companion.assert_not_called()
+
+    def test_owner_stop_during_revalidation_prevents_game_launch(self):
+        _, _, popen, _, companion = self.patches()
+        reasons = iter([None, "OWNER_STOP"])
+        with self.assertRaises(KeyboardInterrupt):
+            launcher.start(approved=True, cloud_confirmed=True, account_confirmed=True,
+                           confirm_steam=lambda: None, seconds=None,
+                           should_stop=lambda: next(reasons))
+        popen.assert_not_called()
+        companion.assert_not_called()
+
+    def test_game_guard_precedes_owner_stop(self):
+        _, _, _, _, companion = self.patches()
+        owner = Mock(return_value=None)
+        with patch.object(launcher, "_target", return_value=None), \
+             contextlib.redirect_stdout(io.StringIO()):
+            launcher.start(approved=True, cloud_confirmed=True, account_confirmed=True,
+                           confirm_steam=lambda: None, should_stop=owner)
+        # The owner callback runs twice before launch, but the live guard must win in supervision.
+        before = owner.call_count
+        with patch.object(launcher, "_target", return_value=None):
+            self.assertEqual(companion.call_args.kwargs["should_stop"](), "TARGET_CONFLICT")
+        self.assertEqual(owner.call_count, before)
+
     def test_changed_progress_never_launches_or_restores(self):
         _, process, popen, _, companion = self.patches(changed=True)
         with self.assertRaises(launcher.LauncherError) as error:
@@ -195,6 +243,29 @@ class MainLauncherTests(unittest.TestCase):
                      patch.object(launcher, "start", return_value={"companion": companion}), \
                      contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(launcher.main(args), expected)
+
+    def test_cli_unlimited_duration_and_exclusive_minutes(self):
+        args = ["start", "--approve-main-account-launch", "--confirm-cloud-synced",
+                "--confirm-steam-account", "--until-game-exit"]
+        with patch.object(launcher.sys.stdin, "isatty", return_value=True), \
+             patch.object(launcher, "start", return_value={"companion": {}}) as start, \
+             contextlib.redirect_stdout(io.StringIO()):
+            launcher.main(args)
+        self.assertIsNone(start.call_args.kwargs["seconds"])
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            launcher.main(args + ["--minutes", "5"])
+
+    def test_owner_stop_succeeds_only_after_clean_cleanup(self):
+        args = ["start", "--approve-main-account-launch", "--confirm-cloud-synced",
+                "--confirm-steam-account"]
+        report = {"reason": "OWNER_STOP", "failure_stage": "NONE",
+                  "gateway_cleanup_complete": True, "companion_group_cleanup_complete": True}
+        with patch.object(launcher.sys.stdin, "isatty", return_value=True), \
+             patch.object(launcher, "start", return_value={"companion": report}), \
+             contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(launcher.main(args), 0)
+            report["failure_stage"] = "HARVEST"
+            self.assertEqual(launcher.main(args), 1)
 
     def test_game_disappearance_preserves_exit_status_and_rejects_crashes(self):
         for exit_code, reason in ((0, "GAME_EXIT"), (1, "GAME_CRASHED"),

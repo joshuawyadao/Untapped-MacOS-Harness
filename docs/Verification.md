@@ -1,5 +1,7 @@
 # Verification and reward milestone
 
+For the November 10, 2026 starting-relic check, see [Starting-relic badge investigation](Starting-Relic-Diagnosis.md). The owner confirmed three visible named-tier badges (“Inconsistent”) after native IDs, tier coverage and actual DOM rectangles were verified. No rendering patch was required for that observation.
+
 This record distinguishes static inspection, startup, game detection, reader attachment, state reading, and overlay display. Each requires separate evidence. The pinned user-supplied companion was `3.12.3-latest` with `app.asar` SHA-256 `ca3a2e6a6f728b2d635abfc70a5434d4107438b8d801a650357989e8442d798c`.
 
 | Milestone | Result through the November 3, 2026 observation | Evidence or next check |
@@ -441,3 +443,27 @@ Codex reported two actionable findings: Ubuntu fixture portability (already corr
 Marking PR2 ready triggered an additional Codex review of71afd93. It found that a copied-game crash could still look like normal game exit. The launcher now records `game_exit_code`, classifies a disappeared target with nonzero/signal status as `GAME_CRASHED`, and treats disappearance without a confirmed exit as `TARGET_CONFLICT`. Companion supervision accepts the crash reason, retains private evidence and completes owned-group cleanup. The CLI also rejects a nonzero game exit first observed after a normal companion stop. No game termination or save restore was introduced.
 
 Synthetic regressions failed before implementation and now cover exit0, exit1, signal-11, unknown status, retained evidence, and late crash reporting. All242 local tests pass, including53 focused main-account cases; repository/Markdown and whitespace checks pass. No live app, game, save or Cloud operation ran.
+
+## Attack-summary icon repair — November 10, 2026
+
+The owner reported a broken image in the enemy attack summary during multi-attacks. Static inspection found its five damage-dependent intent images still referenced remote URLs omitted from UI assets v1. Version 2 replaces only that image-source expression with embedded, genuinely downloaded public images. Native damage/hit calculation and thresholds are unchanged.
+
+All five images passed download media/magic/size checks and local image decoding. The real rewritten overlay passed `node --check`; replacing the generated lookup with the original URL expression reproduced the original renderer entry exactly. The installed v2 ASAR is `69fd36df875ddd3f55ef751dff0cbb8e9c102654948e1849022ebd3b91ad6644`. Comparison against v1 found only `dist/renderer/assets/Sts2Overlay-DPeYNPLb.js` changed inside ASAR. Outer signing, fixed native payloads, original base/policy binding and the preferred v2 receipt were verified; legacy copy/receipt remain intact. No live process was restarted.
+
+The full suite passed 252 tests; two additional installer publication/signing-failure regressions then passed within the 13-test updater suite. Coverage includes all five lookup entries, incremental asset preservation, rejected destinations/anchors, legacy/v2 selection, signing failure, idempotent installation and default tier seeding for both UI versions. Repository and diff checks passed. A visual combat check remains pending the next normal launch from the refinement checkout; the running diagnostic companion retains its previous image source.
+
+## Dedicated Dock launcher — November 10, 2026
+
+A native AppKit launcher was built, ad-hoc signed, verified and installed in the owner Applications folder. Its idle window displayed the three expected controls without launching a game. The full suite passed 272 tests, including new game-lifetime, owner cancellation, no-callback rejection, exclusive worker lock, validated private OAuth-file and GUI protocol coverage. The app snapshot includes UI assets v2 selection and the attack-icon repair. Dock pinning could not be automated because the Dock UI tool timed out; the owner can keep the running icon in the Dock.
+
+This establishes build/startup UI and synthetic orchestration, not a completed GUI-driven game session or long-session reliability. Actual Steam readiness, browser sign-in, overlay display and normal exit through the new app remain owner-run live checks. The prior supervision failure remains unexplained and is not attributed to the former four-hour cutoff. See [desktop use and implementation](Desktop-Launcher.md).
+
+## PR #3 review hardening — November 11, 2026
+
+A sampled Brooks review of the refinement diff found two issues: native owner-stop finalization could overwrite an explicit cleanup failure with a success message, and native outcome/installer publication behavior lacked automated protection. The frontend now retains the terminal outcome independently of owner intent; a reported error or unreported nonzero exit remains visible. A close request also keeps the launcher open with the error rather than quitting after failed cleanup. The actual Swift finalization seam is compiled/executed in a macOS-only regression, while portable synthetic installer tests cover complete runtime snapshots, compile/sign/verify failures and existing-destination preservation. The builder compiles both Swift source files using an explicit application entry point.
+
+These PR fixes do not replace a running installed app. Rebuild the launcher from the merged/reviewed code when updating the installed application. The native outcome test is explicitly skipped on non-macOS CI; portable worker, supervisor and installer tests still run there. A subsequent Codex review confirmed that independent pipe/exit callbacks could discard the final status. The native reader now drains stdout to EOF and queues data/error callbacks before finalization from a single producer. A compiled regression delays every UI callback until after worker exit across 20 child processes, then verifies all report bytes precede exit handling.
+
+PR-review validation: all 276 tests passed locally, including the Swift outcome regression; the complete multi-file AppKit launcher compiled successfully. The native regression was rerun after adding explicit close-request/failed-cleanup assertions.
+
+The output-ordering follow-up passed the native regression and complete AppKit compilation. Python behavior is unchanged from the 276-test pass; CI is rerun on each pushed head.

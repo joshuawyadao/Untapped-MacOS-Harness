@@ -12,7 +12,7 @@ Retry only live game-process inventory timeouts within a fixed budget, preserve 
 - [x] Add a failing synthetic timeout-then-success regression at the live guard/supervisor seam; cover timeout exhaustion, reset after recovery, non-inventory timeouts and non-timeout failures.
 - [x] Retry only subprocess inventory timeouts with at most three attempts and fixed 250 ms backoff; recheck account mismatch, game/companion exit, owner stop and finite session deadline while waiting, and require a fresh successful identity check before continuing.
 - [x] Extend bounded safe diagnostics to count handled timeouts, retries, recoveries and exhaustion without leaving a recovered timeout as the fatal first failure; retain immediate mismatch behavior and privacy protection.
-- [ ] Run focused and full tests, verify unchanged companion/login/network pins, build/sign and verify exact runtime parity; update the operational and verification docs.
+- [x] Run focused and full tests, verify unchanged companion/login/network pins, build/sign and verify exact runtime parity; update the operational and verification docs.
 - [ ] Replace the installed launcher only after normal app/game closure, preserve rollback, inspect idle controls, and save/push the completed branch with live-test limits.
 
 ## Open questions
@@ -22,3 +22,5 @@ Retry only live game-process inventory timeouts within a fixed budget, preserve 
 - The actual launcher-guard/supervisor regression failed before implementation with TimeoutExpired on the first inventory attempt. Ten focused live-seam cases now pass: recovery, three-attempt exhaustion, budget reset, immediate confirmed game/account mismatch, cancellation/game/companion exit during delay, finite deadline and non-retryable failures. No real game or credentials are used.
 
 - All 341 tests pass. Read-only integration review found no retry safety defect; the actual callback/supervisor tests demonstrate fresh verification, three-attempt exhaustion, responsive exits and immediate mismatch stops. Native build/install and real-game recovery observation remain next.
+
+- Implementation checkpoint `3b6e564` is complete. The native signed staged build passes deep strict verification, all 37 runtime files match, and a packaged-supervisor synthetic timeout recovery probe passes. Companion/login/network pins remain unchanged. The game remains running, so replacement awaits normal owner closure and Cloud synchronization.

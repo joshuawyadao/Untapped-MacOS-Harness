@@ -17,3 +17,7 @@ Repair STS2 overlay visibility in native macOS full screen using Electron's docu
 
 ## Open questions
 - None. The owner requests the full-screen fix and installed launcher update. Use the existing feature branch and original entitlements; normal game closure remains an operational prerequisite for replacing the installed launcher.
+
+## Validation notes
+- All 353 tests pass. Independent read-only integration review found no concrete defect. Synthetic tests cannot establish native full-screen compositing, focus, click-through or live badge alignment.
+- The separate immutable companion update is signed/verified; only CORE changes within ASAR, and earlier UI/login copies and policy/helper pins are preserved. The staged launcher and signed Keychain helper verify, with all 39 runtime sources matching implementation checkpoint `aab687f`. Replacement awaits normal owner closure and Cloud synchronization; live full-screen/windowed observation follows installation.

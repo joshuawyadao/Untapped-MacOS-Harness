@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
-    name: CI Verify
+  portable:
+    name: Portable tests
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -37,3 +37,32 @@ jobs:
         run: sudo install -d -m 1777 /private/tmp
       - name: Test harness with synthetic archives and events
         run: python3 -m unittest discover -s tests -v
+  native:
+    name: macOS native launcher
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compile and verify native launcher code
+        run: ./scripts/check_native_ci.sh
+      - name: Test native launcher outcome seam
+        run: python3 -m unittest discover -s tests -p test_launcher_native.py -v
+  verify:
+    name: CI Verify
+    if: always()
+    needs: [portable, native]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require every platform check
+        env:
+          PORTABLE_RESULT: ${{ needs.portable.result }}
+          NATIVE_RESULT: ${{ needs.native.result }}
+        run: ./scripts/check_ci_results.sh

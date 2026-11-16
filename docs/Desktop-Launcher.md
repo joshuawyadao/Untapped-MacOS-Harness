@@ -94,3 +94,9 @@ Rebuild to a new destination using the existing build command, then replace the 
 Live verification should cover the Untapped U tab while entering/leaving native full screen, followed by tier badges or the Attacks panel on the relevant game screen. A renderer reporting itself visible does not establish that macOS is displaying its window above the game. Windowed visibility was confirmed during diagnosis; the repaired native full-screen behavior requires an owner-visible check after installation.
 
 The November 16 full-screen update is installed at the original Applications path. Its native signatures, signed helper pin and all 39 runtime files verify; the previous launcher is preserved for rollback. The idle window retains Remember enabled. The owner has confirmed overlay visibility with the repaired companion while the game remains in native full screen. The initial sighting was delayed; repeated transitions and other display arrangements remain ongoing use/testing checks.
+
+### Portable and native CI enforcement
+
+Every pull request to main runs the portable harness suite on Ubuntu and a separate macOS job. The macOS job compiles the actual launcher, outcome and Keychain helper sources into runner temporary storage, ad-hoc signs and verifies those inert binaries, and runs the native outcome/streaming seam tests with synthetic system processes. It does not open the launcher, access Keychain, install apps or start a game.
+
+The existing required `CI Verify` check runs after both platform jobs, including when a dependency fails or is skipped. It accepts only explicit success from both jobs; failed, cancelled, skipped, missing, empty or unknown results fail the gate. Branch protection keeps the same required check name. Focused regressions exercise the result script and verify that the aggregate's dependency/condition/result bindings remain on that job, with native compilation and seam tests on `macos-15`.

@@ -1,26 +1,25 @@
 # Plan
 
-Repair STS2 overlay visibility in native macOS full screen using Electron's documented panel window type, preserve the verified companion chain, and install an updated signed launcher.
+Bring the CI feature branch onto current main while preserving its portable/native enforcement, validate the current launcher sources, and prepare a reviewed merge-ready PR.
 
 ## Scope
-- In: STS2-only Darwin overlay window construction, immutable companion update and selection, regression coverage, signed launcher rebuild/replacement, and owner-visible full-screen verification.
-- Out: Game bytes or saves, Steam/Cloud settings, login/token handling, network routes, sandbox permissions, non-STS2 window behavior, and terminating active gameplay.
+- In: Merge current main into codex/ci-test-baseline-2026-11-16 without rewriting published history; preserve Ubuntu tests, isolated macOS compilation/signatures/native seam tests, and the unconditional CI Verify aggregate; maintain focused regression tests and CI documentation.
+- Out: Product behavior changes, rebuilding installed apps, game/Steam/Keychain operations, repository-rule changes, unrelated CI infrastructure, and merging the resulting PR.
 
 ## Action items
-- [x] Map Desktop-Launcher, Harness-Architecture, Main-Account-Migration and Verification docs; inspect patching, login/UI update selection, native launcher building and matching tests. Live diagnosis confirms combat data and rendered Attacks content; the owner sees the U tab after exiting native full screen. Electron v37.10.3 documents the panel type for full-screen apps.
-- [x] Checkpoint this resolved plan before implementation on the current feature branch (`fc0242c`).
-- [x] Add a failing regression for the real window-construction patch, proving STS2/Darwin panel behavior and unchanged other platform/franchise options; retain click-through, show/hide and positive account gates. The native-option test failed without panel and passes after the scoped option patch; real pinned CORE anchor application also verifies.
-- [x] Implement the guarded patch for fresh preparations and a separately signed full-screen update layered above the retained login/UI companion; validate source binding, policy/helper pins, signatures, idempotence, tampering, interrupted preparation and rollback.
-- [x] Route native-launcher selection through the complete update, run targeted and full tests plus repository/whitespace checks, and update Desktop-Launcher, Harness-Architecture and Verification docs with behavior and live-test limits. All 353 tests pass; native build and live verification remain below.
-- [x] Prepare/verify the immutable companion and signed launcher build, preserve previous selections/bundles, and replace the launcher only after normal owner closure and Steam Cloud synchronization.
-- [x] Verify installed runtime parity and native signatures, save/push the installation record, and preserve rollback.
-- [x] Record the owner-visible full-screen result and baseline windowed comparison. The owner first reported the updated overlay hidden, then confirmed it appeared; live inspection confirms native full screen and the repaired companion. Repeat transitions, other display layouts, focus/click-through and live badge alignment remain additional use/testing limits.
+- [x] Inspect the three unique CI commits, current main/PR4 contents, workflow, scripts, native seam tests and Desktop-Launcher docs; verify GitHub's always/needs behavior against official documentation. The branch's older remembered-login snapshot must not undo newer supervision or full-screen changes.
+- [x] Commit this resolved plan as a local checkpoint before merging or implementing (`90fd34f`).
+- [x] Merge origin/main (`779c5a8`), preserve the current task plan and CI documentation, and prove harness/launcher sources match main byte-for-byte. Conflicted product files and prior tests use the reviewed main versions.
+- [x] Assess aggregate-job failure/skip/cancel/missing-result coverage and native-build isolation; extend result cases to unset/empty/unknown values and scope required-gate/native assertions to their own jobs. No production defect was found.
+- [x] Run targeted CI regressions, all 355 tests, isolated native compile/signature checks, YAML/shell/repository/whitespace checks, and update Desktop-Launcher/Verification CI evidence without changing installed applications.
+- [ ] Save/push the updated feature branch and open a draft PR scoped to its CI changes.
+- [ ] Run Brooks and Codex reviews, handle actionable feedback, and verify actual portable/macOS/aggregate jobs pass on the final head with the existing required CI Verify context and no merge conflicts.
+- [ ] Mark the PR ready, make a final fresh gate check, and leave it unmerged with a concise review/validation ledger and documented limits.
 
 ## Open questions
-- None. The owner requests the full-screen fix and installed launcher update. Use the existing feature branch and original entitlements; normal game closure remains an operational prerequisite for replacing the installed launcher.
+- None. The user explicitly requests updating the named branch and preparing its PR; use a normal merge to preserve shared branch history and existing main protections.
 
-## Validation notes
-- All 353 tests pass. Independent read-only integration review found no concrete defect. Synthetic tests cannot establish native full-screen compositing, focus, click-through or live badge alignment.
-- The separate immutable companion update is signed/verified; only CORE changes within ASAR, and earlier UI/login copies and policy/helper pins are preserved. The staged launcher and signed Keychain helper verify, with all 39 runtime sources matching implementation checkpoint `aab687f`. Replacement awaits normal owner closure and Cloud synchronization; live full-screen/windowed observation follows installation.
-
-- Live completion: the owner confirmed the overlay showing after the initial negative report. A read-only check verified the active private companion's ASAR matches the signed full-screen update, the panel anchor is present, Steam/profile has no mismatch, and reader/overlay lifecycle markers pass. The game menu explicitly showed Exit Full Screen. No further code change or restart occurred between the owner's two reports; the initial delay is not attributed.
+## Validation and review handoff
+- Local validation covers merge checkpoint `779c5a8`; subsequent changes are documentation only. Synthetic mutations confirm the workflow test rejects a renamed required job, a misplaced aggregate condition and an Ubuntu native runner.
+- Brooks PR review inspected all six files at that checkpoint and found no actionable concern. The added verification record does not change executable behavior.
+- Publishing, exact-head Codex review and hosted portable/native/aggregate results remain PR gates. Track their live completion in the PR description and review ledger; this implementation checkpoint does not claim those later results.

@@ -12,8 +12,9 @@ Repair STS2 overlay visibility in native macOS full screen using Electron's docu
 - [x] Add a failing regression for the real window-construction patch, proving STS2/Darwin panel behavior and unchanged other platform/franchise options; retain click-through, show/hide and positive account gates. The native-option test failed without panel and passes after the scoped option patch; real pinned CORE anchor application also verifies.
 - [x] Implement the guarded patch for fresh preparations and a separately signed full-screen update layered above the retained login/UI companion; validate source binding, policy/helper pins, signatures, idempotence, tampering, interrupted preparation and rollback.
 - [x] Route native-launcher selection through the complete update, run targeted and full tests plus repository/whitespace checks, and update Desktop-Launcher, Harness-Architecture and Verification docs with behavior and live-test limits. All 353 tests pass; native build and live verification remain below.
-- [ ] Prepare/verify the immutable companion and signed launcher build, preserve previous selections/bundles, and replace the launcher only after normal owner closure and Steam Cloud synchronization.
-- [ ] Verify installed runtime parity and native signatures; test native full-screen/windowed visibility with the owner, then save/push the completed branch and report remaining limits.
+- [x] Prepare/verify the immutable companion and signed launcher build, preserve previous selections/bundles, and replace the launcher only after normal owner closure and Steam Cloud synchronization.
+- [x] Verify installed runtime parity and native signatures, save/push the installation record, and preserve rollback.
+- [ ] Test native full-screen/windowed visibility with the owner and record the observed result; native compositing, focus, click-through and live badge alignment remain observation limits until checked.
 
 ## Open questions
 - None. The owner requests the full-screen fix and installed launcher update. Use the existing feature branch and original entitlements; normal game closure remains an operational prerequisite for replacing the installed launcher.

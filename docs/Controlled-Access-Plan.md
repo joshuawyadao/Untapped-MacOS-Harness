@@ -144,3 +144,10 @@ The service-name repair matches only the vendor's sandbox-specific keytar servic
 ## Host supervision diagnostics
 
 The November 16 host-only diagnostic update adds finite check/category records, bounded errno/return-code integers, counters and last-check durations to the already sanitized main-account report. It preserves a pre-cleanup first-failure snapshot and separates cleanup failures/exit observations. The launcher status uses validated fixed labels only. Exception messages, classes, tracebacks, argv, paths, account values, credentials and raw log content are excluded. The companion/native payloads, Keychain service/data scope, network/outer policy, guard decisions and operation timeouts remain unchanged; this update does not claim to fix the prior native crash.
+
+
+## Bounded live process-inventory retries
+
+The owner authorized retries for the observed process-inventory timeout while retaining immediate stops for real game/account mismatches. Only the live main-account supervisor retries an exact `GAME_PROCESS_INVENTORY` timeout raised as `subprocess.TimeoutExpired`: three total consecutive attempts with 250 ms between attempts and the existing two-second per-command timeout. Fresh successful identity verification is required; confirmed mismatches and non-timeout errors are never retried. Account events, game/companion exit, owner cancellation and finite deadlines are checked during the short backoff. Startup/test-account behavior and remote/network retries stay unchanged.
+
+Handled timeout/retry/recovery/exhaustion counters are bounded and exclude private process/exception/account values. Exhaustion remains fail-closed and preserves its failure diagnostic. This host-only liveness allowance changes no native account/profile overlay gate, Keychain data scope, companion payload, sandbox entitlement or gateway destination/body permission.

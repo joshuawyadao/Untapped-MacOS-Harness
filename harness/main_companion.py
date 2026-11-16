@@ -21,6 +21,9 @@ from .supervision_diagnostics import SupervisionDiagnostics, failure_record
 MAX_SECONDS = 8 * 3600
 EVENT_NAMES = controlled.EVENTS | {"main-steam-verified", "main-steam-mismatch"}
 STOP_REASONS = {"GAME_EXIT", "GAME_CRASHED", "TARGET_CONFLICT", "OWNER_STOP"}
+INVENTORY_MAX_ATTEMPTS = 3
+INVENTORY_RETRY_DELAY = 0.25
+RETRY_POLL_INTERVAL = 0.05
 
 
 def _private_directory(path):
@@ -95,27 +98,78 @@ def _events(attempt):
     return result
 
 
-def supervise(process, attempt, seconds, should_stop=None, *, clock=time.monotonic, diagnostics=None):
-    """Poll the owned companion only. Authentication never shortens the run."""
+def supervise(process, attempt, seconds, should_stop=None, *, clock=time.monotonic,
+              diagnostics=None, retry_should_stop=None):
+    """Poll the owned companion, retrying only identified inventory timeouts."""
     if seconds is None and not callable(should_stop):
         raise HarnessError("Unlimited companion supervision requires a stop callback")
+    if retry_should_stop is not None and not callable(retry_should_stop):
+        raise HarnessError("Inventory retry stop callback must be callable")
     trace = diagnostics if diagnostics is not None else SupervisionDiagnostics()
     deadline = trace.call("SUPERVISION_CLOCK", lambda: None if seconds is None else clock() + seconds)
     seen = set()
+    inventory_timeouts = 0
+    retry_due = None
 
     def checked_stop(reason):
         if reason not in STOP_REASONS:
             raise HarnessError("Unexpected game-stop result")
         return reason
 
+    def wait_for_poll(timeout):
+        try:
+            process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            # Normal child polling timeout, unrelated to inventory recovery.
+            pass
+
+    def retry_timing():
+        now = clock()
+        return retry_due - now, None if deadline is None else deadline - now
+
     while True:
         trace.call("EVENT_READ", lambda: seen.update(_events(attempt)))
         if "main-steam-mismatch" in seen:
             return "STEAM_ACCOUNT_MISMATCH", seen
+        if retry_due is not None:
+            # Keep safety/cancellation checks responsive during the short delay.
+            if retry_should_stop is not None:
+                reason = trace.call("GAME_GUARD", retry_should_stop)
+                if reason is not None:
+                    return trace.call("STOP_RESULT_VALIDATE", checked_stop, reason), seen
+            exit_code = trace.call("COMPANION_POLL", process.poll)
+            if exit_code is not None:
+                trace.call("EVENT_READ", lambda: seen.update(_events(attempt)))
+                return ("COMPANION_EXITED" if exit_code == 0 else "COMPANION_CRASHED"), seen
+            delay, remaining = trace.call("SUPERVISION_CLOCK", retry_timing)
+            if remaining is not None and remaining <= 0:
+                return "SESSION_LIMIT_REACHED", seen
+            if delay > 0:
+                timeout = min(RETRY_POLL_INTERVAL, delay)
+                if remaining is not None:
+                    timeout = min(timeout, remaining)
+                trace.call("COMPANION_WAIT", wait_for_poll, timeout)
+                continue
+            retry_due = None
         if should_stop is not None:
-            reason = trace.call("GAME_GUARD", should_stop)
+            try:
+                reason = trace.call("GAME_GUARD", should_stop)
+            except subprocess.TimeoutExpired:
+                next_count = inventory_timeouts + 1
+                retrying = next_count < INVENTORY_MAX_ATTEMPTS
+                # A timeout from any other check remains an immediate failure.
+                if not trace.record_inventory_timeout(retrying=retrying):
+                    raise
+                inventory_timeouts = next_count
+                if not retrying:
+                    raise
+                retry_due = trace.call("SUPERVISION_CLOCK", lambda: clock() + INVENTORY_RETRY_DELAY)
+                continue
             if reason is not None:
                 return trace.call("STOP_RESULT_VALIDATE", checked_stop, reason), seen
+            if inventory_timeouts:
+                trace.record_inventory_recovery()
+                inventory_timeouts = 0
         exit_code = trace.call("COMPANION_POLL", process.poll)
         if exit_code is not None:
             trace.call("EVENT_READ", lambda: seen.update(_events(attempt)))
@@ -123,14 +177,7 @@ def supervise(process, attempt, seconds, should_stop=None, *, clock=time.monoton
         remaining = trace.call("SUPERVISION_CLOCK", lambda: None if deadline is None else deadline - clock())
         if remaining is not None and remaining <= 0:
             return "SESSION_LIMIT_REACHED", seen
-
-        def wait_for_poll():
-            try:
-                process.wait(timeout=0.5 if remaining is None else min(0.5, remaining))
-            except subprocess.TimeoutExpired:
-                # This timeout is the normal polling interval, not a failure.
-                pass
-        trace.call("COMPANION_WAIT", wait_for_poll)
+        trace.call("COMPANION_WAIT", wait_for_poll, 0.5 if remaining is None else min(0.5, remaining))
 
 
 def _clone(session, manifest):
@@ -225,7 +272,8 @@ def _diagnostic(safe):
 
 def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: Path,
         expected_steam_id: str, expected_profile: int, seconds=14400,
-        should_stop=None, on_companion_ready=None, remember_store=None, diagnostics=None):
+        should_stop=None, on_companion_ready=None, remember_store=None, diagnostics=None,
+        retry_should_stop=None):
     """Start one private signed copy; never signal or modify the game process."""
     if platform.system() != "Darwin" or os.getuid() == 0 or os.getuid() != os.geteuid():
         raise HarnessError("Main-account companion requires unprivileged macOS")
@@ -302,7 +350,7 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
                     stage = "supervise"
                     remaining = None if seconds is None else seconds - (time.monotonic() - started)
                     reason, seen = supervise(process, root, remaining,
-                                             should_stop, diagnostics=trace)
+                                             should_stop, diagnostics=trace, retry_should_stop=retry_should_stop)
                     if reason == "GAME_CRASHED":
                         failure_stage = "GAME_PROCESS_EXIT"
                     elif reason == "COMPANION_CRASHED":

@@ -137,6 +137,33 @@ class SupervisionDiagnostics:
         self.failure = None
         self._last_check_elapsed_ms = None
         self._check_sequence = 0
+        self._inventory_timeouts = 0
+        self._inventory_retries = 0
+        self._inventory_recoveries = 0
+        self._inventory_exhaustions = 0
+
+    def record_inventory_timeout(self, *, retrying: bool) -> bool:
+        """Account for a timeout just captured from the inventory check.
+
+        A retry makes that first failure provisional, so a later failure can be
+        reported accurately. Other failures are never cleared here.
+        """
+        if type(retrying) is not bool or self.failure is None:
+            return False
+        if (self.failure.get("check") != "GAME_PROCESS_INVENTORY"
+                or self.failure.get("category") != "TIMEOUT"):
+            return False
+        self._inventory_timeouts = min(_MAX_ATTEMPTS, self._inventory_timeouts + 1)
+        if retrying:
+            self._inventory_retries = min(_MAX_ATTEMPTS, self._inventory_retries + 1)
+            self.failure = None
+        else:
+            self._inventory_exhaustions = min(_MAX_ATTEMPTS, self._inventory_exhaustions + 1)
+        return True
+
+    def record_inventory_recovery(self) -> None:
+        """Record a successful guard after one or more inventory timeouts."""
+        self._inventory_recoveries = min(_MAX_ATTEMPTS, self._inventory_recoveries + 1)
 
     def _safe_clock(self):
         try:
@@ -185,6 +212,13 @@ class SupervisionDiagnostics:
         }
         if self._last_check_elapsed_ms is not None:
             result["last_check_elapsed_ms"] = self._last_check_elapsed_ms
+        if self._inventory_timeouts:
+            result["inventory_retry"] = {
+                "timeouts": self._inventory_timeouts,
+                "retries_scheduled": self._inventory_retries,
+                "recoveries": self._inventory_recoveries,
+                "exhaustions": self._inventory_exhaustions,
+            }
         return result
 
 

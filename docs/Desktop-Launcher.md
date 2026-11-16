@@ -64,10 +64,19 @@ The corrected service-name build is installed at the original Applications path,
 
 ### Supervision failure diagnostics
 
-When a supervision check throws, the launcher now names the check and a fixed error category, for example “Supervision stopped during game process inventory (timeout).” The underlying safeguards, deadlines and stop behavior are unchanged. Finish any running game normally; use this launcher for the next start rather than macOS Reopen on the copied companion.
+When an unhandled supervision check throws, the launcher names the check and a fixed error category, for example “Supervision stopped during game process inventory (timeout).” Confirmed identity mismatches remain fatal; the bounded timeout policy below handles only process-inventory timeouts. Finish any running game normally; use this launcher for the next start rather than macOS Reopen on the copied companion.
 
 The sanitized `sts2main-controlled.*.json` report records `supervision_diagnostics` (schema, bounded check counter, last started/completed checks, last-check duration and first failure), `failure_before_cleanup`, `cleanup_failures`, and companion exit codes before/after cleanup. `companion_termination_requested` says whether the main process was still observed alive when cleanup was requested; an exit after that request does not by itself establish the initiating cause. Cleanup uses the already reaped process result without an extra polling operation. The old top-level reason/stage/exit fields remain available.
 
 Reports contain only fixed check/category names and bounded numeric errno/return-code evidence. They exclude exception messages, class names, tracebacks, command arguments, paths, account details, tokens and raw vendor logs. No diagnostic history is accumulated in memory. For another failure, keep the launcher error visible and ask for the newest sanitized report; the original private attempt and OS crash evidence remain separate. These diagnostics describe future failures and cannot recover the exception discarded by the preceding build.
 
 The November 16 diagnostic build is installed at the original Applications path with a rollback bundle retained. Native signatures, the helper pin and all 37 runtime files verified. The opened idle launcher retains Remember enabled. Start normally for the next test; if Untapped closes, keep the launcher error visible and report the triggering activity so the new check/category and cleanup records can be inspected.
+
+
+### Bounded process-inventory timeout recovery
+
+A slow system process-list query can trigger the live game guard's two-second command timeout. The launcher now permits three total attempts for consecutive `subprocess.TimeoutExpired` failures identified specifically as `GAME_PROCESS_INVENTORY`, with 250 ms between attempts. It requires a fresh successful game identity check to continue. Three consecutive timeouts still stop the companion and retain a fatal timeout diagnostic. A successful check resets the consecutive budget.
+
+During retry backoff the supervisor checks account mismatch, game exit/crash, companion exit, owner cancellation and any finite session deadline, polling the delay at most 50 ms at a time. A confirmed mismatch stops immediately when detected and receives no retry; non-timeout inventory errors and timeouts from other checks retain their existing outcomes. The game is never signalled. Individual process creation/scheduling overhead can add to the nominal three command timeouts plus two delays; the attempt count stays fixed.
+
+The safe `supervision_diagnostics.inventory_retry` counters record `timeouts`, `retries_scheduled`, `recoveries` and `exhaustions`. A scheduled retry can be cancelled by a safety/exit check before it starts. Handled timeouts do not remain as the fatal first failure after recovery; exhaustion or a later different failure retains its actual check/category. These counters contain no process identities or private exception data. Startup/test-account inventory checks and network retry policy are unchanged.

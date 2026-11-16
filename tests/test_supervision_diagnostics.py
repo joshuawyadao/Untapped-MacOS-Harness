@@ -162,6 +162,73 @@ class SupervisionDiagnosticTests(unittest.TestCase):
         self.assertEqual(snapshot["last_check"], "EVENT_READ")
         self.assertEqual(snapshot["last_check_elapsed_ms"], 1000)
 
+    def test_inventory_retry_clears_only_provisional_timeout(self):
+        diagnostic = SupervisionDiagnostics(clock=lambda: 1.0)
+        self.assertNotIn("inventory_retry", diagnostic.snapshot())
+        with self.assertRaises(TimeoutError):
+            diagnostic.call("GAME_PROCESS_INVENTORY", lambda: (_ for _ in ()).throw(
+                TimeoutError("private process data")
+            ))
+        self.assertFalse(diagnostic.record_inventory_timeout(retrying="yes"))
+        self.assertEqual(diagnostic.snapshot()["failure"]["category"], "TIMEOUT")
+        self.assertNotIn("inventory_retry", diagnostic.snapshot())
+        self.assertTrue(diagnostic.record_inventory_timeout(retrying=True))
+        diagnostic.record_inventory_recovery()
+        snapshot = diagnostic.snapshot()
+        self.assertIsNone(snapshot["failure"])
+        self.assertEqual(snapshot["inventory_retry"], {
+            "timeouts": 1, "retries_scheduled": 1, "recoveries": 1, "exhaustions": 0,
+        })
+        self.assertNotIn("private", repr(snapshot))
+
+    def test_inventory_exhaustion_keeps_failure_and_rejects_other_failures(self):
+        diagnostic = SupervisionDiagnostics()
+        with self.assertRaises(TimeoutError):
+            diagnostic.call("GAME_PROCESS_INVENTORY", lambda: (_ for _ in ()).throw(
+                TimeoutError("private")
+            ))
+        self.assertTrue(diagnostic.record_inventory_timeout(retrying=False))
+        self.assertEqual(diagnostic.snapshot()["failure"], {
+            "check": "GAME_PROCESS_INVENTORY", "category": "TIMEOUT",
+        })
+        self.assertEqual(diagnostic.snapshot()["inventory_retry"]["exhaustions"], 1)
+        other = SupervisionDiagnostics()
+        with self.assertRaises(TimeoutError):
+            other.call("COMPANION_POLL", lambda: (_ for _ in ()).throw(TimeoutError()))
+        self.assertFalse(other.record_inventory_timeout(retrying=True))
+        self.assertNotIn("inventory_retry", other.snapshot())
+        not_timeout = SupervisionDiagnostics()
+        with self.assertRaises(PermissionError):
+            not_timeout.call("GAME_PROCESS_INVENTORY", lambda: (_ for _ in ()).throw(
+                PermissionError("private")
+            ))
+        self.assertFalse(not_timeout.record_inventory_timeout(retrying=True))
+        self.assertEqual(not_timeout.snapshot()["failure"]["category"], "PERMISSION_DENIED")
+
+    def test_multiple_inventory_timeout_sequences_and_counter_bounds(self):
+        diagnostic = SupervisionDiagnostics()
+        for _ in range(2):
+            with self.assertRaises(TimeoutError):
+                diagnostic.call("GAME_PROCESS_INVENTORY", lambda: (_ for _ in ()).throw(
+                    TimeoutError("private")
+                ))
+            self.assertTrue(diagnostic.record_inventory_timeout(retrying=True))
+        diagnostic.record_inventory_recovery()
+        with self.assertRaises(TimeoutError):
+            diagnostic.call("GAME_PROCESS_INVENTORY", lambda: (_ for _ in ()).throw(
+                TimeoutError("private")
+            ))
+        self.assertTrue(diagnostic.record_inventory_timeout(retrying=False))
+        self.assertEqual(diagnostic.snapshot()["inventory_retry"], {
+            "timeouts": 3, "retries_scheduled": 2, "recoveries": 1, "exhaustions": 1,
+        })
+        from harness import supervision_diagnostics as module
+        diagnostic._inventory_timeouts = module._MAX_ATTEMPTS
+        diagnostic._inventory_exhaustions = module._MAX_ATTEMPTS
+        self.assertTrue(diagnostic.record_inventory_timeout(retrying=False))
+        self.assertEqual(diagnostic.snapshot()["inventory_retry"]["timeouts"], module._MAX_ATTEMPTS)
+        self.assertEqual(diagnostic.snapshot()["inventory_retry"]["exhaustions"], module._MAX_ATTEMPTS)
+
 
 if __name__ == "__main__":
     unittest.main()

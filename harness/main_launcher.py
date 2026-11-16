@@ -400,10 +400,17 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
                     return "TARGET_CONFLICT"
                 return trace.call("OWNER_STOP_CHECK", owner_stop_reason)
 
+            def retry_stop_reason():
+                exit_code = trace.call("GAME_PROCESS_POLL", process.poll)
+                if exit_code is not None:
+                    return "GAME_EXIT" if exit_code == 0 else "GAME_CRASHED"
+                return trace.call("OWNER_STOP_CHECK", owner_stop_reason)
+
             report = main_companion.run(companion_session, _private(root / "preferences"),
                        target_pid=pid, target_game=executable, expected_steam_id=binding["steam_id"],
                        expected_profile=binding["profile"], seconds=seconds, should_stop=stop_reason,
-                       on_companion_ready=on_companion_ready, remember_store=remember_store, diagnostics=trace)
+                       on_companion_ready=on_companion_ready, remember_store=remember_store, diagnostics=trace,
+                       retry_should_stop=retry_stop_reason)
         game_exit_code = process.poll()
         result = {"mode": "MAIN_ACCOUNT_STEAM_PROGRESS", "backup": backup_summary,
                   "steam_initialization_observed": True, "cloud_store_enabled_logged": True,

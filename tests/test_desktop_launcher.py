@@ -128,3 +128,25 @@ class DesktopTests(unittest.TestCase):
                 self.assertEqual(json.loads(out.getvalue().splitlines()[-1])['event'], 'error')
                 self.assertNotIn('private-token', out.getvalue())
                 start.assert_not_called()
+
+
+    def test_worker_reports_allowlisted_failure_and_ignores_private_fields(self):
+        for failure, expected in [
+            ({'check': 'GAME_PROCESS_INVENTORY', 'category': 'TIMEOUT', 'message': 'private-token'},
+             'game process inventory (timeout)'),
+            ({'check': 'private-token', 'category': 'TIMEOUT'}, 'stopped after a failed check'),
+            ({'check': 'EVENT_READ', 'category': ['private-token']}, 'stopped after a failed check'),
+        ]:
+            with self.subTest(expected=expected), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp); (root / 'runs').mkdir()
+                result = {'game_exit_code': None, 'companion': {'reason': 'COMPANION_FAILED',
+                    'failure_stage': 'SUPERVISE', 'gateway_cleanup_complete': True,
+                    'companion_group_cleanup_complete': True, 'supervision_diagnostics': {'failure': failure}}}
+                out = io.StringIO()
+                with patch.object(desktop.main_launcher, '_prepared', return_value=(root, None, None)), \
+                     patch.object(desktop.main_launcher, 'start', return_value=result):
+                    self.assertEqual(desktop.run_worker(io.StringIO(''), out), 1)
+                event = json.loads(out.getvalue().splitlines()[-1])
+                self.assertEqual(event['event'], 'error')
+                self.assertIn(expected, event['message'])
+                self.assertNotIn('private-token', out.getvalue())

@@ -60,3 +60,12 @@ The first remembered-login build used the wrong vendor keytar service name, so s
 After the corrected launcher is installed, keep Remember enabled and sign in once more. The earlier session cannot supply a saved login because its save calls bypassed the bridge. Check the dedicated item's presence without printing credentials, then quit normally and start again to verify automatic restoration. Do not log out of Untapped between those starts: logout intentionally deletes the saved login. Steam/Cloud confirmations still apply.
 
 The corrected service-name build is installed at the original Applications path, with the previous launcher retained for rollback. Native signatures and all 36 runtime files verified, and the reopened idle window retains the owner's Remember preference. A fresh sign-in and saved-item check must precede the real automatic-sign-in test.
+
+
+### Supervision failure diagnostics
+
+When a supervision check throws, the launcher now names the check and a fixed error category, for example “Supervision stopped during game process inventory (timeout).” The underlying safeguards, deadlines and stop behavior are unchanged. Finish any running game normally; use this launcher for the next start rather than macOS Reopen on the copied companion.
+
+The sanitized `sts2main-controlled.*.json` report records `supervision_diagnostics` (schema, bounded check counter, last started/completed checks, last-check duration and first failure), `failure_before_cleanup`, `cleanup_failures`, and companion exit codes before/after cleanup. `companion_termination_requested` says whether the main process was still observed alive when cleanup was requested; an exit after that request does not by itself establish the initiating cause. Cleanup uses the already reaped process result without an extra polling operation. The old top-level reason/stage/exit fields remain available.
+
+Reports contain only fixed check/category names and bounded numeric errno/return-code evidence. They exclude exception messages, class names, tracebacks, command arguments, paths, account details, tokens and raw vendor logs. No diagnostic history is accumulated in memory. For another failure, keep the launcher error visible and ask for the newest sanitized report; the original private attempt and OS crash evidence remain separate. These diagnostics describe future failures and cannot recover the exception discarded by the preceding build.

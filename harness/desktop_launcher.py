@@ -13,6 +13,7 @@ from urllib.parse import parse_qsl, urlsplit
 
 from . import main_account, main_launcher
 from .asar import HarnessError
+from .supervision_diagnostics import failure_message
 
 
 def oauth_url(value):
@@ -186,7 +187,9 @@ def run_worker(stream=None, output=None, *, remember=False, forget=False, keycha
                 if healthy:
                     controls.emit('finished', 'Companion session ended. Quit any game still running normally and let Steam Cloud sync.')
                     return 0
-                controls.emit('error', 'The companion session stopped after a failed check. Private diagnostics were retained. Quit any running game normally.')
+                detail = failure_message(companion.get('supervision_diagnostics'))
+                controls.emit('error', (detail or 'The companion session stopped after a failed check.')
+                              + ' Private diagnostics were retained. Quit any running game normally.')
                 return 1
     except main_launcher.LauncherError as exc:
         controls.emit('error', main_launcher.MESSAGES[exc.code])

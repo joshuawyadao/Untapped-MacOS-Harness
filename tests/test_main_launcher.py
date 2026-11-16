@@ -3,6 +3,7 @@ import contextlib
 import io
 import json
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,6 +11,7 @@ from unittest.mock import Mock, patch
 
 from harness import main_companion, main_launcher as launcher, progress_backup
 from harness.asar import HarnessError, sha256
+from harness.supervision_diagnostics import SupervisionDiagnostics
 
 
 class MainLauncherTests(unittest.TestCase):
@@ -21,6 +23,8 @@ class MainLauncherTests(unittest.TestCase):
         self.root.mkdir(mode=0o700)
         for name in ("backups", "runs", "preferences"):
             (self.root / name).mkdir(mode=0o700)
+        (self.root / "companion").mkdir(mode=0o700)
+        launcher._write(self.root / "companion/manifest.json", {"patched_asar_sha256": "synthetic"})
         self.binding = {"steam_id": "12345678901234567", "profile": 1}
         launcher._write(self.root / "main-proposal.json", {"proposal_only": True})
         launcher._write(self.root / "activation.json", {"schema": 1, "copied_apps_signed": True,
@@ -108,14 +112,16 @@ class MainLauncherTests(unittest.TestCase):
     def test_unlimited_start_forwards_ready_callback_and_guarded_owner_stop(self):
         _, process, _, _, companion = self.patches()
         ready = Mock()
+        store = Mock()
         owner = Mock(side_effect=[None, None, "OWNER_STOP"])
         with patch.object(launcher, "_target", return_value=2468), \
              contextlib.redirect_stdout(io.StringIO()):
             launcher.start(approved=True, cloud_confirmed=True, account_confirmed=True,
                            confirm_steam=lambda: None, seconds=None, should_stop=owner,
-                           on_companion_ready=ready)
+                           on_companion_ready=ready, remember_store=store)
         self.assertIsNone(companion.call_args.kwargs["seconds"])
         self.assertIs(companion.call_args.kwargs["on_companion_ready"], ready)
+        self.assertIs(companion.call_args.kwargs["remember_store"], store)
         with patch.object(launcher, "_target", return_value=2468):
             self.assertEqual(companion.call_args.kwargs["should_stop"](), "OWNER_STOP")
         owner.assert_called()
@@ -298,6 +304,37 @@ class MainLauncherTests(unittest.TestCase):
              patch.object(launcher, "start", return_value=result), contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(launcher.main(["start"]), 1)
 
+
+    def test_inventory_and_group_failures_keep_exact_check_and_guard_outcome(self):
+        import errno
+        for check in ('GAME_PROCESS_INVENTORY', 'GAME_PROCESS_GROUP'):
+            with self.subTest(check=check):
+                trace = SupervisionDiagnostics()
+                expected = self.root / 'copied-game'
+                rows = [(5, os.getuid(), str(expected), False)]
+                error = (subprocess.TimeoutExpired('private-token', 2) if check == 'GAME_PROCESS_INVENTORY'
+                         else PermissionError(errno.EACCES, 'private-token', '/private-token'))
+                with patch.object(launcher, '_inventory', side_effect=error if check == 'GAME_PROCESS_INVENTORY' else None,
+                                  return_value=rows), \
+                     patch.object(launcher.os, 'getpgid', side_effect=error if check == 'GAME_PROCESS_GROUP' else None,
+                                  return_value=5), self.assertRaises(type(error)) as caught:
+                    launcher._target(expected, 5, diagnostics=trace)
+                self.assertIs(caught.exception, error)
+                self.assertEqual(trace.snapshot()['failure']['check'], check)
+                self.assertNotIn('private-token', json.dumps(trace.snapshot()))
+
+    def test_live_guard_preserves_timeout_evidence_and_does_not_signal_game(self):
+        _, process, _, _, companion = self.patches()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.start()
+        error = subprocess.TimeoutExpired('private-token', 2, output=b'private-token')
+        with patch.object(launcher, '_inventory', side_effect=error), self.assertRaises(subprocess.TimeoutExpired):
+            companion.call_args.kwargs['should_stop']()
+        trace = companion.call_args.kwargs['diagnostics']
+        self.assertEqual(trace.snapshot()['failure'],
+            {'check': 'GAME_PROCESS_INVENTORY', 'category': 'TIMEOUT'})
+        process.kill.assert_not_called()
+        process.terminate.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()

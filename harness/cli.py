@@ -110,8 +110,12 @@ def prepare(app, destination):
     (destination / "profile").mkdir(mode=0o700)
     report.update({
         "schema": 1, "patched_asar_sha256": sha256(patched_bytes),
+        "remember_login_version": 1,
+        "remember_login_helper_sha256": sha256((ROOT / "harness/remember_keytar.cjs").read_bytes()),
         "controlled_access_version": 1, "controlled_preflight_version": 1, "reward_scale_capture": True,
         "sts2_store_compat_version": 1, "sts2_macos_settings_ui": True,
+        "macos_fullscreen_version": 1,
+        "macos_fullscreen_base_sha256": ASAR_SHA256,
         "main_steam_guard_version": 1,
         "controlled_gateway_sha256": sha256((ROOT / "harness/gateway.py").read_bytes()),
         "controlled_network_sha256": sha256((ROOT / "harness/controlled_network.cjs").read_bytes()),

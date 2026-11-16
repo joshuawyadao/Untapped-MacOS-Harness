@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 
 // Owner intent does not certify cleanup. A terminal worker report always wins;
 // without one, an abnormal process exit must remain visible as a failure.
@@ -26,12 +27,21 @@ func launcherShouldQuit(requested: Bool, outcome: LauncherTerminalOutcome?, exit
 func drainLauncherWorker(process: Process, output: FileHandle,
                          onChunk: (Data) -> Void, onReadError: () -> Void,
                          onExit: (Process) -> Void) {
-    do {
-        while let chunk = try output.read(upToCount: 4096), !chunk.isEmpty {
-            onChunk(chunk)
+    // Foundation's fill-oriented read can wait for all 4096 bytes, deadlocking
+    // a worker that emits a short prompt then waits for owner input. POSIX read
+    // returns available pipe bytes immediately while preserving EOF ordering.
+    var buffer = [UInt8](repeating: 0, count: 4096)
+    while true {
+        let count = buffer.withUnsafeMutableBytes {
+            Darwin.read(output.fileDescriptor, $0.baseAddress, $0.count)
         }
-    } catch {
-        onReadError()
+        if count == 0 { break }
+        if count < 0 {
+            if errno == EINTR { continue }
+            onReadError()
+            break
+        }
+        onChunk(Data(buffer.prefix(count)))
     }
     process.waitUntilExit()
     onExit(process)

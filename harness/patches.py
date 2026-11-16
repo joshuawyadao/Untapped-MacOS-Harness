@@ -2,6 +2,7 @@
 from pathlib import Path
 from .asar import HarnessError
 from .sts2_ui import SETTINGS_UI_ENTRY, patch_settings_ui
+from .fullscreen_patch import WINDOW_OLD, WINDOW_NEW
 
 VERSION = "3.12.3-latest"
 ASAR_SHA256 = "ca3a2e6a6f728b2d635abfc70a5434d4107438b8d801a650357989e8442d798c"
@@ -21,6 +22,7 @@ RUNTIME_STORE_CLASS = 'class CloudSaveStore extends ScryObject {'
 
 # Small exact-match anchors, not a redistributed companion bundle.
 CORE_PATCHES = [
+    (WINDOW_OLD, WINDOW_NEW),
     ('platforms: electron.app.isPackaged ? ["win32", "linux"] : ["win32", "darwin", "linux"]\n      // macOS is dev-only',
      'platforms: ["win32", "darwin", "linux"] // harness: STS2-only platform gate'),
     ('(process.platform === "win32" || process.platform === "linux" || process.platform === "darwin" && !electron.app.isPackaged)) {\n      this.games.sts2 = new Sts2();',
@@ -130,7 +132,8 @@ def patched_entries(archive):
     store_helper = Path(__file__).with_name("sts2_store_compat.cjs").read_text()
     runtime = replace_once(runtime, RUNTIME_STORE_CLASS, store_helper + "\n" + RUNTIME_STORE_CLASS)
     settings_ui = patch_settings_ui(archive.read(SETTINGS_UI).decode())
-    bootstrap = Path(__file__).with_name("bootstrap.cjs").read_text()
+    from .remember_patch import inject
+    bootstrap = inject(Path(__file__).with_name("bootstrap.cjs").read_text())
     if not main.startswith('"use strict";\n'):
         raise HarnessError("Main entry lost its strict-mode directive")
     main = '"use strict";\n' + bootstrap + "\n" + main[len('"use strict";\n'):]

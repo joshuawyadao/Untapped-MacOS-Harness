@@ -16,10 +16,14 @@ from pathlib import Path
 from . import cli, controlled, main_account, main_preferences, process_identity
 from .asar import HarnessError, sha256
 from .gateway import Gateway
+from .supervision_diagnostics import SupervisionDiagnostics, failure_record
 
 MAX_SECONDS = 8 * 3600
 EVENT_NAMES = controlled.EVENTS | {"main-steam-verified", "main-steam-mismatch"}
 STOP_REASONS = {"GAME_EXIT", "GAME_CRASHED", "TARGET_CONFLICT", "OWNER_STOP"}
+INVENTORY_MAX_ATTEMPTS = 3
+INVENTORY_RETRY_DELAY = 0.25
+RETRY_POLL_INTERVAL = 0.05
 
 
 def _private_directory(path):
@@ -94,33 +98,86 @@ def _events(attempt):
     return result
 
 
-def supervise(process, attempt, seconds, should_stop=None, *, clock=time.monotonic):
-    """Poll the owned companion only. Authentication never shortens the run."""
+def supervise(process, attempt, seconds, should_stop=None, *, clock=time.monotonic,
+              diagnostics=None, retry_should_stop=None):
+    """Poll the owned companion, retrying only identified inventory timeouts."""
     if seconds is None and not callable(should_stop):
         raise HarnessError("Unlimited companion supervision requires a stop callback")
-    deadline = None if seconds is None else clock() + seconds
+    if retry_should_stop is not None and not callable(retry_should_stop):
+        raise HarnessError("Inventory retry stop callback must be callable")
+    trace = diagnostics if diagnostics is not None else SupervisionDiagnostics()
+    deadline = trace.call("SUPERVISION_CLOCK", lambda: None if seconds is None else clock() + seconds)
     seen = set()
+    inventory_timeouts = 0
+    retry_due = None
+
+    def checked_stop(reason):
+        if reason not in STOP_REASONS:
+            raise HarnessError("Unexpected game-stop result")
+        return reason
+
+    def wait_for_poll(timeout):
+        try:
+            process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            # Normal child polling timeout, unrelated to inventory recovery.
+            pass
+
+    def retry_timing():
+        now = clock()
+        return retry_due - now, None if deadline is None else deadline - now
+
     while True:
-        seen.update(_events(attempt))
+        trace.call("EVENT_READ", lambda: seen.update(_events(attempt)))
         if "main-steam-mismatch" in seen:
             return "STEAM_ACCOUNT_MISMATCH", seen
+        if retry_due is not None:
+            # Keep safety/cancellation checks responsive during the short delay.
+            if retry_should_stop is not None:
+                reason = trace.call("GAME_GUARD", retry_should_stop)
+                if reason is not None:
+                    return trace.call("STOP_RESULT_VALIDATE", checked_stop, reason), seen
+            exit_code = trace.call("COMPANION_POLL", process.poll)
+            if exit_code is not None:
+                trace.call("EVENT_READ", lambda: seen.update(_events(attempt)))
+                return ("COMPANION_EXITED" if exit_code == 0 else "COMPANION_CRASHED"), seen
+            delay, remaining = trace.call("SUPERVISION_CLOCK", retry_timing)
+            if remaining is not None and remaining <= 0:
+                return "SESSION_LIMIT_REACHED", seen
+            if delay > 0:
+                timeout = min(RETRY_POLL_INTERVAL, delay)
+                if remaining is not None:
+                    timeout = min(timeout, remaining)
+                trace.call("COMPANION_WAIT", wait_for_poll, timeout)
+                continue
+            retry_due = None
         if should_stop is not None:
-            reason = should_stop()
+            try:
+                reason = trace.call("GAME_GUARD", should_stop)
+            except subprocess.TimeoutExpired:
+                next_count = inventory_timeouts + 1
+                retrying = next_count < INVENTORY_MAX_ATTEMPTS
+                # A timeout from any other check remains an immediate failure.
+                if not trace.record_inventory_timeout(retrying=retrying):
+                    raise
+                inventory_timeouts = next_count
+                if not retrying:
+                    raise
+                retry_due = trace.call("SUPERVISION_CLOCK", lambda: clock() + INVENTORY_RETRY_DELAY)
+                continue
             if reason is not None:
-                if reason not in STOP_REASONS:
-                    raise HarnessError("Unexpected game-stop result")
-                return reason, seen
-        exit_code = process.poll()
+                return trace.call("STOP_RESULT_VALIDATE", checked_stop, reason), seen
+            if inventory_timeouts:
+                trace.record_inventory_recovery()
+                inventory_timeouts = 0
+        exit_code = trace.call("COMPANION_POLL", process.poll)
         if exit_code is not None:
-            seen.update(_events(attempt))
+            trace.call("EVENT_READ", lambda: seen.update(_events(attempt)))
             return ("COMPANION_EXITED" if exit_code == 0 else "COMPANION_CRASHED"), seen
-        remaining = None if deadline is None else deadline - clock()
+        remaining = trace.call("SUPERVISION_CLOCK", lambda: None if deadline is None else deadline - clock())
         if remaining is not None and remaining <= 0:
             return "SESSION_LIMIT_REACHED", seen
-        try:
-            process.wait(timeout=0.5 if remaining is None else min(0.5, remaining))
-        except subprocess.TimeoutExpired:
-            pass
+        trace.call("COMPANION_WAIT", wait_for_poll, 0.5 if remaining is None else min(0.5, remaining))
 
 
 def _clone(session, manifest):
@@ -147,7 +204,7 @@ def _clone(session, manifest):
         raise
 
 
-def _launch(root, gateway, target_environment, expected_steam_id, expected_profile):
+def _launch(root, gateway, target_environment, expected_steam_id, expected_profile, remember=None):
     profile = root / "profile"
     helper = profile / "controlled-network.cjs"
     adapter = Path(__file__).with_name("controlled_network.cjs").read_bytes()
@@ -169,6 +226,17 @@ def _launch(root, gateway, target_environment, expected_steam_id, expected_profi
         "UNTAPPED_HARNESS_EXPECTED_STEAM_ID": expected_steam_id,
         "UNTAPPED_HARNESS_EXPECTED_PROFILE": str(expected_profile),
     })
+    if remember is not None:
+        login_helper = Path(__file__).with_name("remember_keytar.cjs").read_bytes()
+        if (manifest.get("remember_login_version") != 1
+                or manifest.get("remember_login_helper_sha256") != sha256(login_helper)):
+            raise HarnessError("Companion lacks the reviewed remember-login bridge")
+        target = profile / "remember-keytar.cjs"
+        target.write_bytes(login_helper)
+        target.chmod(0o600)
+        environment.update(remember.environment)
+        environment.update({"UNTAPPED_HARNESS_REMEMBER_LOGIN": "1",
+                            "UNTAPPED_HARNESS_LOGIN_HELPER_SHA256": sha256(login_helper)})
     policy = root / "controlled.sb"
     real_home = Path(pwd.getpwuid(os.getuid()).pw_dir).resolve(strict=True)
     policy.write_text(cli.sandbox_profile(root, real_home)
@@ -204,7 +272,8 @@ def _diagnostic(safe):
 
 def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: Path,
         expected_steam_id: str, expected_profile: int, seconds=14400,
-        should_stop=None, on_companion_ready=None):
+        should_stop=None, on_companion_ready=None, remember_store=None, diagnostics=None,
+        retry_should_stop=None):
     """Start one private signed copy; never signal or modify the game process."""
     if platform.system() != "Darwin" or os.getuid() == 0 or os.getuid() != os.geteuid():
         raise HarnessError("Main-account companion requires unprivileged macOS")
@@ -225,10 +294,18 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
         raise HarnessError("Companion lacks the prepared Steam identity guard")
     if not (session / "signing.json").is_file():
         raise HarnessError("Main-account launch requires a signed companion")
+    trace = diagnostics if diagnostics is not None else SupervisionDiagnostics()
+    supervision_snapshot = trace.snapshot()
+    failure_before_cleanup = None
+    cleanup_failures = []
+    exit_after_cleanup = None
+    termination_requested = False
     started = time.monotonic()
     root = None
     process = None
+    login_bridge = None
     gateway = None
+    gateway_entered = False
     reason = "PREFLIGHT_FAILED"
     failure_stage = "NONE"
     stage = "gateway"
@@ -245,6 +322,7 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
     try:
         gateway = Gateway()
         with gateway:
+            gateway_entered = True
             try:
                 stage = "preflight"
                 preflight = controlled.sanitized_preflight(gateway.preflight())
@@ -257,16 +335,26 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
                     main_preferences.seed(root / "profile", preferences_dir,
                                           enable_default_tiers=manifest.get("ui_assets_version") in (1, 2))
                     stage = "launch"
-                    process = _launch(root, gateway, target_environment,
-                                      expected_steam_id, expected_profile)
+                    if remember_store is not None:
+                        from .remember_login import RememberBroker
+                        login_bridge = RememberBroker(root, remember_store,
+                            on_warning=getattr(remember_store, "on_warning", None))
+                        login_bridge.__enter__()
+                        process = _launch(root, gateway, target_environment,
+                                          expected_steam_id, expected_profile, remember=login_bridge)
+                    else:
+                        process = _launch(root, gateway, target_environment,
+                                          expected_steam_id, expected_profile)
                     if on_companion_ready is not None:
                         on_companion_ready(root)
                     stage = "supervise"
                     remaining = None if seconds is None else seconds - (time.monotonic() - started)
                     reason, seen = supervise(process, root, remaining,
-                                             should_stop)
+                                             should_stop, diagnostics=trace, retry_should_stop=retry_should_stop)
                     if reason == "GAME_CRASHED":
                         failure_stage = "GAME_PROCESS_EXIT"
+                    elif reason == "COMPANION_CRASHED":
+                        failure_stage = "PROCESS_EXIT"
                 elif preflight["passed"]:
                     reason = "SESSION_LIMIT_REACHED"
             except KeyboardInterrupt:
@@ -276,32 +364,54 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
                 reason = "COMPANION_FAILED"
                 failure_stage = stage.upper()
             finally:
+                # Freeze the initiating check before any cleanup can fail.
+                supervision_snapshot = trace.snapshot()
+                failure_before_cleanup = {"reason": reason, "failure_stage": failure_stage}
                 if process is not None:
                     # Helpers may outlive an exited main process. Always reap the owned group.
                     try:
                         companion_exit_code = process.poll()
                         terminated = companion_exit_code is None
+                        termination_requested = terminated
                         if companion_exit_code not in (None, 0) and failure_stage == "NONE":
                             reason = "COMPANION_CRASHED"
                             failure_stage = "PROCESS_EXIT"
                         cli.stop_probe(process)
-                    except (Exception, KeyboardInterrupt):
+                    except (Exception, KeyboardInterrupt) as exc:
+                        cleanup_failures.append(failure_record("GROUP_CLEANUP", exc))
                         group_cleanup_complete = False
                         reason = "COMPANION_CLEANUP_FAILED"
                         failure_stage = "GROUP_CLEANUP"
+                    # stop_probe already waits/reaps; reading its cached result
+                    # adds no polling call and cannot change cleanup success.
+                    try:
+                        observed_exit = getattr(process, "returncode", None)
+                        if type(observed_exit) is int and -255 <= observed_exit <= 255:
+                            exit_after_cleanup = observed_exit
+                    except Exception:
+                        pass
                     if group_cleanup_complete:
                         try:
                             seen.update(_events(root))
-                        except Exception:
+                        except Exception as exc:
+                            cleanup_failures.append(failure_record("FINAL_EVENT_READ", exc))
                             if failure_stage == "NONE":
                                 reason = "COMPANION_FAILED"
                                 failure_stage = "EVENT_READ"
                         try:
                             main_preferences.harvest(root / "profile", preferences_dir)
                             saved = True
-                        except Exception:
+                        except Exception as exc:
+                            cleanup_failures.append(failure_record("PREFERENCE_HARVEST", exc))
                             reason = "COMPANION_FAILED"
                             failure_stage = "HARVEST"
+                if login_bridge is not None:
+                    try:
+                        login_bridge.close()
+                    except Exception as exc:
+                        cleanup_failures.append(failure_record("LOGIN_BRIDGE_CLEANUP", exc))
+                        reason = "COMPANION_FAILED"
+                        failure_stage = "LOGIN_BRIDGE_CLEANUP"
                 if root is not None and failure_stage == "NONE":
                     try:
                         # Only this exact private attempt root may be removed.
@@ -309,13 +419,18 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
                             raise HarnessError("Unexpected private companion root")
                         shutil.rmtree(root)
                         removed = True
-                    except Exception:
+                    except Exception as exc:
+                        cleanup_failures.append(failure_record("ATTEMPT_CLEANUP", exc))
                         reason = "COMPANION_FAILED"
                         failure_stage = "ATTEMPT_CLEANUP"
-    except KeyboardInterrupt:
+    except KeyboardInterrupt as exc:
+        if gateway_entered:
+            cleanup_failures.append(failure_record("GATEWAY_CLEANUP", exc))
         reason = "INTERRUPTED"
         failure_stage = "GATEWAY"
-    except Exception:
+    except Exception as exc:
+        if gateway_entered:
+            cleanup_failures.append(failure_record("GATEWAY_CLEANUP", exc))
         reason = "COMPANION_FAILED"
         failure_stage = "GATEWAY"
     gateway_cleanup_complete = gateway is not None and gateway.cleanup_complete is True
@@ -332,6 +447,12 @@ def run(session: Path, preferences_dir: Path, *, target_pid: int, target_game: P
             "reason": reason, "failure_stage": failure_stage, "preflight": preflight,
             "companion_started": process is not None, "companion_terminated": terminated,
             "companion_exit_code": companion_exit_code,
+            "companion_exit_code_before_cleanup": companion_exit_code,
+            "companion_exit_code_after_cleanup": exit_after_cleanup,
+            "companion_termination_requested": termination_requested,
+            "failure_before_cleanup": failure_before_cleanup,
+            "supervision_diagnostics": supervision_snapshot,
+            "cleanup_failures": cleanup_failures[:6],
             "companion_group_cleanup_complete": group_cleanup_complete,
             "authenticated": "authenticated" in seen,
             "steam_account_verified": "main-steam-verified" in seen and "main-steam-mismatch" not in seen,

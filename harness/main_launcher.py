@@ -252,13 +252,18 @@ def _steam_ready():
         _fail("OPEN_INTENDED_STEAM")
 
 
-def _target(expected, process_group):
+def _target(expected, process_group, diagnostics=None):
     games = []
-    for pid, uid, command, steam in _inventory():
+    rows = diagnostics.call("GAME_PROCESS_INVENTORY", _inventory) if diagnostics is not None else _inventory()
+    for pid, uid, command, steam in rows:
         if uid != os.getuid():
             _fail("TARGET_CONFLICT")
         if not steam:
-            if command != str(expected) or os.getpgid(pid) != process_group:
+            if command != str(expected):
+                _fail("TARGET_CONFLICT")
+            group = (diagnostics.call("GAME_PROCESS_GROUP", os.getpgid, pid)
+                     if diagnostics is not None else os.getpgid(pid))
+            if group != process_group:
                 _fail("TARGET_CONFLICT")
             games.append(pid)
     if len(games) > 1:
@@ -300,7 +305,7 @@ def _wait_for_steam(process, executable, log, seconds=60):
 
 def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
           seconds=DEFAULT_SECONDS, confirm_steam=None, should_stop=None,
-          on_companion_ready=None):
+          on_companion_ready=None, remember_store=None):
     if not (approved and cloud_confirmed and account_confirmed):
         _fail("LIVE_CONFIRMATIONS_REQUIRED")
     if seconds is not None and (type(seconds) is not int or not 60 <= seconds <= MAX_SECONDS):
@@ -327,7 +332,7 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
     if (activation.get("schema") != 1 or activation.get("copied_apps_signed") is not True
             or activation.get("proposal_sha256") != sha256((root / "main-proposal.json").read_bytes())):
         _fail("ACTIVATION_REQUIRED")
-    from .ui_update import selected_session
+    from .fullscreen_update import selected_session
     companion_session = selected_session(root)
     game_debug.verify(root / "game")
     cli._validate_launch_copy(companion_session)
@@ -378,11 +383,14 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
                                        stderr=subprocess.STDOUT, start_new_session=True)
             pid = _wait_for_steam(process, executable, log)
 
+            from .supervision_diagnostics import SupervisionDiagnostics
+            trace = SupervisionDiagnostics()
+
             def stop_reason():
                 try:
-                    current = _target(executable, process.pid)
+                    current = trace.call("GAME_GUARD", _target, executable, process.pid, diagnostics=trace)
                     if current is None:
-                        exit_code = process.poll()
+                        exit_code = trace.call("GAME_PROCESS_POLL", process.poll)
                         if exit_code is None:
                             return "TARGET_CONFLICT"
                         return "GAME_EXIT" if exit_code == 0 else "GAME_CRASHED"
@@ -390,12 +398,19 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
                         return "TARGET_CONFLICT"
                 except (HarnessError, OSError):
                     return "TARGET_CONFLICT"
-                return owner_stop_reason()
+                return trace.call("OWNER_STOP_CHECK", owner_stop_reason)
+
+            def retry_stop_reason():
+                exit_code = trace.call("GAME_PROCESS_POLL", process.poll)
+                if exit_code is not None:
+                    return "GAME_EXIT" if exit_code == 0 else "GAME_CRASHED"
+                return trace.call("OWNER_STOP_CHECK", owner_stop_reason)
 
             report = main_companion.run(companion_session, _private(root / "preferences"),
                        target_pid=pid, target_game=executable, expected_steam_id=binding["steam_id"],
                        expected_profile=binding["profile"], seconds=seconds, should_stop=stop_reason,
-                       on_companion_ready=on_companion_ready)
+                       on_companion_ready=on_companion_ready, remember_store=remember_store, diagnostics=trace,
+                       retry_should_stop=retry_stop_reason)
         game_exit_code = process.poll()
         result = {"mode": "MAIN_ACCOUNT_STEAM_PROGRESS", "backup": backup_summary,
                   "steam_initialization_observed": True, "cloud_store_enabled_logged": True,

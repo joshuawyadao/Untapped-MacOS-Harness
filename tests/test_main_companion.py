@@ -13,6 +13,7 @@ from unittest.mock import Mock, patch
 
 from harness import main_companion as companion
 from harness.asar import HarnessError
+from harness.supervision_diagnostics import SupervisionDiagnostics
 
 
 def passing_preflight():
@@ -109,7 +110,8 @@ class MainCompanionTests(unittest.TestCase):
 
     def _run(self, gateway, *, stop="GAME_EXIT", events=None, launch_error=None,
              harvest_error=None, cleanup_error=None, order=None, ui_version=None, seed=None,
-             seconds=14400, on_companion_ready=None):
+             seconds=14400, on_companion_ready=None, remember_store=None,
+             stop_error=None, post_exit_code=None):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         base = Path(temp.name).resolve()
@@ -122,7 +124,7 @@ class MainCompanionTests(unittest.TestCase):
         self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
         self.addCleanup(lambda: shutil.rmtree(root) if root.exists() else None)
         (root / "profile").mkdir(mode=0o700)
-        def launch_copy(*_args):
+        def launch_copy(*_args, **_kwargs):
             if order is not None:
                 order.append("launch")
             if launch_error:
@@ -134,6 +136,13 @@ class MainCompanionTests(unittest.TestCase):
                 order.append("group_cleanup")
             if cleanup_error:
                 raise cleanup_error
+            if post_exit_code is not None:
+                process.returncode = post_exit_code
+
+        def should_stop():
+            if stop_error:
+                raise stop_error
+            return stop
 
         def harvest(*_args):
             if order is not None:
@@ -154,8 +163,8 @@ class MainCompanionTests(unittest.TestCase):
              patch.object(companion, "_diagnostic") as diagnostic:
             report = companion.run(session, prefs, target_pid=123,
                                    target_game=Path("/synthetic/game"), expected_steam_id="12345678901234567",
-                                   expected_profile=0, seconds=seconds, should_stop=lambda: stop,
-                                   on_companion_ready=on_companion_ready)
+                                   expected_profile=0, seconds=seconds, should_stop=should_stop,
+                                   on_companion_ready=on_companion_ready, remember_store=remember_store)
         return report, clone, launch, terminate, diagnostic, root
 
     def test_unlimited_run_reports_ready_root_after_launch(self):
@@ -330,3 +339,110 @@ class MainCompanionTests(unittest.TestCase):
             stream.symlink_to(outside)
             with self.assertRaises(HarnessError):
                 companion._events(root)
+
+    # Exercise broker lifetime through the real supervisor cleanup boundaries.
+    def test_broker_closes_after_companion_before_private_profile_removal(self):
+        order = []
+        broker = Mock()
+        broker.__enter__ = Mock(side_effect=lambda: order.append('broker_open'))
+        broker.close.side_effect = lambda: order.append('broker_close')
+        with patch('harness.remember_login.RememberBroker', return_value=broker):
+            report, _, launch, _, _, root = self._run(FakeGateway(), order=order, remember_store=Mock())
+        self.assertIs(launch.call_args.kwargs['remember'], broker)
+        self.assertEqual(order, ['broker_open', 'launch', 'group_cleanup', 'harvest', 'broker_close'])
+        self.assertEqual(report['failure_stage'], 'NONE')
+        self.assertFalse(root.exists())
+
+    def test_broker_cleanup_failure_retains_attempt_and_reports_failure(self):
+        broker = Mock()
+        broker.__enter__ = Mock()
+        broker.close.side_effect = HarnessError('private-token')
+        with patch('harness.remember_login.RememberBroker', return_value=broker):
+            report, _, _, _, _, root = self._run(FakeGateway(), remember_store=Mock())
+        self.assertEqual(report['failure_stage'], 'LOGIN_BRIDGE_CLEANUP')
+        self.assertTrue(root.exists())
+        self.assertNotIn('private-token', json.dumps(report))
+
+
+    def test_supervision_failure_survives_cleanup_error_and_observes_later_exit(self):
+        import errno
+        error = subprocess.TimeoutExpired('private-token command', 2,
+            output=b'private-token output', stderr=b'private-token stderr')
+        report, _, _, _, _, root = self._run(FakeGateway(), stop_error=error,
+            harvest_error=PermissionError(errno.EACCES, 'private-token message', '/private-token/path'),
+            post_exit_code=-11)
+        self.assertEqual(report['failure_before_cleanup'],
+            {'reason': 'COMPANION_FAILED', 'failure_stage': 'SUPERVISE'})
+        self.assertEqual(report['supervision_diagnostics']['failure'],
+            {'check': 'GAME_GUARD', 'category': 'TIMEOUT'})
+        self.assertEqual(report['cleanup_failures'],
+            [{'check': 'PREFERENCE_HARVEST', 'category': 'PERMISSION_DENIED', 'errno': errno.EACCES}])
+        self.assertIsNone(report['companion_exit_code_before_cleanup'])
+        self.assertEqual(report['companion_exit_code_after_cleanup'], -11)
+        self.assertTrue(report['companion_termination_requested'])
+        self.assertEqual(report['failure_stage'], 'HARVEST')
+        self.assertTrue(root.exists())
+        self.assertNotIn('private-token', json.dumps(report))
+
+
+    def test_each_supervision_boundary_identifies_its_failure(self):
+        import errno
+        cases = [
+            ('EVENT_READ', 'event', PermissionError(errno.EACCES, 'private-token', '/private-token')),
+            ('GAME_GUARD', 'guard', subprocess.TimeoutExpired('private-token', 2)),
+            ('COMPANION_POLL', 'poll', ChildProcessError(errno.ECHILD, 'private-token')),
+            ('COMPANION_WAIT', 'wait', RuntimeError('private-token')),
+            ('SUPERVISION_CLOCK', 'clock', ValueError('private-token')),
+            ('STOP_RESULT_VALIDATE', 'stop', HarnessError('unused')),
+        ]
+        for expected, boundary, error in cases:
+            with self.subTest(check=expected):
+                trace = SupervisionDiagnostics()
+                process = FakeProcess()
+                stop = Mock(return_value='private-token' if boundary == 'stop' else None)
+                clock = Mock(return_value=0)
+                event = Mock(return_value=set())
+                if boundary == 'event': event.side_effect = error
+                if boundary == 'guard': stop.side_effect = error
+                if boundary == 'poll': process.poll = Mock(side_effect=error)
+                if boundary == 'wait': process.wait = Mock(side_effect=error)
+                if boundary == 'clock': clock.side_effect = error
+                with patch.object(companion, '_events', event), self.assertRaises(Exception):
+                    companion.supervise(process, Path('/unused'), 10, should_stop=stop,
+                                        clock=clock, diagnostics=trace)
+                self.assertEqual(trace.snapshot()['failure']['check'], expected)
+                self.assertNotIn('private-token', json.dumps(trace.snapshot()))
+
+    def test_expected_poll_timeouts_are_successful_checks(self):
+        trace = SupervisionDiagnostics()
+        process = FakeProcess()
+        stops = iter([None, None, 'OWNER_STOP'])
+        with patch.object(companion, '_events', return_value=set()):
+            reason, _ = companion.supervise(process, Path('/unused'), None,
+                should_stop=lambda: next(stops), diagnostics=trace)
+        self.assertEqual(reason, 'OWNER_STOP')
+        self.assertEqual(process.waits, [0.5, 0.5])
+        self.assertIsNone(trace.snapshot()['failure'])
+
+    def test_secondary_cleanup_failures_are_classified_separately(self):
+        import errno
+        for keyword, check in [('cleanup_error', 'GROUP_CLEANUP'), ('harvest_error', 'PREFERENCE_HARVEST')]:
+            with self.subTest(check=check):
+                report, *_ = self._run(FakeGateway(), **{keyword: OSError(errno.EIO, 'private-token')})
+                self.assertIsNone(report['supervision_diagnostics']['failure'])
+                self.assertEqual(report['cleanup_failures'][0],
+                    {'check': check, 'category': 'OS_ERROR', 'errno': errno.EIO})
+                self.assertNotIn('private-token', json.dumps(report))
+
+
+    def test_native_exit_has_no_invented_supervision_exception(self):
+        with patch.object(FakeProcess, 'poll', return_value=-11), \
+             patch.object(FakeProcess, 'returncode', -11, create=True):
+            report, *_ = self._run(FakeGateway(), stop=None)
+        self.assertEqual(report['reason'], 'COMPANION_CRASHED')
+        self.assertEqual(report['failure_before_cleanup'],
+            {'reason': 'COMPANION_CRASHED', 'failure_stage': 'PROCESS_EXIT'})
+        self.assertIsNone(report['supervision_diagnostics']['failure'])
+        self.assertEqual(report['companion_exit_code_before_cleanup'], -11)
+        self.assertEqual(report['companion_exit_code_after_cleanup'], -11)
+        self.assertFalse(report['companion_termination_requested'])

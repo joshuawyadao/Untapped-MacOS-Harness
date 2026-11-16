@@ -1,21 +1,20 @@
 # Plan
 
-Verify the macOS-native launcher alongside the portable suite while preserving the CI Verify gate.
+Bring the CI feature branch onto current main while preserving its portable/native enforcement, validate the current launcher sources, and prepare a reviewed merge-ready PR.
 
 ## Scope
-- In: Scoped CI enforcement, automated validation, meaningful orchestration regressions, and canonical verification documentation for Untapped MacOS Harness.
-- Out: Product feature changes, deployment, paid services or account changes, personal data, physical-device operation, and release signing/publishing.
+- In: Merge current main into codex/ci-test-baseline-2026-11-16 without rewriting published history; preserve Ubuntu tests, isolated macOS compilation/signatures/native seam tests, and the unconditional CI Verify aggregate; maintain focused regression tests and CI documentation.
+- Out: Product behavior changes, rebuilding installed apps, game/Steam/Keychain operations, repository-rule changes, unrelated CI infrastructure, and merging the resulting PR.
 
 ## Action items
-- [x] Read native installer, gateway, credential-boundary tests, and Desktop-Launcher documentation.
-- [x] Add an isolated native compile/ad-hoc signature verification helper without launching components or using Keychain.
-- [x] Run native outcome tests on macOS and portable tests on Ubuntu behind one unconditional aggregate gate.
-- [x] Add regression checks for orchestration and document exactly what native validation proves.
-- [x] Run portable tests and safe local native compilation; validate YAML and diff.
-- [x] Save and push the isolated branch; validate hosted workflow when available.
+- [x] Inspect the three unique CI commits, current main/PR4 contents, workflow, scripts, native seam tests and Desktop-Launcher docs; verify GitHub's always/needs behavior against official documentation. The branch's older remembered-login snapshot must not undo newer supervision or full-screen changes.
+- [ ] Commit this resolved plan as a local checkpoint before merging or implementing.
+- [ ] Merge origin/main, resolve any documentation conflict by preserving the current plan plus both branches' operational intent, and prove harness/launcher sources match main byte-for-byte.
+- [ ] Assess aggregate-job failure/skip/cancel/missing-result coverage and native-build isolation; add only meaningful in-scope tests or corrections justified by findings.
+- [ ] Run targeted CI regressions, the current full suite, isolated native compile/signature checks, YAML/shell/repository/whitespace checks, and update Desktop-Launcher/Verification CI evidence without changing installed applications.
+- [ ] Save/push the updated feature branch and open a draft PR scoped to its CI changes.
+- [ ] Run Brooks and Codex reviews, handle actionable feedback, and verify actual portable/macOS/aggregate jobs pass on the final head with the existing required CI Verify context and no merge conflicts.
+- [ ] Mark the PR ready, make a final fresh gate check, and leave it unmerged with a concise review/validation ledger and documented limits.
 
-## Discovery notes
-- Baseline: `a1a6849a837b3a62fde14e81df135476529a6163` (`HEAD`), isolated from the original checkout.
-- Existing in-progress changes in original project folders remain untouched.
-- Missing hosting/account capabilities are reported as concrete limitations; they are not permission to weaken required checks.
-- Local native compilation, signature verification and outcome tests passed. After selecting the installed ARM Node and allowing temporary loopback tests outside the sandbox, all 313 portable tests passed. Hosted portable, macOS native and aggregate CI Verify jobs passed: https://github.com/joshuawyadao/Untapped-MacOS-Harness/actions/runs/43938667947 . No launcher or real Keychain operation was executed.
+## Open questions
+- None. The user explicitly requests updating the named branch and preparing its PR; use a normal merge to preserve shared branch history and existing main protections.

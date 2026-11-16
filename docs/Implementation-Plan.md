@@ -14,7 +14,7 @@ Repair STS2 overlay visibility in native macOS full screen using Electron's docu
 - [x] Route native-launcher selection through the complete update, run targeted and full tests plus repository/whitespace checks, and update Desktop-Launcher, Harness-Architecture and Verification docs with behavior and live-test limits. All 353 tests pass; native build and live verification remain below.
 - [x] Prepare/verify the immutable companion and signed launcher build, preserve previous selections/bundles, and replace the launcher only after normal owner closure and Steam Cloud synchronization.
 - [x] Verify installed runtime parity and native signatures, save/push the installation record, and preserve rollback.
-- [ ] Test native full-screen/windowed visibility with the owner and record the observed result; native compositing, focus, click-through and live badge alignment remain observation limits until checked.
+- [x] Record the owner-visible full-screen result and baseline windowed comparison. The owner first reported the updated overlay hidden, then confirmed it appeared; live inspection confirms native full screen and the repaired companion. Repeat transitions, other display layouts, focus/click-through and live badge alignment remain additional use/testing limits.
 
 ## Open questions
 - None. The owner requests the full-screen fix and installed launcher update. Use the existing feature branch and original entitlements; normal game closure remains an operational prerequisite for replacing the installed launcher.
@@ -22,3 +22,5 @@ Repair STS2 overlay visibility in native macOS full screen using Electron's docu
 ## Validation notes
 - All 353 tests pass. Independent read-only integration review found no concrete defect. Synthetic tests cannot establish native full-screen compositing, focus, click-through or live badge alignment.
 - The separate immutable companion update is signed/verified; only CORE changes within ASAR, and earlier UI/login copies and policy/helper pins are preserved. The staged launcher and signed Keychain helper verify, with all 39 runtime sources matching implementation checkpoint `aab687f`. Replacement awaits normal owner closure and Cloud synchronization; live full-screen/windowed observation follows installation.
+
+- Live completion: the owner confirmed the overlay showing after the initial negative report. A read-only check verified the active private companion's ASAR matches the signed full-screen update, the panel anchor is present, Steam/profile has no mismatch, and reader/overlay lifecycle markers pass. The game menu explicitly showed Exit Full Screen. No further code change or restart occurred between the owner's two reports; the initial delay is not attributed.

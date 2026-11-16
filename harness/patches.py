@@ -2,6 +2,7 @@
 from pathlib import Path
 from .asar import HarnessError
 from .sts2_ui import SETTINGS_UI_ENTRY, patch_settings_ui
+from .fullscreen_patch import WINDOW_OLD, WINDOW_NEW
 
 VERSION = "3.12.3-latest"
 ASAR_SHA256 = "ca3a2e6a6f728b2d635abfc70a5434d4107438b8d801a650357989e8442d798c"
@@ -21,6 +22,7 @@ RUNTIME_STORE_CLASS = 'class CloudSaveStore extends ScryObject {'
 
 # Small exact-match anchors, not a redistributed companion bundle.
 CORE_PATCHES = [
+    (WINDOW_OLD, WINDOW_NEW),
     ('platforms: electron.app.isPackaged ? ["win32", "linux"] : ["win32", "darwin", "linux"]\n      // macOS is dev-only',
      'platforms: ["win32", "darwin", "linux"] // harness: STS2-only platform gate'),
     ('(process.platform === "win32" || process.platform === "linux" || process.platform === "darwin" && !electron.app.isPackaged)) {\n      this.games.sts2 = new Sts2();',

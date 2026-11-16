@@ -34,7 +34,7 @@ The native frontend communicates with the worker over bounded JSON lines. UI out
 
 ## Validation and limitations
 
-The November 10, 2026 build compiled and passed native signature verification. The installed app window was inspected with Start Game enabled and sign-in/stop disabled while idle. All 272 regression tests passed, including new lifetime, cancellation, private URL, exclusive-lock and worker-protocol cases. Native Dock automation timed out, so pinning is left to the owner. On each CI run, macOS now compiles the actual launcher, outcome, and Keychain helper sources into runner temporary storage, ad-hoc signs and verifies those inert binaries, and runs the native outcome seam tests using only synthetic system processes. The required `CI Verify` check fails unless both this macOS job and the portable harness suite succeed; it does not open the launcher, access Keychain, install apps, or start a game.
+The November 10, 2026 build compiled and passed native signature verification. The installed app window was inspected with Start Game enabled and sign-in/stop disabled while idle. All 272 regression tests passed, including new lifetime, cancellation, private URL, exclusive-lock and worker-protocol cases. Native Dock automation timed out, so pinning is left to the owner.
 
 The first complete real-game launch through the new app, browser login through its button, multi-hour sessions and quit behavior remain live checks. The earlier diagnostic session ended with a supervision failure whose underlying cause was not established; removing the duration limit does not resolve or conceal that separate issue. Private diagnostics and existing failure outcomes remain available.
 
@@ -60,3 +60,43 @@ The first remembered-login build used the wrong vendor keytar service name, so s
 After the corrected launcher is installed, keep Remember enabled and sign in once more. The earlier session cannot supply a saved login because its save calls bypassed the bridge. Check the dedicated item's presence without printing credentials, then quit normally and start again to verify automatic restoration. Do not log out of Untapped between those starts: logout intentionally deletes the saved login. Steam/Cloud confirmations still apply.
 
 The corrected service-name build is installed at the original Applications path, with the previous launcher retained for rollback. Native signatures and all 36 runtime files verified, and the reopened idle window retains the owner's Remember preference. A fresh sign-in and saved-item check must precede the real automatic-sign-in test.
+
+
+### Supervision failure diagnostics
+
+When an unhandled supervision check throws, the launcher names the check and a fixed error category, for example “Supervision stopped during game process inventory (timeout).” Confirmed identity mismatches remain fatal; the bounded timeout policy below handles only process-inventory timeouts. Finish any running game normally; use this launcher for the next start rather than macOS Reopen on the copied companion.
+
+The sanitized `sts2main-controlled.*.json` report records `supervision_diagnostics` (schema, bounded check counter, last started/completed checks, last-check duration and first failure), `failure_before_cleanup`, `cleanup_failures`, and companion exit codes before/after cleanup. `companion_termination_requested` says whether the main process was still observed alive when cleanup was requested; an exit after that request does not by itself establish the initiating cause. Cleanup uses the already reaped process result without an extra polling operation. The old top-level reason/stage/exit fields remain available.
+
+Reports contain only fixed check/category names and bounded numeric errno/return-code evidence. They exclude exception messages, class names, tracebacks, command arguments, paths, account details, tokens and raw vendor logs. No diagnostic history is accumulated in memory. For another failure, keep the launcher error visible and ask for the newest sanitized report; the original private attempt and OS crash evidence remain separate. These diagnostics describe future failures and cannot recover the exception discarded by the preceding build.
+
+The November 16 diagnostic build is installed at the original Applications path with a rollback bundle retained. Native signatures, the helper pin and all 37 runtime files verified. The opened idle launcher retains Remember enabled. Start normally for the next test; if Untapped closes, keep the launcher error visible and report the triggering activity so the new check/category and cleanup records can be inspected.
+
+
+### Bounded process-inventory timeout recovery
+
+A slow system process-list query can trigger the live game guard's two-second command timeout. The launcher now permits three total attempts for consecutive `subprocess.TimeoutExpired` failures identified specifically as `GAME_PROCESS_INVENTORY`, with 250 ms between attempts. It requires a fresh successful game identity check to continue. Three consecutive timeouts still stop the companion and retain a fatal timeout diagnostic. A successful check resets the consecutive budget.
+
+During retry backoff the supervisor checks account mismatch, game exit/crash, companion exit, owner cancellation and any finite session deadline, polling the delay at most 50 ms at a time. A confirmed mismatch stops immediately when detected and receives no retry; non-timeout inventory errors and timeouts from other checks retain their existing outcomes. The game is never signalled. Individual process creation/scheduling overhead can add to the nominal three command timeouts plus two delays; the attempt count stays fixed.
+
+The safe `supervision_diagnostics.inventory_retry` counters record `timeouts`, `retries_scheduled`, `recoveries` and `exhaustions`. A scheduled retry can be cancelled by a safety/exit check before it starts. Handled timeouts do not remain as the fatal first failure after recovery; exhaustion or a later different failure retains its actual check/category. These counters contain no process identities or private exception data. Startup/test-account inventory checks and network retry policy are unchanged.
+
+The bounded inventory-retry build is installed at the original Applications path with the prior launcher retained for rollback. Native signatures, the helper pin and all 37 runtime sources verified, and the reopened idle launcher retains Remember enabled. Start normally; recovered timeouts will appear in the safe counters when the session ends. A new stop still retains its actual fatal check/category and cleanup evidence.
+
+## Native macOS full-screen overlay
+
+The STS2 overlay uses Electron's macOS `panel` window type so it can float above a native full-screen game. The existing all-workspace/full-screen visibility, click-through behavior, account/profile gate, normal show/hide rules and window sizing remain in place. The option applies only to the STS2 overlay on Darwin; settings and other platform/game windows retain their previous construction.
+
+For a prepared installation, run `python3 -m harness.fullscreen_update --install-main` before rebuilding the native launcher. This publishes a separately verified `companion-fullscreen-v1` copy and receipt above the retained UI/login copies, with the same signing entitlements, native binaries, helper pin and controlled network policy. Fresh companion preparations include the same patch. The launcher validates and selects the complete final layer, including a second selection check before game launch; incomplete or inconsistent metadata stops launch.
+
+Rebuild to a new destination using the existing build command, then replace the installed launcher after normal game closure and Steam Cloud synchronization. Preserve the prior launcher bundle for rollback: its older runtime continues to select the retained login/UI copy. A running session continues using its existing companion until normal exit. Remembered login and Steam progress retain their existing behavior.
+
+Live verification should cover the Untapped U tab while entering/leaving native full screen, followed by tier badges or the Attacks panel on the relevant game screen. A renderer reporting itself visible does not establish that macOS is displaying its window above the game. Windowed visibility was confirmed during diagnosis; the repaired native full-screen behavior requires an owner-visible check after installation.
+
+The November 16 full-screen update is installed at the original Applications path. Its native signatures, signed helper pin and all 39 runtime files verify; the previous launcher is preserved for rollback. The idle window retains Remember enabled. The owner has confirmed overlay visibility with the repaired companion while the game remains in native full screen. The initial sighting was delayed; repeated transitions and other display arrangements remain ongoing use/testing checks.
+
+### Portable and native CI enforcement
+
+Every pull request to main runs the portable harness suite on Ubuntu and a separate macOS job. The macOS job compiles the actual launcher, outcome and Keychain helper sources into runner temporary storage, ad-hoc signs and verifies those inert binaries, and runs the native outcome/streaming seam tests with synthetic system processes. It does not open the launcher, access Keychain, install apps or start a game.
+
+The existing required `CI Verify` check runs after both platform jobs, including when a dependency fails or is skipped. It accepts only explicit success from both jobs; failed, cancelled, skipped, missing, empty or unknown results fail the gate. Branch protection keeps the same required check name. Focused regressions exercise the result script and verify that the aggregate's dependency/condition/result bindings remain on that job, with native compilation and seam tests on `macos-15`.

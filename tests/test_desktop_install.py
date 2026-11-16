@@ -47,7 +47,7 @@ class DesktopInstallTests(unittest.TestCase):
         with patch.object(desktop_install, 'REPO', self.repo), \
              patch.object(desktop_install.main_launcher, '_prepared',
                           return_value=(self.game.parents[2], None, None)), \
-             patch.object(desktop_install.login_update, 'selected_session') as selected, \
+             patch.object(desktop_install.fullscreen_update, 'selected_session') as selected, \
              patch.object(desktop_install.subprocess, 'run', side_effect=run) as commands:
             result = desktop_install.build(self.destination)
         selected.assert_called_once_with(self.game.parents[2])
@@ -138,7 +138,7 @@ class DesktopInstallTests(unittest.TestCase):
         with patch.object(desktop_install, 'REPO', self.repo), \
              patch.object(desktop_install.main_launcher, '_prepared',
                           return_value=(self.game.parents[2], None, None)), \
-             patch.object(desktop_install.login_update, 'selected_session') as selected, \
+             patch.object(desktop_install.fullscreen_update, 'selected_session') as selected, \
              patch.object(desktop_install.subprocess, 'run') as commands:
             with self.assertRaisesRegex(HarnessError, 'already exists'):
                 desktop_install.build(self.destination)

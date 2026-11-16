@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from . import main_launcher, login_update
+from . import main_launcher, fullscreen_update
 from .asar import HarnessError
 
 NAME = 'Slay the Spire 2 + Untapped.app'
@@ -18,7 +18,7 @@ REPO = Path(__file__).resolve().parents[1]
 def build(destination):
     os.umask(0o077)
     root, home, _ = main_launcher._prepared()
-    login_update.selected_session(root)
+    fullscreen_update.selected_session(root)
     destination = Path(destination)
     if destination.exists() or destination.is_symlink():
         raise HarnessError('Launcher destination already exists; preserve the installed app')

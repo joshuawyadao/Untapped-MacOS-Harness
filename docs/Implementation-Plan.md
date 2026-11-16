@@ -9,12 +9,17 @@ Bring the CI feature branch onto current main while preserving its portable/nati
 ## Action items
 - [x] Inspect the three unique CI commits, current main/PR4 contents, workflow, scripts, native seam tests and Desktop-Launcher docs; verify GitHub's always/needs behavior against official documentation. The branch's older remembered-login snapshot must not undo newer supervision or full-screen changes.
 - [x] Commit this resolved plan as a local checkpoint before merging or implementing (`90fd34f`).
-- [ ] Merge origin/main, resolve any documentation conflict by preserving the current plan plus both branches' operational intent, and prove harness/launcher sources match main byte-for-byte.
+- [x] Merge origin/main (`779c5a8`), preserve the current task plan and CI documentation, and prove harness/launcher sources match main byte-for-byte. Conflicted product files and prior tests use the reviewed main versions.
 - [x] Assess aggregate-job failure/skip/cancel/missing-result coverage and native-build isolation; extend result cases to unset/empty/unknown values and scope required-gate/native assertions to their own jobs. No production defect was found.
-- [ ] Run targeted CI regressions, the current full suite, isolated native compile/signature checks, YAML/shell/repository/whitespace checks, and update Desktop-Launcher/Verification CI evidence without changing installed applications.
+- [x] Run targeted CI regressions, all 355 tests, isolated native compile/signature checks, YAML/shell/repository/whitespace checks, and update Desktop-Launcher/Verification CI evidence without changing installed applications.
 - [ ] Save/push the updated feature branch and open a draft PR scoped to its CI changes.
 - [ ] Run Brooks and Codex reviews, handle actionable feedback, and verify actual portable/macOS/aggregate jobs pass on the final head with the existing required CI Verify context and no merge conflicts.
 - [ ] Mark the PR ready, make a final fresh gate check, and leave it unmerged with a concise review/validation ledger and documented limits.
 
 ## Open questions
 - None. The user explicitly requests updating the named branch and preparing its PR; use a normal merge to preserve shared branch history and existing main protections.
+
+## Validation and review handoff
+- Local validation covers merge checkpoint `779c5a8`; subsequent changes are documentation only. Synthetic mutations confirm the workflow test rejects a renamed required job, a misplaced aggregate condition and an Ubuntu native runner.
+- Brooks PR review inspected all six files at that checkpoint and found no actionable concern. The added verification record does not change executable behavior.
+- Publishing, exact-head Codex review and hosted portable/native/aggregate results remain PR gates. Track their live completion in the PR description and review ledger; this implementation checkpoint does not claim those later results.

@@ -23,6 +23,8 @@ class MainLauncherTests(unittest.TestCase):
         self.root.mkdir(mode=0o700)
         for name in ("backups", "runs", "preferences"):
             (self.root / name).mkdir(mode=0o700)
+        (self.root / "companion").mkdir(mode=0o700)
+        launcher._write(self.root / "companion/manifest.json", {"patched_asar_sha256": "synthetic"})
         self.binding = {"steam_id": "12345678901234567", "profile": 1}
         launcher._write(self.root / "main-proposal.json", {"proposal_only": True})
         launcher._write(self.root / "activation.json", {"schema": 1, "copied_apps_signed": True,

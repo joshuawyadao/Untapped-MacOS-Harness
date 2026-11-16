@@ -8,10 +8,10 @@ Repair STS2 overlay visibility in native macOS full screen using Electron's docu
 
 ## Action items
 - [x] Map Desktop-Launcher, Harness-Architecture, Main-Account-Migration and Verification docs; inspect patching, login/UI update selection, native launcher building and matching tests. Live diagnosis confirms combat data and rendered Attacks content; the owner sees the U tab after exiting native full screen. Electron v37.10.3 documents the panel type for full-screen apps.
-- [ ] Checkpoint this resolved plan before implementation on the current feature branch.
-- [ ] Add a failing regression for the real window-construction patch, proving STS2/Darwin panel behavior and unchanged other platform/franchise options; retain click-through, show/hide and positive account gates.
-- [ ] Implement the guarded patch for fresh preparations and a separately signed full-screen update layered above the retained login/UI companion; validate source binding, policy/helper pins, signatures, idempotence, tampering, interrupted preparation and rollback.
-- [ ] Route native-launcher selection through the complete update, run targeted and full tests plus repository/whitespace checks, and update Desktop-Launcher, Harness-Architecture and Verification docs with behavior and live-test limits.
+- [x] Checkpoint this resolved plan before implementation on the current feature branch (`fc0242c`).
+- [x] Add a failing regression for the real window-construction patch, proving STS2/Darwin panel behavior and unchanged other platform/franchise options; retain click-through, show/hide and positive account gates. The native-option test failed without panel and passes after the scoped option patch; real pinned CORE anchor application also verifies.
+- [x] Implement the guarded patch for fresh preparations and a separately signed full-screen update layered above the retained login/UI companion; validate source binding, policy/helper pins, signatures, idempotence, tampering, interrupted preparation and rollback.
+- [x] Route native-launcher selection through the complete update, run targeted and full tests plus repository/whitespace checks, and update Desktop-Launcher, Harness-Architecture and Verification docs with behavior and live-test limits. All 353 tests pass; native build and live verification remain below.
 - [ ] Prepare/verify the immutable companion and signed launcher build, preserve previous selections/bundles, and replace the launcher only after normal owner closure and Steam Cloud synchronization.
 - [ ] Verify installed runtime parity and native signatures; test native full-screen/windowed visibility with the owner, then save/push the completed branch and report remaining limits.
 

@@ -332,7 +332,7 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
     if (activation.get("schema") != 1 or activation.get("copied_apps_signed") is not True
             or activation.get("proposal_sha256") != sha256((root / "main-proposal.json").read_bytes())):
         _fail("ACTIVATION_REQUIRED")
-    from .login_update import selected_session
+    from .fullscreen_update import selected_session
     companion_session = selected_session(root)
     game_debug.verify(root / "game")
     cli._validate_launch_copy(companion_session)

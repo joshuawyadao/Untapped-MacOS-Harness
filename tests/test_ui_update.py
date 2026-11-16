@@ -262,9 +262,24 @@ class UiUpdateTests(unittest.TestCase):
         self.addCleanup(fixture.doCleanups)
         _, _, _, _, run = fixture.patches()
         selected = fixture.root / 'companion-ui'
+        selected.mkdir(mode=0o700)
+        self.write(selected / 'manifest.json', {'patched_asar_sha256': 'synthetic-ui'})
         with patch.object(ui_update, 'selected_session', return_value=selected):
             fixture.start()
         self.assertEqual(run.call_args.args[0], selected)
+
+    def test_main_launch_uses_selected_fullscreen_update(self):
+        from test_main_launcher import MainLauncherTests
+        from harness import fullscreen_update
+        fixture = MainLauncherTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        _, _, _, _, run = fixture.patches()
+        selected = fixture.root / 'companion-fullscreen-v1'
+        with patch.object(fullscreen_update, 'selected_session', return_value=selected) as selector:
+            fixture.start()
+        self.assertEqual(run.call_args.args[0], selected)
+        self.assertEqual(selector.call_count, 2)
 
 
 if __name__ == '__main__':

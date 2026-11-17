@@ -24,6 +24,8 @@ A filesystem lock prevents two desktop workers from running concurrently. Launch
 
 If Steam updates the game, the launcher may stop with “The installed game changed.” The [reviewed game-version update](Game-Version-Updates.md) adds a separately pinned v0.111.1 copy while retaining the original activation and Steam progress; rebuild the launcher after that update is verified. A rebuild alone cannot approve an unknown source build.
 
+The updated launcher is installed at the same user Applications/Dock path. November 17 live verification confirms starting-choice and reward tier badges plus a matched combat Attacks panel on v0.111.1 with the existing Steam/profile binding. The original copied game, previous launcher and verified pre-update progress backup are retained; the normal owner-controlled Steam/Cloud startup and quit workflow still applies.
+
 From the refinement checkout, on the prepared macOS account:
 
 ```sh

@@ -76,6 +76,8 @@ The experiment isolates a native access prerequisite, not the proprietary reader
 
 ## Separate debug-game copy trust boundary
 
+The [reviewed game-version update](Game-Version-Updates.md) extends this boundary with an explicit immutable v0.111.1 build record while retaining legacy defaults. `game_update.py` publishes a separate fixed game directory and lineage-bound selection receipt under the desktop lock. The main launcher and builder select that game and retain exact source/copy rechecks; the original account binding, activation, game and companion are not overwritten.
+
 `game_debug.py` adds copy/proposal/explicit-sign/verify/install operations for one separately reviewed game experiment. The full original tree SHA-256 `4892eb6c03ae851fde4f075c5ca75d9db827b84b2c651bcc9b5e62cd41add85e` covers file bytes, file modes, symlink text and directory entries; assembly/version pins alone are insufficient for this path. Both original architectures must have exactly the four inspected game entitlements and ad-hoc Hardened Runtime. Preparation copies without signing, rechecks source/copy equality and writes `debug-game.json`. The proposed plist adds only get-task-allow.
 
 `sign` refuses before any signing call unless explicitly approved. It regenerates/verifies the proposal, signs only the outer app (no recursive signing), verifies signatures and both exact five-entitlement sets, then compares every entry with the baseline. Changes may affect only the executable and CodeResources hashes, with file modes preserved. A private `debug-game-signing.json` records exact signed files and scope; failures never create a success receipt. Verification rechecks the immutable source-tree pin, baseline/receipt agreement, entire signed tree and code-signing settings.

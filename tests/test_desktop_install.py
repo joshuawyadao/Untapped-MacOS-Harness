@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from harness import desktop_install
+from harness import desktop_install, game_update
 from harness.asar import HarnessError
 
 
@@ -43,15 +43,28 @@ class DesktopInstallTests(unittest.TestCase):
         self.destination = self.root / 'Applications' / desktop_install.NAME
         self.destination.parent.mkdir()
 
-    def build(self, run):
+    def build(self, run, *, selected_game=None):
         with patch.object(desktop_install, 'REPO', self.repo), \
              patch.object(desktop_install.main_launcher, '_prepared',
                           return_value=(self.game.parents[2], None, None)), \
              patch.object(desktop_install.fullscreen_update, 'selected_session') as selected, \
+             patch.object(game_update, 'verify_selected_game',
+                          return_value=(selected_game or self.game.parents[1], None)) as game_selection, \
              patch.object(desktop_install.subprocess, 'run', side_effect=run) as commands:
             result = desktop_install.build(self.destination)
         selected.assert_called_once_with(self.game.parents[2])
+        game_selection.assert_called_once_with(self.game.parents[2])
         return result, commands
+
+    def test_build_uses_icon_from_selected_reviewed_game_copy(self):
+        session = self.game.parents[2] / 'game-v0.111.1'
+        contents = session / 'SlayTheSpire2.app/Contents'
+        (contents / 'Resources').mkdir(parents=True)
+        (contents / 'Info.plist').write_bytes(plistlib.dumps({'CFBundleIconFile': 'NewGame'}))
+        (contents / 'Resources/NewGame.icns').write_bytes(b'new reviewed game icon')
+        self.build(self.fake_commands, selected_game=session)
+        self.assertEqual((self.destination / 'Contents/Resources/Launcher.icns').read_bytes(),
+                         b'new reviewed game icon')
 
     @staticmethod
     def fake_commands(command, **kwargs):

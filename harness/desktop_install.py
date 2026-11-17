@@ -24,6 +24,8 @@ def build(destination):
         raise HarnessError('Launcher destination already exists; preserve the installed app')
     if not destination.parent.is_dir() or destination.parent.resolve() != destination.parent:
         raise HarnessError('Launcher destination parent must be a real directory')
+    from .game_update import verify_selected_game
+    selected_game, _ = verify_selected_game(root)
     stage = Path(tempfile.mkdtemp(prefix='desktop-build-', dir=destination.parent))
     app = stage / NAME
     contents = app / 'Contents'
@@ -51,7 +53,7 @@ def build(destination):
             'CFBundleShortVersionString': '1.0', 'CFBundleVersion': '1',
             'NSHighResolutionCapable': True, 'LSMinimumSystemVersion': '13.0'}
     # Reuse the owner's local game icon, without checking vendor artwork into Git.
-    game = root / 'game/SlayTheSpire2.app/Contents'
+    game = selected_game / 'SlayTheSpire2.app/Contents'
     game_info = plistlib.loads((game / 'Info.plist').read_bytes())
     icon = game_info.get('CFBundleIconFile')
     if isinstance(icon, str) and Path(icon).name == icon:

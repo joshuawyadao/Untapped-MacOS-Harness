@@ -130,13 +130,14 @@ def _progress(data_root, selected_profile=None):
     return steam_id, selected_profile
 
 
-def _source(home):
+def _source(home, *, build=None):
     source = home / main_account.GAME_RELATIVE
     try:
-        files = game_launch.verified_app(source)
+        files = (game_launch.verified_app(source) if build is None
+                 else game_launch.verified_app(source, build=build))
     except (HarnessError, OSError):
         _fail("SOURCE_CHANGED")
-    if game_debug._tree_hash(files) != game_debug.ORIGINAL_TREE_SHA256:
+    if game_debug._tree_hash(files) != (game_debug.ORIGINAL_TREE_SHA256 if build is None else build.tree_sha256):
         _fail("SOURCE_CHANGED")
     return source
 
@@ -193,14 +194,25 @@ def prepare(companion_app, *, selected_profile=None):
     return review
 
 
-def _prepared():
-    uid, home = account()
-    root = _private(home / WORKSPACE_RELATIVE)
+def _binding(root, uid, home):
+    """Validate retained account binding without accepting a changed source build."""
     binding = _read(root / "main-launch.json")
     if (binding.get("schema") != 1 or binding.get("uid") != uid or binding.get("home") != str(home)
             or binding.get("source_tree_sha256") != game_debug.ORIGINAL_TREE_SHA256):
         _fail("PREPARATION_INVALID")
-    _source(home)
+    return binding
+
+
+def _prepared():
+    uid, home = account()
+    root = _private(home / WORKSPACE_RELATIVE)
+    binding = _binding(root, uid, home)
+    from .game_update import selected_game
+    _, build = selected_game(root)
+    if build is None:
+        _source(home)
+    else:
+        _source(home, build=build)
     steam_id, profile = _progress(home / main_account.DATA_RELATIVE, binding.get("profile"))
     if steam_id != binding.get("steam_id") or profile != binding.get("profile"):
         _fail("PREPARATION_INVALID")
@@ -334,7 +346,8 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
         _fail("ACTIVATION_REQUIRED")
     from .fullscreen_update import selected_session
     companion_session = selected_session(root)
-    game_debug.verify(root / "game")
+    from .game_update import verify_selected_game
+    game_session, game_build = verify_selected_game(root)
     cli._validate_launch_copy(companion_session)
     _closed()
     if confirm_steam is None:
@@ -352,8 +365,12 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
     stop_before_launch()
     _steam_ready()
     # Opening Steam can update the installed build while the owner confirms it.
-    _source(home)
-    game_debug.verify(root / "game")
+    if game_build is None:
+        _source(home)
+    else:
+        _source(home, build=game_build)
+    if verify_selected_game(root) != (game_session, game_build):
+        _fail("PREPARATION_INVALID")
     if selected_session(root) != companion_session:
         _fail("PREPARATION_INVALID")
     cli._validate_launch_copy(companion_session)
@@ -365,7 +382,7 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
     (attempt / "temp").mkdir(mode=0o700)
     (attempt / "steam_appid.txt").write_text(APP_ID + "\n")
     (attempt / "steam_appid.txt").chmod(0o600)
-    executable = root / "game" / game_debug.APP / game_launch.EXECUTABLE
+    executable = game_session / game_debug.APP / game_launch.EXECUTABLE
     command = [str(executable), "--force-steam=on", "--nomods", "--windowed"]
     environment = {"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "en_US.UTF-8",
                    "HOME": str(home), "TMPDIR": str(attempt / "temp"),
@@ -377,7 +394,12 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
         log = attempt / "game.log"
         with log.open("xb") as output:
             os.chmod(log, 0o600)
-            _source(home)
+            if game_build is None:
+                _source(home)
+            else:
+                _source(home, build=game_build)
+            if verify_selected_game(root) != (game_session, game_build):
+                _fail("PREPARATION_INVALID")
             stop_before_launch()
             process = subprocess.Popen(command, cwd=attempt, env=environment, stdout=output,
                                        stderr=subprocess.STDOUT, start_new_session=True)

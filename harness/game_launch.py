@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 
 from .asar import HarnessError
+from . import game_builds
 from .cli import ROOT, stop_probe
 
 VERSION = "v0.107.1"
@@ -82,7 +83,9 @@ def tree_manifest(app):
     return found
 
 
-def verified_app(app):
+def verified_app(app, *, build=None):
+    if build is not None:
+        build = game_builds.reviewed(build)
     app = Path(app).absolute()
     if not app.is_dir() or app.is_symlink() or app.resolve() != app:
         raise HarnessError("Game app must be a real directory")
@@ -91,7 +94,10 @@ def verified_app(app):
         if path.is_symlink() or not path.is_file() or not path.resolve(strict=True).is_relative_to(app):
             raise HarnessError("Game critical file escapes the app")
     release = json.loads((app / "Contents/Resources/release_info.json").read_text())
-    if release.get("version") != VERSION or release.get("commit") != COMMIT or digest(app / ASSEMBLY) != ASSEMBLY_HASH:
+    version = build.version if build is not None else VERSION
+    commit = build.commit if build is not None else COMMIT
+    assembly_hash = build.assembly_sha256 if build is not None else ASSEMBLY_HASH
+    if release.get("version") != version or release.get("commit") != commit or digest(app / ASSEMBLY) != assembly_hash:
         raise HarnessError("Unsupported game build")
     result = subprocess.run(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
                             capture_output=True, text=True)

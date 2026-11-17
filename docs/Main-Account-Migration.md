@@ -1,5 +1,7 @@
 # Main-account and Steam progress migration
 
+For the additive v0.111.1 migration of this existing activated workspace, see [reviewed game-version updates](Game-Version-Updates.md). The old copied game and activation records remain intact; a separately verified selection binds the new copy to the same account/profile. Progress backup and owner-controlled Steam/Cloud confirmations remain part of each normal launch.
+
 The owner wants existing normal macOS and Steam progress. The main-account launcher is implemented, and the owner-approved copied-app signing and activation are verified. The first live Steam/progress run is pending. Fresh test progress is a development fixture, not the permanent setup.
 
 ## Verified starting point

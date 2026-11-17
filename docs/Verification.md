@@ -1,5 +1,13 @@
 # Verification and reward milestone
 
+## v0.111.1 compatibility update — November 16, 2026
+
+The installed launcher was verified against main with all 39 runtime sources identical, native/helper hashes matching its installation record and valid signatures. Startup nevertheless reproduced `SOURCE_CHANGED` immediately: Steam's signed source is now v0.111.1/cc1f9462 while the retained game/binding pin is v0.107.1/59260271. Critical files are present. The new managed assembly and complete 444-entry tree pins are recorded in [reviewed game-version updates](Game-Version-Updates.md); both architectures retain the original four entitlements, ad-hoc signing and Hardened Runtime.
+
+Plan checkpoint `17d5347` precedes implementation. Explicit reviewed-build validation passes against the actual new source. Synthetic coverage preserves legacy receipts, rejects unreviewed/mixed build pins and payload/signature/entitlement changes, validates retained record lineage and fixed-path publication, refuses account/profile mismatch before preparation, exercises real prepared-state selection, and checks the new executable target plus selection-change refusal before spawn. Independent read-only review found no blocking migration defect. A failure between directory and receipt publication remains an explicit fail-closed recovery state.
+
+Read-only static inspection finds all 65 explicit managed game classes used by the existing Untapped reader in both versions. Its combat wrapper already supports the new turn-state path; both games have identical .NET runtime and Godot managed bridge binaries. The custom native engine revision changed, so attachment, native geometry and visible overlay compatibility remain live checks. Full-suite results, signed copy/launcher installation and live observations are recorded below as each completes.
+
 For the November 10, 2026 starting-relic check, see [Starting-relic badge investigation](Starting-Relic-Diagnosis.md). The owner confirmed three visible named-tier badges (“Inconsistent”) after native IDs, tier coverage and actual DOM rectangles were verified. No rendering patch was required for that observation.
 
 This record distinguishes static inspection, startup, game detection, reader attachment, state reading, and overlay display. Each requires separate evidence. The pinned user-supplied companion was `3.12.3-latest` with `app.asar` SHA-256 `ca3a2e6a6f728b2d635abfc70a5434d4107438b8d801a650357989e8442d798c`.

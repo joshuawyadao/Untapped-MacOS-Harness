@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 from . import game_launch as game
+from . import game_builds
 from .asar import HarnessError, sha256
 
 # Complete original tree (file bytes/modes and symlink text), verified locally.
@@ -73,15 +74,21 @@ def _settings(app, expected):
             raise HarnessError("Game must retain ad-hoc signing and Hardened Runtime")
 
 
-def _baseline(session):
+def _baseline(session, *, build=None):
+    if build is not None:
+        build = game_builds.reviewed(build)
+    version = build.version if build is not None else game.VERSION
+    commit = build.commit if build is not None else game.COMMIT
+    tree_hash = build.tree_sha256 if build is not None else ORIGINAL_TREE_SHA256
+    assembly_hash = build.assembly_sha256 if build is not None else game.ASSEMBLY_HASH
     manifest = _json(session, BASE)
     if (manifest.get("schema") != 1 or manifest.get("scope") != SCOPE
-            or manifest.get("game_version") != game.VERSION or manifest.get("commit") != game.COMMIT
+            or manifest.get("game_version") != version or manifest.get("commit") != commit
             or manifest.get("original_entitlements") != ENTITLEMENTS
             or not isinstance(manifest.get("source_files"), dict)
-            or manifest.get("source_tree_sha256") != ORIGINAL_TREE_SHA256
+            or manifest.get("source_tree_sha256") != tree_hash
             or manifest.get("source_tree_sha256") != _tree_hash(manifest["source_files"])
-            or manifest["source_files"].get(game.ASSEMBLY, {}).get("sha256") != game.ASSEMBLY_HASH):
+            or manifest["source_files"].get(game.ASSEMBLY, {}).get("sha256") != assembly_hash):
         raise HarnessError("Game baseline is not the pinned original build")
     source = Path(manifest["source_app"])
     app = session / APP
@@ -94,7 +101,13 @@ def _tree_hash(files):
     return sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode())
 
 
-def prepare(source, session):
+def _verified_app(app, build):
+    return game.verified_app(app) if build is None else game.verified_app(app, build=build)
+
+
+def prepare(source, session, *, build=None):
+    if build is not None:
+        build = game_builds.reviewed(build)
     source = Path(source).absolute()
     session = Path(session).absolute()
     if (platform.system() != "Darwin" or os.getuid() == 0 or os.getuid() != os.geteuid()
@@ -102,28 +115,30 @@ def prepare(source, session):
             or session.is_relative_to(game.ROOT) or session.is_relative_to(source)
             or source.is_relative_to(session)):
         raise HarnessError("Use a fresh separate disposable game session outside the repository")
-    files = game.verified_app(source)
-    if _tree_hash(files) != ORIGINAL_TREE_SHA256:
+    files = _verified_app(source, build)
+    if _tree_hash(files) != (build.tree_sha256 if build is not None else ORIGINAL_TREE_SHA256):
         raise HarnessError("Original game tree differs from the complete pinned source")
     _settings(source, ENTITLEMENTS)
     session.mkdir(mode=0o700)
     shutil.copytree(source, session / APP, symlinks=True)
-    if game.verified_app(session / APP) != files or game.tree_manifest(source) != files:
+    if _verified_app(session / APP, build) != files or game.tree_manifest(source) != files:
         raise HarnessError("New game copy or source changed during preparation")
-    manifest = {"schema": 1, "scope": SCOPE, "game_version": game.VERSION, "commit": game.COMMIT,
+    manifest = {"schema": 1, "scope": SCOPE,
+                "game_version": build.version if build is not None else game.VERSION,
+                "commit": build.commit if build is not None else game.COMMIT,
                 "source_app": str(source), "source_files": files,
                 "source_tree_sha256": _tree_hash(files), "original_entitlements": ENTITLEMENTS}
     game.write_json(session / BASE, manifest)
-    return proposal(session)
+    return proposal(session) if build is None else proposal(session, build=build)
 
 
-def proposal(session):
+def proposal(session, *, build=None):
     session = _root(session)
     if (session / RECEIPT).exists() or (session / RECEIPT).is_symlink() or (session / "manifest.json").exists() or (session / "manifest.json").is_symlink():
         raise HarnessError("Proposal requires an unsigned, uninstalled new game copy")
-    manifest = _baseline(session)
+    manifest = _baseline(session) if build is None else _baseline(session, build=build)
     app = session / APP
-    if game.verified_app(app) != manifest["source_files"]:
+    if _verified_app(app, build) != manifest["source_files"]:
         raise HarnessError("Unsigned game copy differs from its original baseline")
     _settings(app, ENTITLEMENTS)
     path = session / "debug-game-entitlements.plist"
@@ -157,14 +172,14 @@ def _allowed_changes(original, signed):
     return sorted(changed)
 
 
-def sign(session, *, approved=False):
+def sign(session, *, approved=False, build=None):
     if not approved:
         raise HarnessError("Explicit owner approval required for this game-copy signing")
-    proposed = proposal(session)
+    proposed = proposal(session) if build is None else proposal(session, build=build)
     session = _root(session)
-    manifest = _baseline(session)
+    manifest = _baseline(session) if build is None else _baseline(session, build=build)
     _command(proposed["command"])
-    files = game.verified_app(session / APP)
+    files = _verified_app(session / APP, build)
     _settings(session / APP, DEBUG_ENTITLEMENTS)
     changed = _allowed_changes(manifest["source_files"], files)
     receipt = {"schema": 1, "scope": SCOPE, "source_tree_sha256": manifest["source_tree_sha256"],
@@ -176,9 +191,9 @@ def sign(session, *, approved=False):
     return receipt
 
 
-def verify(session):
+def verify(session, *, build=None):
     session = _root(session)
-    manifest = _baseline(session)
+    manifest = _baseline(session) if build is None else _baseline(session, build=build)
     receipt = _json(session, RECEIPT)
     if (receipt.get("schema") != 1 or receipt.get("scope") != SCOPE
             or receipt.get("source_tree_sha256") != manifest["source_tree_sha256"]
@@ -189,7 +204,7 @@ def verify(session):
     changed = _allowed_changes(manifest["source_files"], receipt["signed_files"])
     if receipt.get("changed_files") != changed:
         raise HarnessError("Debug-game changed-file receipt is invalid")
-    if game.verified_app(session / APP) != receipt["signed_files"]:
+    if _verified_app(session / APP, build) != receipt["signed_files"]:
         raise HarnessError("Signed debug game changed after receipt")
     _settings(session / APP, DEBUG_ENTITLEMENTS)
     return receipt["signed_files"]

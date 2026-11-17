@@ -22,6 +22,8 @@ A filesystem lock prevents two desktop workers from running concurrently. Launch
 
 ## Build and installation
 
+If Steam updates the game, the launcher may stop with “The installed game changed.” The [reviewed game-version update](Game-Version-Updates.md) adds a separately pinned v0.111.1 copy while retaining the original activation and Steam progress; rebuild the launcher after that update is verified. A rebuild alone cannot approve an unknown source build.
+
 From the refinement checkout, on the prepared macOS account:
 
 ```sh

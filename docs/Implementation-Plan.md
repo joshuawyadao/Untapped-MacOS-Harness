@@ -1,25 +1,21 @@
 # Plan
 
-Bring the CI feature branch onto current main while preserving its portable/native enforcement, validate the current launcher sources, and prepare a reviewed merge-ready PR.
+Support the measured Slay the Spire 2 v0.111.1 build through an immutable verified game-copy update, check the genuine Untapped reader, and install a signed launcher while retaining existing Steam progress and rollback artifacts.
 
 ## Scope
-- In: Merge current main into codex/ci-test-baseline-2026-11-16 without rewriting published history; preserve Ubuntu tests, isolated macOS compilation/signatures/native seam tests, and the unconditional CI Verify aggregate; maintain focused regression tests and CI documentation.
-- Out: Product behavior changes, rebuilding installed apps, game/Steam/Keychain operations, repository-rule changes, unrelated CI infrastructure, and merging the resulting PR.
+- In: New feature branch; exact v0.111.1/cc1f9462 assembly and full-tree pins; explicit build-aware game verification/signing; a separately published main-account game-copy layer; current game/account/progress/companion gates; synthetic regressions; signed launcher staging and guarded replacement; read-only and owner-controlled live compatibility checks.
+- Out: Modifying Steam's installed game or saves, restoring progress, changing Steam Cloud settings, weakening version/signature/identity/account checks, expanding companion network access, fabricated ratings, proprietary code redistribution, or merging a PR.
 
 ## Action items
-- [x] Inspect the three unique CI commits, current main/PR4 contents, workflow, scripts, native seam tests and Desktop-Launcher docs; verify GitHub's always/needs behavior against official documentation. The branch's older remembered-login snapshot must not undo newer supervision or full-screen changes.
-- [x] Commit this resolved plan as a local checkpoint before merging or implementing (`90fd34f`).
-- [x] Merge origin/main (`779c5a8`), preserve the current task plan and CI documentation, and prove harness/launcher sources match main byte-for-byte. Conflicted product files and prior tests use the reviewed main versions.
-- [x] Assess aggregate-job failure/skip/cancel/missing-result coverage and native-build isolation; extend result cases to unset/empty/unknown values and scope required-gate/native assertions to their own jobs. No production defect was found.
-- [x] Run targeted CI regressions, all 355 tests, isolated native compile/signature checks, YAML/shell/repository/whitespace checks, and update Desktop-Launcher/Verification CI evidence without changing installed applications.
-- [ ] Save/push the updated feature branch and open a draft PR scoped to its CI changes.
-- [ ] Run Brooks and Codex reviews, handle actionable feedback, and verify actual portable/macOS/aggregate jobs pass on the final head with the existing required CI Verify context and no merge conflicts.
-- [ ] Mark the PR ready, make a final fresh gate check, and leave it unmerged with a concise review/validation ledger and documented limits.
+- [x] Inspect Desktop-Launcher, Main-Account-Migration, Harness-Architecture, Verification and current launch/debug-copy tests. Reproduce SOURCE_CHANGED: installed v0.111.1/cc1f9462 differs from legacy v0.107.1/59260271. Measure new assembly/tree hashes and both original four-entitlement/ad-hoc/Hardened Runtime contracts.
+- [ ] Commit this resolved plan before implementation on codex/sts2-v0.111.1-compatibility.
+- [ ] Add explicit reviewed-build verification/signing while retaining legacy defaults and receipts; test wrong version, assembly/tree mutation, metadata/signature/entitlement failures and signed-copy restrictions.
+- [ ] Add an immutable main-account game update with fixed paths, old-binding lineage, last-step receipt publication and exclusive session lock. Retain the original game/proposal/activation, companion selection, login and preferences; verify incomplete/tampered/idempotent states.
+- [ ] Route prepared validation and all pre-launch source/copy rechecks through the selected build, preserving backup-before-Steam, current account/profile checks and immediate mismatch stops. Cover actual launch selection and selection changes during startup.
+- [ ] Inspect Untapped's native reader and new managed data contracts without touching credentials; run focused/full synthetic tests and native compilation/signatures. Update architecture, migration, launcher and verification docs with exact evidence and limits.
+- [ ] Prepare/sign/verify the authorized separate game copy and build a signed launcher snapshot. Replace the installed launcher under the session lock only after verifying no active game/Steam/worker and preserve its rollback bundle.
+- [ ] Verify installed runtime/native hashes and owner-visible controls; use the owner's normal Steam/account confirmations to observe reader connection, matching Steam profile, real state and visible overlay on v0.111.1. Never equate synthetic/static checks with live compatibility.
+- [ ] Record completed validation, installed artifacts and any concrete compatibility blocker; commit checkpoints and push the feature branch using save-branch. Leave unrelated artifacts and private/vendor payloads outside Git.
 
 ## Open questions
-- None. The user explicitly requests updating the named branch and preparing its PR; use a normal merge to preserve shared branch history and existing main protections.
-
-## Validation and review handoff
-- Local validation covers merge checkpoint `779c5a8`; subsequent changes are documentation only. Synthetic mutations confirm the workflow test rejects a renamed required job, a misplaced aggregate condition and an Ubuntu native runner.
-- Brooks PR review inspected all six files at that checkpoint and found no actionable concern. The added verification record does not change executable behavior.
-- Publishing, exact-head Codex review and hosted portable/native/aggregate results remain PR gates. Track their live completion in the PR description and review ledger; this implementation checkpoint does not claim those later results.
+- None. The user explicitly requests the new build, copied-game/launcher update, compatibility testing and preservation of existing Steam progress. Existing account/Cloud confirmations remain owner-controlled operational steps when the updated launcher starts.

@@ -77,9 +77,11 @@ Reports contain only fixed check/category names and bounded numeric errno/return
 The November 16 diagnostic build is installed at the original Applications path with a rollback bundle retained. Native signatures, the helper pin and all 37 runtime files verified. The opened idle launcher retains Remember enabled. Start normally for the next test; if Untapped closes, keep the launcher error visible and report the triggering activity so the new check/category and cleanup records can be inspected.
 
 
-### Bounded process-inventory timeout recovery
+### Live process inventory and timeout recovery
 
-A slow system process-list query can trigger the live game guard's two-second command timeout. The launcher now permits three total attempts for consecutive `subprocess.TimeoutExpired` failures identified specifically as `GAME_PROCESS_INVENTORY`, with 250 ms between attempts. It requires a fresh successful game identity check to continue. Three consecutive timeouts still stop the companion and retain a fatal timeout diagnostic. A successful check resets the consecutive budget.
+During play, the launcher reuses one unprivileged macOS worker and requests a fresh process snapshot on each guard pass. The guard still checks ownership, the verified game path and PID, the process group, and conflicting Steam or game processes. Pre-launch checks use the system process inventory as before. A foreign executable path that cannot be resolved while its process is still present triggers a legacy scan within the same attempt. See the [architecture notes](Harness-Architecture.md#bounded-live-inventory-retries) for the process metadata used and the [benchmark](Verification.md#live-process-inventory-cpu-benchmark) for measured CPU use.
+
+Each live inventory attempt has a two-second timeout. The launcher permits three total attempts for consecutive `subprocess.TimeoutExpired` failures identified specifically as `GAME_PROCESS_INVENTORY`, with 250 ms between attempts. A timeout reaps the worker so the next attempt starts fresh. Three consecutive timeouts stop the companion and retain a fatal timeout diagnostic. A successful check resets the consecutive budget.
 
 During retry backoff the supervisor checks account mismatch, game exit/crash, companion exit, owner cancellation and any finite session deadline, polling the delay at most 50 ms at a time. A confirmed mismatch stops immediately when detected and receives no retry; non-timeout inventory errors and timeouts from other checks retain their existing outcomes. The game is never signalled. Individual process creation/scheduling overhead can add to the nominal three command timeouts plus two delays; the attempt count stays fixed.
 

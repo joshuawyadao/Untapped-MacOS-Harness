@@ -227,6 +227,7 @@ class GameUpdateTests(unittest.TestCase):
                  patch.object(launcher, "_closed"), \
                  patch.object(launcher, "_steam_ready"), \
                  patch.object(launcher.cli, "_validate_launch_copy"), \
+                 patch.object(launcher.live_inventory, "prepare", return_value=contextlib.nullcontext(None)), \
                  patch.object(launcher.subprocess, "Popen", return_value=process) as popen, \
                  patch.object(launcher, "_wait_for_steam", return_value=2468), \
                  patch.object(main_companion, "run", return_value={"synthetic": True}), \

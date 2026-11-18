@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from harness import main_companion as companion, main_launcher as launcher
 from harness.asar import HarnessError
@@ -45,7 +45,9 @@ class InventoryRetryTests(unittest.TestCase):
         case.setUp()
         try:
             _, game, _, _, call = case.patches()
-            with contextlib.redirect_stdout(io.StringIO()):
+            called = Mock()
+            with patch.object(launcher.live_inventory, 'prepare', return_value=contextlib.nullcontext(called)), \
+                 contextlib.redirect_stdout(io.StringIO()):
                 launcher.start(approved=True, cloud_confirmed=True, account_confirmed=True,
                     confirm_steam=lambda: None, seconds=None, should_stop=owner)
             arguments = call.call_args.kwargs
@@ -70,8 +72,8 @@ class InventoryRetryTests(unittest.TestCase):
             extra = {}
             if 'retry_should_stop' in arguments:
                 extra['retry_should_stop'] = arguments['retry_should_stop']
-            with patch.object(launcher, '_inventory', side_effect=inventory) as called, \
-                 patch.object(launcher.os, 'getpgid', return_value=game.pid), \
+            called.side_effect = inventory
+            with patch.object(launcher.os, 'getpgid', return_value=game.pid), \
                  patch.object(companion, '_events', side_effect=events,
                               return_value=set()):
                 error = None

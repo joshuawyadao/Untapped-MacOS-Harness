@@ -49,6 +49,7 @@ class MainLauncherTests(unittest.TestCase):
         stack.enter_context(patch.object(progress_backup, "assert_source_unchanged", side_effect=unchanged))
         process = Mock(pid=2468)
         process.poll.return_value = None
+        stack.enter_context(patch.object(launcher.live_inventory, "prepare", return_value=contextlib.nullcontext(None)))
         popen = stack.enter_context(patch.object(launcher.subprocess, "Popen", side_effect=lambda *a, **kw: order.append("launch") or process))
         waiter = stack.enter_context(patch.object(launcher, "_wait_for_steam",
                         side_effect=launcher.LauncherError("STEAM_STARTUP_FAILED") if startup_failed else None,
@@ -217,6 +218,33 @@ class MainLauncherTests(unittest.TestCase):
             self.assertEqual(launcher._target(expected, 5), 5)
             with self.assertRaises(launcher.LauncherError):
                 launcher._target(expected, 9)
+
+    def test_live_session_uses_native_inventory_and_validates_every_candidate(self):
+        _, process, _, _, companion = self.patches()
+        inventory = Mock()
+        with patch.object(launcher.live_inventory, "prepare", return_value=contextlib.nullcontext(inventory)), \
+             contextlib.redirect_stdout(io.StringIO()):
+            self.start()
+        args = companion.call_args.kwargs
+        game = (process.pid, os.getuid(), str(args['target_game']), False)
+        foreign_steam = (7, os.getuid() + 1, "/Steam.app/Contents/MacOS/steam_osx", True)
+        foreign_game = (8, os.getuid() + 1, game[2], False)
+        other_copy = (9, os.getuid(), "/different/Slay the Spire 2", False)
+        duplicate = (10, *game[1:])
+
+        with patch.object(launcher, "_inventory") as legacy, \
+             patch.object(launcher.os, "getpgid", return_value=process.pid) as group:
+            inventory.return_value = [game]
+            self.assertIsNone(args['should_stop']())
+            group.assert_called_once_with(process.pid)
+            for extra in (foreign_steam, foreign_game, other_copy, duplicate):
+                with self.subTest(candidate=extra[0]):
+                    inventory.return_value = [game, extra]
+                    self.assertEqual(args['should_stop'](), "TARGET_CONFLICT")
+            group.return_value = process.pid + 1
+            inventory.return_value = [game]
+            self.assertEqual(args['should_stop'](), "TARGET_CONFLICT")
+            legacy.assert_not_called()
 
     def test_cli_errors_are_fixed_and_do_not_expose_private_exceptions(self):
         output = io.StringIO()

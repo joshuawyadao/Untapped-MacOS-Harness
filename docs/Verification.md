@@ -1,5 +1,24 @@
 # Verification and reward milestone
 
+## Live process inventory CPU benchmark
+
+Run on macOS as the normal user with Xcode command-line tools available.
+
+```sh
+python3 -B -m scripts.benchmark_live_inventory --scans 20 --interval 0.5
+```
+
+The benchmark uses the actual legacy and native inventory paths on the same process table. It runs 20 scans per block with a half-second wait after each scan, in legacy, native, native, legacy order. CPU time includes Python and reaped helper processes. It excludes helper compilation and includes worker startup and cleanup. A separate macOS test compares native and legacy candidate rows for inert game and Steam command aliases. Launcher tests exercise the live route, conflicting identities, and timeout recovery and exhaustion.
+
+On Apple silicon running macOS 27.0.1, 40 scans per implementation produced these results after the build and tests finished.
+
+| Inventory | Mean CPU per scan | Median elapsed per scan | CPU at measured cadence |
+| --- | ---: | ---: | ---: |
+| Legacy `/bin/ps` | 70.97 ms | 73.75 ms | 12.21% of one core |
+| Native worker | 15.97 ms | 17.56 ms | 3.00% of one core |
+
+The native worker used 77.5% less CPU per scan with zero legacy fallbacks. This measures inventory cost on the local process table. In-game frame times and whole-session CPU usage remain unmeasured for this build. All 374 local tests and the native launcher compile and signature checks passed.
+
 ## v0.111.1 compatibility update — November 16, 2026
 
 The installed launcher was verified against main with all 39 runtime sources identical, native/helper hashes matching its installation record and valid signatures. Startup nevertheless reproduced `SOURCE_CHANGED` immediately: Steam's signed source is now v0.111.1/cc1f9462 while the retained game/binding pin is v0.107.1/59260271. Critical files are present. The new managed assembly and complete 444-entry tree pins are recorded in [reviewed game-version updates](Game-Version-Updates.md); both architectures retain the original four entitlements, ad-hoc signing and Hardened Runtime.

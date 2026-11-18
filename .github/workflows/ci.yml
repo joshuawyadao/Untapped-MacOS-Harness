@@ -50,6 +50,8 @@ jobs:
         run: ./scripts/check_native_ci.sh
       - name: Test native launcher outcome seam
         run: python3 -m unittest discover -s tests -p test_launcher_native.py -v
+      - name: Test native live process inventory
+        run: python3 -m unittest discover -s tests -p test_live_inventory.py -v
   verify:
     name: CI Verify
     if: always()

@@ -39,6 +39,7 @@ class CINativeTests(unittest.TestCase):
         self.assertIn('runs-on: macos-15', native)
         self.assertIn('run: ./scripts/check_native_ci.sh', native)
         self.assertIn('run: python3 -m unittest discover -s tests -p test_launcher_native.py -v', native)
+        self.assertIn('run: python3 -m unittest discover -s tests -p test_live_inventory.py -v', native)
         aggregate = job_config('verify')
         self.assertIn('name: CI Verify', aggregate)
         self.assertIn('needs: [portable, native]', aggregate)

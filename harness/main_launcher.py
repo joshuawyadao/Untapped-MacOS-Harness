@@ -14,7 +14,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from . import cli, controlled, game_debug, game_launch, main_account, reward_probe, signing
+from . import cli, controlled, game_debug, game_launch, live_inventory, main_account, reward_probe, signing
 from .asar import HarnessError, sha256
 
 WORKSPACE_RELATIVE = Path("Library/Application Support/UntappedSTS2Harness")
@@ -264,9 +264,10 @@ def _steam_ready():
         _fail("OPEN_INTENDED_STEAM")
 
 
-def _target(expected, process_group, diagnostics=None):
+def _target(expected, process_group, diagnostics=None, *, inventory=None):
     games = []
-    rows = diagnostics.call("GAME_PROCESS_INVENTORY", _inventory) if diagnostics is not None else _inventory()
+    lookup = _inventory if inventory is None else inventory
+    rows = diagnostics.call("GAME_PROCESS_INVENTORY", lookup) if diagnostics is not None else lookup()
     for pid, uid, command, steam in rows:
         if uid != os.getuid():
             _fail("TARGET_CONFLICT")
@@ -392,7 +393,7 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
     process = None
     try:
         log = attempt / "game.log"
-        with log.open("xb") as output:
+        with log.open("xb") as output, live_inventory.prepare(attempt) as inventory:
             os.chmod(log, 0o600)
             if game_build is None:
                 _source(home)
@@ -410,7 +411,8 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
 
             def stop_reason():
                 try:
-                    current = trace.call("GAME_GUARD", _target, executable, process.pid, diagnostics=trace)
+                    current = trace.call("GAME_GUARD", _target, executable, process.pid,
+                                         diagnostics=trace, inventory=inventory)
                     if current is None:
                         exit_code = trace.call("GAME_PROCESS_POLL", process.poll)
                         if exit_code is None:

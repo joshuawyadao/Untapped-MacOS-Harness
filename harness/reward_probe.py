@@ -70,9 +70,9 @@ def _private_session(session, home):
     return session
 
 
-def _process_inventory():
+def _process_inventory(*, timeout=2):
     return subprocess.run(["/bin/ps", "-axo", "pid=,uid=,comm="],
-                          capture_output=True, text=True, check=True, timeout=2).stdout
+                          capture_output=True, text=True, check=True, timeout=timeout).stdout
 
 
 def run(session, *, debug_game=False):

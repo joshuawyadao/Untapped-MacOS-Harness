@@ -318,7 +318,8 @@ class MainLauncherTests(unittest.TestCase):
                 self.assertEqual(result["companion"]["reason"], reason)
                 self.assertEqual(result["game_left_running"], exit_code is None)
                 with patch.object(launcher.sys.stdin, "isatty", return_value=True), \
-                     patch.object(launcher, "start", return_value=result), contextlib.redirect_stdout(io.StringIO()):
+                     patch.object(launcher, "start", return_value=result), \
+                     contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(launcher.main(["start"]), 0 if exit_code == 0 else 1)
                 process.kill.assert_not_called()
                 process.terminate.assert_not_called()
@@ -328,9 +329,63 @@ class MainLauncherTests(unittest.TestCase):
             "reason": "COMPANION_EXITED", "authenticated": True, "steam_account_verified": True,
             "failure_stage": "NONE", "gateway_cleanup_complete": True,
             "companion_group_cleanup_complete": True}}
+        error = io.StringIO()
         with patch.object(launcher.sys.stdin, "isatty", return_value=True), \
-             patch.object(launcher, "start", return_value=result), contextlib.redirect_stdout(io.StringIO()):
+             patch.object(launcher, "start", return_value=result), \
+             contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(error):
             self.assertEqual(launcher.main(["start"]), 1)
+        self.assertIn("Slay the Spire 2 crashed.", error.getvalue())
+
+    def test_live_game_crash_wins_over_group_disappearance_with_native_inventory(self):
+        _, process, _, _, companion = self.patches()
+        expected = self.root / "game" / launcher.game_debug.APP / launcher.game_launch.EXECUTABLE
+        rows = [(process.pid, os.getuid(), str(expected), False)]
+        inventory = Mock(return_value=rows)
+        with patch.object(launcher.live_inventory, "prepare", return_value=contextlib.nullcontext(inventory)), \
+             patch.object(launcher, "_inventory") as legacy, \
+             patch.object(launcher.os, "getpgid", side_effect=ProcessLookupError), \
+             contextlib.redirect_stdout(io.StringIO()):
+            self.start()
+            stop = companion.call_args.kwargs["should_stop"]
+            self.assertEqual(stop(), "TARGET_CONFLICT")
+            process.poll.return_value = -11
+            self.assertEqual(stop(), "GAME_CRASHED")
+            self.assertEqual(inventory.call_count, 2)
+            legacy.assert_not_called()
+        trace = companion.call_args.kwargs["diagnostics"]
+        self.assertEqual(trace.snapshot()["failure"]["check"], "GAME_PROCESS_GROUP")
+        process.kill.assert_not_called()
+        process.terminate.assert_not_called()
+
+    def test_live_game_crash_wins_when_inventory_returns_another_pid(self):
+        _, process, _, _, companion = self.patches()
+        with patch.object(launcher, "_target", return_value=1357), contextlib.redirect_stdout(io.StringIO()):
+            self.start()
+            stop = companion.call_args.kwargs["should_stop"]
+            self.assertEqual(stop(), "TARGET_CONFLICT")
+            process.poll.return_value = -11
+            self.assertEqual(stop(), "GAME_CRASHED")
+
+    def test_summary_reports_game_crash_confirmed_during_companion_cleanup(self):
+        _, process, _, _, companion = self.patches()
+
+        def finish(*args, **kwargs):
+            reason = kwargs["should_stop"]()
+            self.assertEqual(reason, "TARGET_CONFLICT")
+            process.poll.return_value = -11
+            return {"reason": reason, "failure_stage": "NONE", "gateway_cleanup_complete": True}
+
+        companion.side_effect = finish
+        with patch.object(launcher, "_target", return_value=None), contextlib.redirect_stdout(io.StringIO()):
+            result = self.start()
+        self.assertEqual(result["game_exit_code"], -11)
+        self.assertFalse(result["game_left_running"])
+        self.assertEqual(result["companion"], {"reason": "GAME_CRASHED",
+                         "failure_stage": "GAME_PROCESS_EXIT", "gateway_cleanup_complete": True})
+        summary, = (self.root / "runs").glob("main-*/summary.json")
+        self.assertEqual(json.loads(summary.read_text()), result)
+        process.kill.assert_not_called()
+        process.terminate.assert_not_called()
 
 
     def test_inventory_and_group_failures_keep_exact_check_and_guard_outcome(self):

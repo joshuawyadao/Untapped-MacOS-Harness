@@ -20,6 +20,8 @@ The desktop worker uses game-lifetime mode: no four-hour or eight-hour session c
 
 A filesystem lock prevents two desktop workers from running concurrently. LaunchServices also normally reuses the existing app. CLI conflicts are still checked through the existing game/Steam inventory. GUI cancellation is checked before game creation and during supervision; the game is never terminated by companion cleanup.
 
+If the supervised game exits with a signal or nonzero status during play, the launcher displays “Slay the Spire 2 crashed.” It also displays this message when the exit status arrives during companion cleanup. The private run summary records the game's exit code.
+
 ## Build and installation
 
 If Steam updates the game, the launcher may stop with “The installed game changed.” The [reviewed game-version update](Game-Version-Updates.md) adds a separately pinned v0.111.1 copy while retaining the original activation and Steam progress; rebuild the launcher after that update is verified. A rebuild alone cannot approve an unknown source build.

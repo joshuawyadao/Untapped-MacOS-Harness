@@ -150,3 +150,22 @@ class DesktopTests(unittest.TestCase):
                 self.assertEqual(event['event'], 'error')
                 self.assertIn(expected, event['message'])
                 self.assertNotIn('private-token', out.getvalue())
+
+    def test_worker_names_game_crash_even_after_a_different_companion_stop(self):
+        for reason in ('GAME_CRASHED', 'TARGET_CONFLICT', 'COMPANION_EXITED'):
+            with self.subTest(reason=reason), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                (root / 'runs').mkdir()
+                result = {'game_exit_code': -11, 'companion': {'reason': reason,
+                    'failure_stage': 'NONE', 'gateway_cleanup_complete': True,
+                    'companion_group_cleanup_complete': True,
+                    'supervision_diagnostics': {'failure': {
+                        'check': 'GAME_PROCESS_GROUP', 'category': 'OS_ERROR', 'message': 'private-token'}}}}
+                out = io.StringIO()
+                with patch.object(desktop.main_launcher, '_prepared', return_value=(root, None, None)), \
+                     patch.object(desktop.main_launcher, 'start', return_value=result):
+                    self.assertEqual(desktop.run_worker(io.StringIO(''), out), 1)
+                event = json.loads(out.getvalue().splitlines()[-1])
+                self.assertEqual(event, {'event': 'error', 'message':
+                    'Slay the Spire 2 crashed. Private diagnostics were retained.'})
+                self.assertNotIn('private-token', out.getvalue())

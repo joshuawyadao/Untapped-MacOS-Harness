@@ -178,12 +178,14 @@ def run_worker(stream=None, output=None, *, remember=False, forget=False, keycha
                     seconds=None, confirm_steam=controls.confirm_steam,
                     should_stop=lambda: 'OWNER_STOP' if controls.stop.is_set() else None,
                     on_companion_ready=controls.companion_ready, remember_store=store)
+                if result.get('game_exit_code') not in (None, 0):
+                    controls.emit('error', main_launcher.MESSAGES['GAME_CRASHED'] + ' Private diagnostics were retained.')
+                    return 1
                 companion = result.get('companion', {})
                 healthy = (companion.get('reason') in {'GAME_EXIT', 'COMPANION_EXITED', 'OWNER_STOP'}
                            and companion.get('failure_stage') == 'NONE'
                            and companion.get('gateway_cleanup_complete') is True
-                           and companion.get('companion_group_cleanup_complete') is True
-                           and result.get('game_exit_code') in (None, 0))
+                           and companion.get('companion_group_cleanup_complete') is True)
                 if healthy:
                     controls.emit('finished', 'Companion session ended. Quit any game still running normally and let Steam Cloud sync.')
                     return 0

@@ -26,7 +26,9 @@ If the supervised game exits with a signal or nonzero status during play, the la
 
 If Steam updates the game, the launcher may stop with “The installed game changed.” The [reviewed game-version update](Game-Version-Updates.md) adds a separately pinned v0.111.1 copy while retaining the original activation and Steam progress; rebuild the launcher after that update is verified. A rebuild alone cannot approve an unknown source build.
 
-The updated launcher is installed at the same user Applications/Dock path. November 17 live verification confirms starting-choice and reward tier badges plus a matched combat Attacks panel on v0.111.1 with the existing Steam/profile binding. The original copied game, previous launcher and verified pre-update progress backup are retained; the normal owner-controlled Steam/Cloud startup and quit workflow still applies.
+The combined launcher was installed at the usual Applications path on November 18, 2026. It uses the native inventory worker during play and reports confirmed game crashes. The prior signed launcher is retained for rollback. [Combined launcher verification](Verification.md#combined-everyday-launcher)
+
+November 17 live verification confirmed starting-choice and reward tier badges plus a matched combat Attacks panel on v0.111.1 with the existing Steam/profile binding. The original copied game and verified pre-update progress backup are retained. Continue to use the normal Steam Cloud startup and quit workflow.
 
 From the refinement checkout, on the prepared macOS account:
 

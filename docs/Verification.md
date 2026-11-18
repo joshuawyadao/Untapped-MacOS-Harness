@@ -1,5 +1,11 @@
 # Verification and reward milestone
 
+## Combined everyday launcher
+
+On November 18, 2026, the everyday macOS launcher was updated to source commit `db0eff9`, which combines the native inventory worker from `cd83496` with the confirmed crash reporting from `adfe28a`. The combined regression verifies that a disappeared process group retains its diagnostic and a confirmed game exit is reported as a crash through the native inventory path. The full 378-test suite, native compilation and signature checks, and repository checks passed.
+
+The replacement held the desktop session lock after game and Steam exit. Both signed launcher bundles verified, including their configured Keychain helper hashes. All 43 installed runtime files matched `db0eff9`, and the previous crash-reporting launcher was retained in the private rollback directory. The installed app opened ready with Start Game available and Remember my Untapped login enabled. Live verification of the combined build covered the idle launcher window. Crash reporting and inventory retry were exercised with synthetic processes.
+
 ## Live process inventory CPU benchmark
 
 Run on macOS as the normal user with Xcode command-line tools available.

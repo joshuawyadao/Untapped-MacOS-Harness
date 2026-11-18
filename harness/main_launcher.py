@@ -39,6 +39,7 @@ MESSAGES = {
     "OPEN_INTENDED_STEAM": "Open Steam in the intended normal account, with every game copy closed.",
     "STEAM_STARTUP_FAILED": "The copied game did not confirm Steam and enabled Cloud storage. Quit it normally; no restore is automatic.",
     "TARGET_CONFLICT": "An unexpected game or Steam process was detected. Quit games normally before retrying.",
+    "GAME_CRASHED": "Slay the Spire 2 crashed.",
     "INTERACTIVE_TERMINAL_REQUIRED": "Start from an interactive Terminal so you can open and confirm Steam after backup.",
     "BACKUP_FAILED": "The private progress backup could not be verified. No game was launched.",
     "PROGRESS_CHANGED": "Progress changed after backup. Quit Steam and games, then make a fresh verified backup.",
@@ -408,25 +409,23 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
             from .supervision_diagnostics import SupervisionDiagnostics
             trace = SupervisionDiagnostics()
 
-            def stop_reason():
-                try:
-                    current = trace.call("GAME_GUARD", _target, executable, process.pid, diagnostics=trace)
-                    if current is None:
-                        exit_code = trace.call("GAME_PROCESS_POLL", process.poll)
-                        if exit_code is None:
-                            return "TARGET_CONFLICT"
-                        return "GAME_EXIT" if exit_code == 0 else "GAME_CRASHED"
-                    if current != pid:
-                        return "TARGET_CONFLICT"
-                except (HarnessError, OSError):
-                    return "TARGET_CONFLICT"
-                return trace.call("OWNER_STOP_CHECK", owner_stop_reason)
-
-            def retry_stop_reason():
+            def game_exit_reason():
                 exit_code = trace.call("GAME_PROCESS_POLL", process.poll)
                 if exit_code is not None:
                     return "GAME_EXIT" if exit_code == 0 else "GAME_CRASHED"
+                return None
+
+            def stop_reason():
+                try:
+                    current = trace.call("GAME_GUARD", _target, executable, process.pid, diagnostics=trace)
+                except (HarnessError, OSError):
+                    current = None
+                if current != pid:
+                    return game_exit_reason() or "TARGET_CONFLICT"
                 return trace.call("OWNER_STOP_CHECK", owner_stop_reason)
+
+            def retry_stop_reason():
+                return game_exit_reason() or trace.call("OWNER_STOP_CHECK", owner_stop_reason)
 
             report = main_companion.run(companion_session, _private(root / "preferences"),
                        target_pid=pid, target_game=executable, expected_steam_id=binding["steam_id"],
@@ -434,6 +433,9 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
                        on_companion_ready=on_companion_ready, remember_store=remember_store, diagnostics=trace,
                        retry_should_stop=retry_stop_reason)
         game_exit_code = process.poll()
+        # The child's exit status can become available during companion cleanup.
+        if game_exit_code not in (None, 0) and report.get("reason") == "TARGET_CONFLICT":
+            report = {**report, "reason": "GAME_CRASHED", "failure_stage": "GAME_PROCESS_EXIT"}
         result = {"mode": "MAIN_ACCOUNT_STEAM_PROGRESS", "backup": backup_summary,
                   "steam_initialization_observed": True, "cloud_store_enabled_logged": True,
                   "cloud_freshness": "OWNER_CONFIRMED_NOT_INDEPENDENTLY_VERIFIED",
@@ -487,10 +489,12 @@ def main(argv=None):
                            confirm_steam=confirm)
         print(json.dumps(result, indent=2))
         if args.command == "start":
+            if result.get("game_exit_code") not in (None, 0):
+                print(MESSAGES["GAME_CRASHED"], file=sys.stderr)
+                return 1
             companion = result.get("companion", {})
             reason = companion.get("reason")
-            healthy = (result.get("game_exit_code") in (None, 0)
-                       and reason in ("GAME_EXIT", "COMPANION_EXITED", "SESSION_LIMIT_REACHED", "OWNER_STOP")
+            healthy = (reason in ("GAME_EXIT", "COMPANION_EXITED", "SESSION_LIMIT_REACHED", "OWNER_STOP")
                        and (reason == "OWNER_STOP" or (companion.get("authenticated") is True
                                                        and companion.get("steam_account_verified") is True))
                        and companion.get("failure_stage") == "NONE"

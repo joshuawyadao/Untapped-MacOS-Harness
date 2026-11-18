@@ -132,6 +132,8 @@ Copy09's owner-run yzm82cgr result confirms actual settings recovery (no prior p
 
 Game/owner exit, mismatch, conflicts, Ctrl+C and deadline stop only owned companion processes. Helper-group cleanup runs even after the leader exits; preference harvest follows cleanup. Private failure evidence is retained, and safe fixed-stage diagnostics are emitted after gateway drain. The game's normal quit/save lifecycle stays with the owner. No restore, global policy change or broader companion API scope is introduced. See the [activation/backup/Cloud contract](Main-Account-Migration.md).
 
+When the live guard cannot validate the expected game, the launcher polls the child it started to distinguish normal exit, crash, and unresolved target conflict. A final poll after companion cleanup can resolve a provisional conflict as a crash in the launcher summary. The original guard and cleanup diagnostics describe what the companion supervisor had observed when it stopped.
+
 
 The owner subsequently approved the main copied-app activation. Both signatures/entitlements/runtime flags and proposal binding verified, with only the allowed outer signing files changed. The installed game and copied native payloads are unchanged. No real progress was read or backed up and no app/Steam network session ran during activation; the next step is the normal-account interactive start sequence rather than further signing approval.
 

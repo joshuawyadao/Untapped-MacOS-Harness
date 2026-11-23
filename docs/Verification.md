@@ -8,6 +8,8 @@ Twelve interleaved tests on the local process table measured a median 110.4 ms f
 
 Before the fix, the sixth injected timeout stopped supervision even with a healthy seventh inventory available. The updated test ran eight two-second timeouts and reached a fresh verified scan at 22.5 simulated seconds. Separate tests cover elapsed-time exhaustion, a confirmed group change during backoff, incomplete or owner-mismatched scoped rows, and a scoped timeout that returns no partial inventory.
 
+All 387 tests passed, including native candidate parity. A direct macOS check confirmed the scoped command returned both the diagnostic process and a root-owned process with their expected UIDs. Repository, syntax, compiler and native signature checks passed. The installed signed bundle matched all 43 runtime sources in `37f4f51`. The swap followed game and Steam exit, held the desktop lock, verified the Keychain helper pin and preserved the previous signed `a9ebedc` bundle for rollback. The updated launcher opened to its ready screen. Live recovery from a naturally occurring stall on this installed build remains unobserved.
+
 ## Live inventory timeout recovery
 
 On November 23, 2026, the overlay disappeared at 10:48 a.m. Pacific. The matching report recorded one recovered timeout sequence and three consecutive timeouts ending in exhaustion. The final inventory attempt took 7,646 ms. The companion was alive when cleanup began and then exited with code zero. The game continued running. Three later probes found the same game and completed within 142 ms. The report and available system logs could not locate the initial stall within the inventory attempt.

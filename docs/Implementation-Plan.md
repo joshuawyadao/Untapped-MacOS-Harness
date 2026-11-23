@@ -13,8 +13,8 @@ Reduce live inventory fallback work and let short macOS process-table outages re
 - [x] Checkpoint this plan on `codex/scoped-inventory-recovery`.
 - [x] Emit unresolved PID and owner rows with the fresh native candidate snapshot. Resolve those rows through per-PID `ps`, require complete owner-matching coverage, and require a fresh whole-table scan when the scoped response is inconclusive or the native snapshot is unavailable.
 - [x] Extend transient timeout recovery to 60 seconds after the first timeout. Keep two-second attempt deadlines, bounded backoff, account and exit checks, and verify the tracked game process group during recovery. Keep PID, owner, executable, group and conflict checks on every accepted inventory.
-- [ ] Add regressions for a long recovered stall, bounded exhaustion, and scoped fallback coverage and timeouts. Run focused, full, native and repository checks with game-name fixtures isolated from live sessions. Record actual evidence and limits in the launcher, architecture and verification docs.
-- [ ] Build and install the verified launcher once the game and Steam close normally, preserve rollback, and commit and push the branch.
+- [x] Add regressions for a long recovered stall, bounded exhaustion, and scoped fallback coverage and timeouts. Run focused, full, native and repository checks with game-name fixtures isolated from live sessions. Record actual evidence and limits in the launcher, architecture and verification docs.
+- [x] Build and install the verified launcher once the game and Steam close normally, preserve rollback, and commit and push the branch.
 
 ## Open questions
 

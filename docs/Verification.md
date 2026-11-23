@@ -8,6 +8,10 @@ Fault injection reproduced two launcher defects. A healthy fourth scan was unrea
 
 At 11:02 a.m. Pacific, a verification fixture briefly used the same process name as the game while a second live session was active. The running guard reported a target conflict and stopped the companion, leaving the game running. This was a separate stop from the earlier timeout exhaustion. The native game-name test now checks for live game processes before starting its fixtures. Run game-name process fixtures only with the game closed.
 
+The macOS smoke test injected a half-second worker stall. It returned after 502 ms with `NATIVE_RESPONSE`, found an inert fixture through a fresh system scan, then found the same fixture after the native scanner restarted. All 382 tests passed, including the native alias test after the actual game closed. Native compilation, signatures, repository and syntax checks passed.
+
+The signed launcher from `a9ebedc` was installed at the usual Applications path after game and Steam exit. The swap held the desktop session lock, verified all 43 runtime files and the Keychain helper pin, and preserved the previous signed launcher for rollback. The app opened to its ready screen with Remember login enabled. Recovery during play was verified with fault-injected fixtures. A naturally occurring stall during gameplay on the installed build remains to be observed.
+
 ## Combined everyday launcher
 
 On November 18, 2026, the everyday macOS launcher was updated to source commit `db0eff9`, which combines the native inventory worker from `cd83496` with the confirmed crash reporting from `adfe28a`. The combined regression verifies that a disappeared process group retains its diagnostic and a confirmed game exit is reported as a crash through the native inventory path. The full 378-test suite, native compilation and signature checks, and repository checks passed.

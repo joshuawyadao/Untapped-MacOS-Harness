@@ -13,8 +13,8 @@ Keep the overlay through recoverable inventory stalls by detaching timed-out sca
 - [x] Checkpoint this plan on `codex/inventory-timeout-recovery` (`a923fed`).
 - [x] Add red regressions for a healthy fourth scan, a stalled child reap, and a fresh alternate scan after a timeout.
 - [x] Bound worker cleanup and the legacy scan, switch to the alternate scanner during recovery, and retain a fixed timeout stage without process data. Keep the two-second scan deadline and let six consecutive timeouts exhaust recovery with longer delays after the first two retries.
-- [ ] Verify fresh snapshots, game and account mismatch handling, cancellation, and terminal exhaustion. Run focused and full tests, native compilation, and repository checks. Record the incident evidence and revised behavior in the launcher, architecture and verification docs.
-- [ ] Build, verify and install the signed launcher after normal quit and Steam Cloud synchronization, retain rollback, and save the branch.
+- [x] Verify fresh snapshots, mismatch handling, cancellation, and exhaustion. All 382 tests and native checks passed. Record the initial incident, the separate fixture-triggered stop, the synthetic recovery, and the host rollout in the launcher, architecture and verification docs.
+- [x] Build and install the signed launcher from `a9ebedc` after normal game and Steam closure. Verify all 43 runtime files, the helper pin, rollback, and the ready screen. Record the verified rollout on the feature branch.
 
 ## Open questions
 

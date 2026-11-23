@@ -91,7 +91,7 @@ During retry backoff the supervisor checks account mismatch, game exit/crash, co
 
 The safe `supervision_diagnostics.inventory_retry` counters record `timeouts`, `retries_scheduled`, `recoveries` and `exhaustions`, plus the latest known fixed timeout phase. The phase distinguishes native or legacy startup, response and reaping. After recovery, the report retains the timeout count and phase. Exhaustion or a later failure retains its own check and category. The report vocabulary excludes process identities and private exception data.
 
-See the [November 23 incident and recovery checks](Verification.md#live-inventory-timeout-recovery) for the failure reproduced by this change.
+The signed recovery launcher was installed at the usual Applications path on November 23, 2026, with the previous launcher retained for rollback. See the [incident and recovery checks](Verification.md#live-inventory-timeout-recovery) for the failure reproduced by this change.
 
 ## Native macOS full-screen overlay
 

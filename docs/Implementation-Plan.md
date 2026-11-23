@@ -1,21 +1,20 @@
 # Plan
 
-Install one everyday macOS launcher that combines the native live process inventory with confirmed game crash reporting.
+Keep the overlay through recoverable inventory stalls by detaching timed-out scans, alternating fresh inventory backends during recovery, and allowing a bounded set of retries.
 
 ## Scope
 
-- In: Combine the launcher changes from `cd83496` and `adfe28a`, verify their interaction, save the combined branch, and replace the everyday signed launcher with a retained rollback copy.
-- Out: Overlay performance changes, another gameplay benchmark, Steam or game modifications, and a pull request.
+- In: Diagnose the November 23 shutdown with retained evidence, harden live inventory and retry handling, add safe fault-stage diagnostics and regressions, and install the tested update after the current session ends.
+- Out: Changing startup and isolated-account checks, weakening game or account validation, changing the overlay, and opening a pull request.
 
 ## Action items
 
-- [x] Inspect both revisions, their launcher and retry tests, and the architecture, desktop launcher, migration and verification docs.
-- [x] Checkpoint this plan on `codex/combined-launcher` (`4968df3`) before integrating either change.
-- [x] Preserve native inventory, target validation and the two-second retry contract while incorporating confirmed and late game-crash reporting in the desktop and terminal launchers. All 59 focused guard, retry, diagnostic and desktop tests passed.
-- [x] Verify the integrated guard and reporting with focused synthetic tests, all 378 tests, and the native launcher build and signature checks.
-- [x] Update the launcher, architecture, migration and verification docs with the combined behavior and rollout evidence.
-- [x] Build the signed launcher from `db0eff9` and replace the idle everyday app under the session lock after normal game and Steam closure. Verify all 43 installed runtime files, the helper pin, and the preserved signed rollback app.
-- [x] Verify the installed app opens ready and record the combined rollout on the feature branch.
+- [x] Inspect the incident, live inventory, retry and diagnostics tests, and desktop, architecture and verification docs. Reproduce the three-timeout shutdown and show how synchronous worker cleanup can extend the recorded time from 2 seconds to 7.646 seconds. Track the initial OS stall as unresolved unless historical evidence identifies it.
+- [ ] Checkpoint this plan on `codex/inventory-timeout-recovery`.
+- [ ] Add red regressions for a healthy fourth scan, a stalled child reap, and a fresh alternate scan after a timeout.
+- [ ] Bound worker cleanup and the legacy scan, switch to the alternate scanner during recovery, and retain a fixed timeout stage without process data. Keep the two-second scan deadline and let six consecutive timeouts exhaust recovery with longer delays after the first two retries.
+- [ ] Verify fresh snapshots, game and account mismatch handling, cancellation, and terminal exhaustion. Run focused and full tests, native compilation, and repository checks. Record the incident evidence and revised behavior in the launcher, architecture and verification docs.
+- [ ] Build, verify and install the signed launcher after normal quit and Steam Cloud synchronization, retain rollback, and save the branch.
 
 ## Open questions
 

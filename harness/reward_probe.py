@@ -73,7 +73,7 @@ def _private_session(session, home):
 
 
 def _process_inventory(*, timeout=2):
-    return subprocess.run(PROCESS_INVENTORY_COMMAND,
+    return subprocess.run(list(PROCESS_INVENTORY_COMMAND),
                           capture_output=True, text=True, check=True, timeout=timeout).stdout
 
 

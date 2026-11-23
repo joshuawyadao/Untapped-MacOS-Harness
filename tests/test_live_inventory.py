@@ -145,6 +145,8 @@ class NativeCandidateTests(unittest.TestCase):
     def test_native_inventory_matches_ps_for_own_aliased_game_and_steam(self):
         if os.getuid() == 0:
             self.skipTest("helper refuses privileged execution")
+        if any(not steam for _, _, _, steam in reward_probe._candidates(reward_probe._process_inventory())):
+            self.skipTest("game-name process fixtures require Slay the Spire 2 to be closed")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             aliases = (

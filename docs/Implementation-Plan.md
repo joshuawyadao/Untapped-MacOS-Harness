@@ -1,20 +1,20 @@
 # Plan
 
-Keep the overlay through recoverable inventory stalls by detaching timed-out scans, alternating fresh inventory backends during recovery, and allowing a bounded set of retries.
+Reduce live inventory fallback work and let short macOS process-table outages recover without weakening the launcher's target and conflict checks.
 
 ## Scope
 
-- In: Diagnose the November 23 shutdown with retained evidence, harden live inventory and retry handling, add safe fault-stage diagnostics and regressions, and install the tested update after the current session ends.
-- Out: Changing startup and isolated-account checks, weakening game or account validation, changing the overlay, and opening a pull request.
+- In: Diagnose the 11:20 Pacific fallback stall, scope fallback to unresolved rows when a native scan completed, extend the bounded retry period, verify the checked process and account behavior, and install the signed build after normal quit.
+- Out: Changes to startup and isolated-account inventory, game or companion signing, and overlay features.
 
 ## Action items
 
-- [x] Inspect the incident, live inventory, retry and diagnostics tests, and desktop, architecture and verification docs. Reproduce the three-timeout shutdown and show how synchronous worker cleanup can extend the recorded time from 2 seconds to 7.646 seconds. Track the initial OS stall as unresolved unless historical evidence identifies it.
-- [x] Checkpoint this plan on `codex/inventory-timeout-recovery` (`a923fed`).
-- [x] Add red regressions for a healthy fourth scan, a stalled child reap, and a fresh alternate scan after a timeout.
-- [x] Bound worker cleanup and the legacy scan, switch to the alternate scanner during recovery, and retain a fixed timeout stage without process data. Keep the two-second scan deadline and let six consecutive timeouts exhaust recovery with longer delays after the first two retries.
-- [x] Verify fresh snapshots, mismatch handling, cancellation, and exhaustion. All 382 tests and native checks passed. Record the initial incident, the separate fixture-triggered stop, the synthetic recovery, and the host rollout in the launcher, architecture and verification docs.
-- [x] Build and install the signed launcher from `a9ebedc` after normal game and Steam closure. Verify all 43 runtime files, the helper pin, rollback, and the ready screen. Record the verified rollout on the feature branch.
+- [x] Match the live session report, reproduce six-attempt exhaustion with a healthy seventh scan, and compare whole-table with selected-PID macOS process lookups. The historical source of the process lookup stall remains unconfirmed.
+- [ ] Checkpoint this plan on `codex/scoped-inventory-recovery`.
+- [ ] Emit unresolved PID and owner rows with the fresh native candidate snapshot. Resolve those rows through per-PID `ps`, require complete owner-matching coverage, and require a fresh whole-table scan when the scoped response is inconclusive or the native snapshot is unavailable.
+- [ ] Extend transient timeout recovery to 60 seconds after the first timeout. Keep two-second attempt deadlines, bounded backoff, account and exit checks, and verify the tracked game process group during recovery. Keep PID, owner, executable, group and conflict checks on every accepted inventory.
+- [ ] Add regressions for a long recovered stall, bounded exhaustion, and scoped fallback coverage and timeouts. Run focused, full, native and repository checks with game-name fixtures isolated from live sessions. Record actual evidence and limits in the launcher, architecture and verification docs.
+- [ ] Build and install the verified launcher once the game and Steam close normally, preserve rollback, and commit and push the branch.
 
 ## Open questions
 

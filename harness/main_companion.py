@@ -21,7 +21,7 @@ from .supervision_diagnostics import SupervisionDiagnostics, failure_record
 MAX_SECONDS = 8 * 3600
 EVENT_NAMES = controlled.EVENTS | {"main-steam-verified", "main-steam-mismatch"}
 STOP_REASONS = {"GAME_EXIT", "GAME_CRASHED", "TARGET_CONFLICT", "OWNER_STOP"}
-INVENTORY_MAX_ATTEMPTS = 6
+INVENTORY_RECOVERY_SECONDS = 60
 INVENTORY_RETRY_DELAY = 0.25
 INVENTORY_EXTENDED_RETRY_DELAY = 1.0
 RETRY_POLL_INTERVAL = 0.05
@@ -110,6 +110,7 @@ def supervise(process, attempt, seconds, should_stop=None, *, clock=time.monoton
     deadline = trace.call("SUPERVISION_CLOCK", lambda: None if seconds is None else clock() + seconds)
     seen = set()
     inventory_timeouts = 0
+    recovery_deadline = None
     retry_due = None
 
     def checked_stop(reason):
@@ -156,22 +157,26 @@ def supervise(process, attempt, seconds, should_stop=None, *, clock=time.monoton
             try:
                 reason = trace.call("GAME_GUARD", should_stop)
             except subprocess.TimeoutExpired:
+                now = trace.call("SUPERVISION_CLOCK", clock)
+                if recovery_deadline is None:
+                    recovery_deadline = now + INVENTORY_RECOVERY_SECONDS
                 next_count = inventory_timeouts + 1
-                retrying = next_count < INVENTORY_MAX_ATTEMPTS
+                delay = (INVENTORY_RETRY_DELAY if next_count < 3 else INVENTORY_EXTENDED_RETRY_DELAY)
+                retry_due = now + delay
+                retrying = retry_due < recovery_deadline
                 # A timeout from any other check remains an immediate failure.
                 if not trace.record_inventory_timeout(retrying=retrying):
                     raise
                 inventory_timeouts = next_count
                 if not retrying:
                     raise
-                delay = (INVENTORY_RETRY_DELAY if next_count < 3 else INVENTORY_EXTENDED_RETRY_DELAY)
-                retry_due = trace.call("SUPERVISION_CLOCK", lambda: clock() + delay)
                 continue
             if reason is not None:
                 return trace.call("STOP_RESULT_VALIDATE", checked_stop, reason), seen
             if inventory_timeouts:
                 trace.record_inventory_recovery()
                 inventory_timeouts = 0
+                recovery_deadline = None
         exit_code = trace.call("COMPANION_POLL", process.poll)
         if exit_code is not None:
             trace.call("EVENT_READ", lambda: seen.update(_events(attempt)))

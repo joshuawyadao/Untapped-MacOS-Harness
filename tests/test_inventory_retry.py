@@ -40,7 +40,8 @@ class _Companion:
 
 
 class InventoryRetryTests(unittest.TestCase):
-    def run_session(self, steps, *, seconds=1.0, events=None, owner=None, on_wait=None):
+    def run_session(self, steps, *, seconds=1.0, events=None, owner=None, on_wait=None,
+                    inventory_seconds=0, group_changes_at=None):
         case = launcher_fixtures.MainLauncherTests()
         case.setUp()
         try:
@@ -62,6 +63,7 @@ class InventoryRetryTests(unittest.TestCase):
                 attempt_times.append(clock.now)
                 step = next(sequence, 'match')
                 if isinstance(step, BaseException):
+                    clock.now += inventory_seconds
                     raise step
                 if step == 'wrong_user':
                     return [(game.pid, os.getuid()+1, str(expected), False)]
@@ -75,7 +77,10 @@ class InventoryRetryTests(unittest.TestCase):
             if 'retry_should_stop' in arguments:
                 extra['retry_should_stop'] = arguments['retry_should_stop']
             called.side_effect = inventory
-            with patch.object(launcher.os, 'getpgid', return_value=game.pid), \
+            def process_group(_pid):
+                return game.pid + 1 if group_changes_at is not None and clock.now >= group_changes_at else game.pid
+
+            with patch.object(launcher.os, 'getpgid', side_effect=process_group), \
                  patch.object(companion, '_events', side_effect=events,
                               return_value=set()):
                 error = None
@@ -110,18 +115,32 @@ class InventoryRetryTests(unittest.TestCase):
         self.assertAlmostEqual(result.elapsed, 1.0)
         self.assertNotIn('private-fixture', repr(result.diagnostic))
 
-    def test_six_consecutive_timeouts_exhaust_without_seventh_attempt(self):
-        errors = [self.timeout() for _ in range(7)]
-        result = self.run_session(errors, seconds=5)
-        self.assertIs(result.error, errors[5])
-        self.assertEqual(result.attempts, 6)
-        for observed, expected in zip(result.attempt_times, (0, .25, .5, 1.5, 2.5, 3.5)):
+    def test_shortened_recovery_budget_exhausts_after_elapsed_timeout_attempts(self):
+        errors = [self.timeout() for _ in range(5)]
+        with patch.object(companion, 'INVENTORY_RECOVERY_SECONDS', 4):
+            result = self.run_session(errors, seconds=12, inventory_seconds=2)
+        self.assertIs(result.error, errors[2])
+        self.assertEqual(result.attempts, 3)
+        for observed, expected in zip(result.attempt_times, (0, 2.25, 4.5)):
             self.assertAlmostEqual(observed, expected)
-        self.assertAlmostEqual(result.elapsed, 3.5)
+        self.assertAlmostEqual(result.elapsed, 6.5)
         self.assertEqual(result.diagnostic['failure'],
             {'check': 'GAME_PROCESS_INVENTORY', 'category': 'TIMEOUT'})
         self.assertEqual(result.diagnostic['inventory_retry'],
-            {'timeouts': 6, 'retries_scheduled': 5, 'recoveries': 0, 'exhaustions': 1})
+            {'timeouts': 3, 'retries_scheduled': 2, 'recoveries': 0, 'exhaustions': 1})
+
+    def test_recovery_after_more_than_six_slow_timeouts_keeps_session_alive(self):
+        result = self.run_session([self.timeout() for _ in range(8)] + ['match'],
+                                  seconds=30, inventory_seconds=2)
+        self.assertIsNone(result.error)
+        self.assertEqual(result.reason, 'SESSION_LIMIT_REACHED')
+        self.assertGreaterEqual(result.attempts, 9)
+        for observed, expected in zip(result.attempt_times[:9],
+                                      (0, 2.25, 4.5, 7.5, 10.5, 13.5, 16.5, 19.5, 22.5)):
+            self.assertAlmostEqual(observed, expected)
+        self.assertEqual(result.diagnostic['inventory_retry'],
+            {'timeouts': 8, 'retries_scheduled': 8, 'recoveries': 1, 'exhaustions': 0})
+        self.assertIsNone(result.diagnostic['failure'])
 
     def test_three_timeouts_then_fresh_verified_fourth_attempt_keeps_session_alive(self):
         result = self.run_session([self.timeout(), self.timeout(), self.timeout(), 'match'], seconds=2)
@@ -196,6 +215,16 @@ class InventoryRetryTests(unittest.TestCase):
         self.assertEqual(result.reason, 'OWNER_STOP')
         self.assertEqual(result.attempts, 1)
         self.assertLessEqual(result.elapsed, .05)
+
+    def test_process_group_change_during_backoff_stops_before_another_scan(self):
+        result = self.run_session([self.timeout(), 'match'], seconds=3,
+                                  inventory_seconds=2, group_changes_at=2.05)
+        self.assertIsNone(result.error)
+        self.assertEqual(result.reason, 'TARGET_CONFLICT')
+        self.assertEqual(result.attempts, 1)
+        self.assertLessEqual(result.elapsed, 2.1)
+        self.assertEqual(result.diagnostic['inventory_retry'],
+            {'timeouts': 1, 'retries_scheduled': 1, 'recoveries': 0, 'exhaustions': 0})
 
     def test_finite_deadline_aborts_before_retry_attempt(self):
         result = self.run_session([self.timeout(), 'match'], seconds=.1)

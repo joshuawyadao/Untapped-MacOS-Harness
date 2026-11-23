@@ -1,4 +1,4 @@
-/* Emit only potential game/Steam rows from a fresh macOS process snapshot. */
+/* Emit potential game/Steam rows and unresolved PIDs from a fresh macOS process snapshot. */
 #include <errno.h>
 #include <libproc.h>
 #include <locale.h>
@@ -64,6 +64,7 @@ static int process_gone(const struct kinfo_proc *original) {
 
 static int scan(const struct kinfo_proc *rows, size_t count, char *args, size_t argmax,
                 char *escaped, size_t escaped_size, uid_t own_uid) {
+    int incomplete = 0;
     for (size_t i = 0; i < count; ++i) {
         const struct kinfo_proc *row = &rows[i];
         pid_t pid = row->kp_proc.p_pid;
@@ -74,8 +75,10 @@ static int scan(const struct kinfo_proc *rows, size_t count, char *args, size_t 
         if (command == NULL) {
             int length = proc_pidpath(pid, path, sizeof(path));
             if (length <= 0 || (size_t)length >= sizeof(path)) {
-                if ((uid != own_uid || might_match(row->kp_proc.p_comm)) && !process_gone(row))
-                    return 1;  /* Resolve the incomplete snapshot with the legacy inventory. */
+                if ((uid != own_uid || might_match(row->kp_proc.p_comm)) && !process_gone(row)) {
+                    if (printf("? %d %u\n", pid, uid) < 0) return -1;
+                    incomplete = 1;
+                }
                 continue;
             }
             command = path;
@@ -84,7 +87,7 @@ static int scan(const struct kinfo_proc *rows, size_t count, char *args, size_t 
         if (strnvis(escaped, escaped_size, command, VIS_TAB | VIS_NL | VIS_NOSLASH) < 0 ||
             printf("%d %u %s\n", pid, uid, escaped) < 0) return -1;
     }
-    return 0;
+    return incomplete;
 }
 
 int main(void) {
@@ -110,7 +113,7 @@ int main(void) {
             break;
         }
         int result = scan(rows, count, args, (size_t)argmax, escaped, escaped_size, uid);
-        /* One terminal byte per request. A fallback discards any partial rows. */
+        /* One terminal byte per request. Status 1 requires the caller to resolve all marked rows. */
         if (result < 0 || fputc(result, stdout) == EOF || fflush(stdout) == EOF) status = 1;
     }
     free(rows);

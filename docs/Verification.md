@@ -1,5 +1,13 @@
 # Verification and reward milestone
 
+## Scoped fallback and longer inventory recovery
+
+On November 23, 2026, at 11:20 a.m. Pacific, the overlay stopped after the launcher exhausted six consecutive inventory timeouts. The report retained `LEGACY_RESPONSE` and a final elapsed time of 2,002 ms. The native worker kept the same PID while two `/bin/ps` children were observed. The companion was alive before cleanup, exited with code zero, and the game continued. The final phase identifies a wait for `ps`. It cannot identify the delayed kernel operation or distinguish a native snapshot's fallback from a full retry after a native timeout.
+
+Twelve interleaved tests on the local process table measured a median 110.4 ms for the whole-table command and 9.0 ms for a two-PID query. Their maxima were 241.0 ms and 33.3 ms. Follow-up broad scans with full command names were more expensive than scans using short names. These measurements establish avoidable fallback work. The multi-second macOS stall did not recur during sampling.
+
+Before the fix, the sixth injected timeout stopped supervision even with a healthy seventh inventory available. The updated test ran eight two-second timeouts and reached a fresh verified scan at 22.5 simulated seconds. Separate tests cover elapsed-time exhaustion, a confirmed group change during backoff, incomplete or owner-mismatched scoped rows, and a scoped timeout that returns no partial inventory.
+
 ## Live inventory timeout recovery
 
 On November 23, 2026, the overlay disappeared at 10:48 a.m. Pacific. The matching report recorded one recovered timeout sequence and three consecutive timeouts ending in exhaustion. The final inventory attempt took 7,646 ms. The companion was alive when cleanup began and then exited with code zero. The game continued running. Three later probes found the same game and completed within 142 ms. The report and available system logs could not locate the initial stall within the inventory attempt.

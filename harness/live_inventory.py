@@ -14,9 +14,10 @@ from .asar import HarnessError
 TIMEOUT = 2
 CLEANUP_TIMEOUT = 0.1
 MAX_RESPONSE = 1024 * 1024
+MAX_SCOPED_PIDS = 128
 COMMAND = "native process inventory"
-TIMEOUT_PHASES = frozenset({"NATIVE_START", "NATIVE_RESPONSE", "NATIVE_REAP",
-                            "LEGACY_START", "LEGACY_RESPONSE", "LEGACY_REAP"})
+TIMEOUT_PHASES = frozenset(f"{backend}_{stage}" for backend in ("NATIVE", "SCOPED", "LEGACY")
+                           for stage in ("START", "RESPONSE", "REAP"))
 
 
 class InventoryTimeout(subprocess.TimeoutExpired):
@@ -103,26 +104,55 @@ class LiveInventory:
             raise InventoryTimeout(phase)
         return remaining
 
-    def _legacy_listing(self, deadline):
+    def _legacy_listing(self, deadline, *, pids=()):
+        backend = "SCOPED" if pids else "LEGACY"
+        start, response = f"{backend}_START", f"{backend}_RESPONSE"
         if "LEGACY" in self._retired:
-            raise InventoryTimeout("LEGACY_REAP")
-        self._remaining(deadline, "LEGACY_START")
-        process = subprocess.Popen(reward_probe.PROCESS_INVENTORY_COMMAND, stdout=subprocess.PIPE,
+            raise InventoryTimeout(f"{backend}_REAP")
+        command = reward_probe.PROCESS_INVENTORY_COMMAND
+        if pids:
+            command = (command[0], "-p", ",".join(pids), "-o", command[-1])
+        self._remaining(deadline, start)
+        process = subprocess.Popen(command, stdout=subprocess.PIPE,
                                    stderr=subprocess.DEVNULL, text=True)
         with process.stdout:
             try:
-                remaining = self._remaining(deadline, "LEGACY_START")
+                remaining = self._remaining(deadline, start)
                 try:
                     listing, _ = process.communicate(timeout=remaining)
                 except subprocess.TimeoutExpired as error:
-                    raise InventoryTimeout("LEGACY_RESPONSE") from error
-                if process.returncode:
+                    raise InventoryTimeout(response) from error
+                # macOS ps exits 1 with no rows if every selected process went away.
+                if process.returncode and not (pids and process.returncode == 1 and not listing.strip()):
                     raise subprocess.CalledProcessError(process.returncode, COMMAND)
-                self._remaining(deadline, "LEGACY_RESPONSE")
+                self._remaining(deadline, response)
                 return listing
             finally:
                 if process.returncode is None:
                     self._retire("LEGACY", process)
+
+    def _resolve_snapshot(self, listing, deadline):
+        resolved = []
+        unresolved = {}
+        for row in listing.splitlines():
+            if not row.startswith("? "):
+                resolved.append(row)
+                continue
+            fields = row.split()
+            if (len(fields) != 3 or not fields[1].isdecimal() or fields[1] == "0"
+                    or not fields[2].isdecimal() or fields[1] in unresolved):
+                return self._legacy_listing(deadline)
+            unresolved[fields[1]] = fields[2]
+        if not 0 < len(unresolved) <= MAX_SCOPED_PIDS:
+            return self._legacy_listing(deadline)
+
+        scoped = self._legacy_listing(deadline, pids=tuple(unresolved))
+        rows = [row.split(None, 2) for row in scoped.splitlines()]
+        if (len(rows) != len(unresolved) or any(len(row) != 3 for row in rows)
+                or {tuple(row[:2]) for row in rows} != set(unresolved.items())):
+            # A PID disappeared, changed owner, or was not resolved. Require a fresh complete scan.
+            return self._legacy_listing(deadline)
+        return "\n".join([*resolved, scoped])
 
     def candidates(self):
         deadline = time.monotonic() + TIMEOUT
@@ -134,8 +164,9 @@ class LiveInventory:
                 listing = self._legacy_listing(deadline)
             else:
                 payload, fallback = self._exchange(deadline)
-                listing = (self._legacy_listing(deadline) if fallback
-                           else payload.decode(locale.getpreferredencoding(False)))
+                listing = payload.decode(locale.getpreferredencoding(False))
+                if fallback:
+                    listing = self._resolve_snapshot(listing, deadline)
             return list(reward_probe._candidates(listing))
         except InventoryTimeout as error:
             if error.phase.startswith("NATIVE_"):

@@ -427,7 +427,16 @@ def start(*, approved=False, cloud_confirmed=False, account_confirmed=False,
                 return trace.call("OWNER_STOP_CHECK", owner_stop_reason)
 
             def retry_stop_reason():
-                return game_exit_reason() or trace.call("OWNER_STOP_CHECK", owner_stop_reason)
+                reason = game_exit_reason() or trace.call("OWNER_STOP_CHECK", owner_stop_reason)
+                if reason is not None:
+                    return reason
+                try:
+                    group = trace.call("GAME_PROCESS_GROUP", os.getpgid, pid)
+                except OSError:
+                    group = None
+                if group != process.pid:
+                    return game_exit_reason() or "TARGET_CONFLICT"
+                return None
 
             report = main_companion.run(companion_session, _private(root / "preferences"),
                        target_pid=pid, target_game=executable, expected_steam_id=binding["steam_id"],

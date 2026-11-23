@@ -109,6 +109,61 @@ class WorkerTests(unittest.TestCase):
             self.assertEqual(inventory.candidates(),
                              [(2, os.getuid(), "/current/Slay the Spire 2", False)])
 
+    def test_resolves_only_unreadable_pids_and_keeps_native_candidates(self):
+        uid = os.getuid()
+        foreign_uid = uid + 1
+        inventory = live_inventory.LiveInventory(self.helper)
+        payload = f"1 {uid} /copy/Slay the Spire 2\n? 11 {foreign_uid}\n? 12 {uid}\n".encode()
+        listing = f" 12 {uid} /usr/bin/true\n 11 {foreign_uid} /foreign/Steam.app/Contents/MacOS/steam_osx\n"
+        worker = Mock(returncode=0, stdout=io.StringIO())
+        worker.communicate.return_value = listing, None
+        with patch.object(inventory, "_exchange", return_value=(payload, 1)), \
+             patch.object(live_inventory.subprocess, "Popen", return_value=worker) as spawn:
+            self.assertEqual(inventory.candidates(), [
+                (1, uid, "/copy/Slay the Spire 2", False),
+                (11, foreign_uid, "/foreign/Steam.app/Contents/MacOS/steam_osx", True),
+            ])
+        self.assertEqual(spawn.call_args.args[0], ("/bin/ps", "-p", "11,12", "-o", "pid=,uid=,comm="))
+
+    def test_inconclusive_scoped_response_requires_fresh_full_listing(self):
+        uid = os.getuid()
+        inventory = live_inventory.LiveInventory(self.helper)
+        payload = f"1 {uid} /stale/Slay the Spire 2\n? 11 {uid}\n? 12 {uid}\n".encode()
+        full = f"2 {uid} /fresh/Slay the Spire 2\n"
+        for scoped in (
+            f"11 {uid} /usr/bin/true\n",
+            f"11 {uid} /usr/bin/true\n12 {uid + 1} /usr/bin/true\n",
+            f"11 {uid} /usr/bin/true\n11 {uid} /usr/bin/true\n",
+            f"11 {uid} /usr/bin/true\n12 {uid}\n",
+        ):
+            with self.subTest(scoped=scoped), \
+                 patch.object(inventory, "_exchange", return_value=(payload, 1)), \
+                 patch.object(inventory, "_legacy_listing", side_effect=[scoped, full]) as legacy:
+                self.assertEqual(inventory.candidates(), [(2, uid, "/fresh/Slay the Spire 2", False)])
+                qualified, broad = legacy.call_args_list
+                self.assertEqual(qualified.kwargs, {"pids": ("11", "12")})
+                self.assertEqual(qualified.args, broad.args)
+                self.assertEqual(broad.kwargs, {})
+
+    def test_scoped_timeout_preserves_native_worker_and_never_returns_partial_rows(self):
+        uid = os.getuid()
+        inventory = live_inventory.LiveInventory(self.helper)
+        native = inventory.process = Mock()
+        worker = Mock(returncode=None, stdout=io.StringIO())
+        worker.poll.return_value = None
+        worker.communicate.side_effect = subprocess.TimeoutExpired("scoped fixture", 2)
+        payload = f"1 {uid} /copy/Slay the Spire 2\n? 11 {uid}\n".encode()
+        with patch.object(inventory, "_exchange", return_value=(payload, 1)), \
+             patch.object(live_inventory.subprocess, "Popen", return_value=worker):
+            with self.assertRaises(live_inventory.InventoryTimeout) as error:
+                inventory.candidates()
+            self.assertEqual(error.exception.phase, "SCOPED_RESPONSE")
+            self.assertIn(error.exception.phase, live_inventory.TIMEOUT_PHASES)
+            self.assertIs(inventory.process, native)
+            native.kill.assert_not_called()
+            worker.kill.assert_called_once()
+            worker.wait.assert_not_called()
+
     def test_timed_out_worker_is_reaped_then_next_request_uses_a_new_worker(self):
         marker = self.root / "first-request"
         helper = self.script(

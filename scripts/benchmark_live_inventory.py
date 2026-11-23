@@ -10,7 +10,7 @@ import tempfile
 import time
 from unittest.mock import patch
 
-from harness import live_inventory, main_launcher, reward_probe
+from harness import live_inventory, main_launcher
 
 
 def cpu_time():
@@ -21,8 +21,8 @@ def cpu_time():
 def measure(name, root, scans, interval):
     session = (live_inventory.prepare(root) if name == "native"
                else nullcontext(main_launcher._inventory))
-    observe_fallback = (patch.object(reward_probe, "_process_inventory",
-                                     wraps=reward_probe._process_inventory)
+    observe_fallback = (patch.object(live_inventory.LiveInventory, "_legacy_listing", autospec=True,
+                                     side_effect=live_inventory.LiveInventory._legacy_listing)
                         if name == "native" else nullcontext())
     latencies = []
     with observe_fallback as fallback:

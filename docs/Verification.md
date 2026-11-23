@@ -1,5 +1,11 @@
 # Verification and reward milestone
 
+## Live inventory timeout recovery
+
+On November 23, 2026, the overlay disappeared at 10:48 a.m. Pacific. The matching report recorded one recovered timeout sequence and three consecutive timeouts ending in exhaustion. The final inventory attempt took 7,646 ms. The companion was alive when cleanup began and then exited with code zero. The game continued running. Three later probes found the same game and completed within 142 ms. The report and available system logs could not locate the initial stall within the inventory attempt.
+
+Fault injection reproduced two launcher defects. A healthy fourth scan was unreachable after three timeouts, and one simulated two-second native timeout took 7,646 ms to return when the synchronous worker reap was delayed by 5,646 ms. The regressions exercise both alternate scanners, a stuck reap, continued supervision after a verified fourth attempt and terminal exhaustion after six. After a timeout, only a fresh, fully checked snapshot counts as recovery.
+
 ## Combined everyday launcher
 
 On November 18, 2026, the everyday macOS launcher was updated to source commit `db0eff9`, which combines the native inventory worker from `cd83496` with the confirmed crash reporting from `adfe28a`. The combined regression verifies that a disappeared process group retains its diagnostic and a confirmed game exit is reported as a crash through the native inventory path. The full 378-test suite, native compilation and signature checks, and repository checks passed.

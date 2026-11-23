@@ -11,6 +11,8 @@ from pathlib import Path
 from . import cli, game_launch
 from .asar import HarnessError
 
+PROCESS_INVENTORY_COMMAND = ("/bin/ps", "-axo", "pid=,uid=,comm=")
+
 
 def _steam_process(command):
     lower = command.lower()
@@ -71,7 +73,7 @@ def _private_session(session, home):
 
 
 def _process_inventory(*, timeout=2):
-    return subprocess.run(["/bin/ps", "-axo", "pid=,uid=,comm="],
+    return subprocess.run(PROCESS_INVENTORY_COMMAND,
                           capture_output=True, text=True, check=True, timeout=timeout).stdout
 
 

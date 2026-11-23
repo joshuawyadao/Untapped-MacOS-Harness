@@ -21,8 +21,9 @@ from .supervision_diagnostics import SupervisionDiagnostics, failure_record
 MAX_SECONDS = 8 * 3600
 EVENT_NAMES = controlled.EVENTS | {"main-steam-verified", "main-steam-mismatch"}
 STOP_REASONS = {"GAME_EXIT", "GAME_CRASHED", "TARGET_CONFLICT", "OWNER_STOP"}
-INVENTORY_MAX_ATTEMPTS = 3
+INVENTORY_MAX_ATTEMPTS = 6
 INVENTORY_RETRY_DELAY = 0.25
+INVENTORY_EXTENDED_RETRY_DELAY = 1.0
 RETRY_POLL_INTERVAL = 0.05
 
 
@@ -163,7 +164,8 @@ def supervise(process, attempt, seconds, should_stop=None, *, clock=time.monoton
                 inventory_timeouts = next_count
                 if not retrying:
                     raise
-                retry_due = trace.call("SUPERVISION_CLOCK", lambda: clock() + INVENTORY_RETRY_DELAY)
+                delay = (INVENTORY_RETRY_DELAY if next_count < 3 else INVENTORY_EXTENDED_RETRY_DELAY)
+                retry_due = trace.call("SUPERVISION_CLOCK", lambda: clock() + delay)
                 continue
             if reason is not None:
                 return trace.call("STOP_RESULT_VALIDATE", checked_stop, reason), seen

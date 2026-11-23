@@ -9,6 +9,7 @@ import subprocess
 import time
 
 from .asar import HarnessError
+from .live_inventory import InventoryTimeout, TIMEOUT_PHASES
 
 
 CHECKS = frozenset({
@@ -109,6 +110,10 @@ def failure_record(check, exc):
 
     category = _category(selected)
     result = {"check": check, "category": category}
+    if check == "GAME_PROCESS_INVENTORY" and isinstance(selected, InventoryTimeout):
+        phase = selected.phase
+        if isinstance(phase, str) and phase in TIMEOUT_PHASES:
+            result["phase"] = phase
     if isinstance(selected, OSError):
         try:
             code = selected.errno
@@ -141,6 +146,7 @@ class SupervisionDiagnostics:
         self._inventory_retries = 0
         self._inventory_recoveries = 0
         self._inventory_exhaustions = 0
+        self._last_inventory_timeout_phase = None
 
     def record_inventory_timeout(self, *, retrying: bool) -> bool:
         """Account for a timeout just captured from the inventory check.
@@ -154,6 +160,7 @@ class SupervisionDiagnostics:
                 or self.failure.get("category") != "TIMEOUT"):
             return False
         self._inventory_timeouts = min(_MAX_ATTEMPTS, self._inventory_timeouts + 1)
+        self._last_inventory_timeout_phase = self.failure.get("phase")
         if retrying:
             self._inventory_retries = min(_MAX_ATTEMPTS, self._inventory_retries + 1)
             self.failure = None
@@ -219,6 +226,8 @@ class SupervisionDiagnostics:
                 "recoveries": self._inventory_recoveries,
                 "exhaustions": self._inventory_exhaustions,
             }
+            if self._last_inventory_timeout_phase is not None:
+                result["inventory_retry"]["last_timeout_phase"] = self._last_inventory_timeout_phase
         return result
 
 

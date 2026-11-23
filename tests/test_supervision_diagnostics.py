@@ -1,8 +1,10 @@
 import errno
 import subprocess
 import unittest
+from unittest.mock import Mock
 
 from harness.asar import HarnessError
+from harness.live_inventory import InventoryTimeout
 from harness.supervision_diagnostics import (
     CATEGORIES,
     CHECKS,
@@ -13,6 +15,23 @@ from harness.supervision_diagnostics import (
 
 
 class SupervisionDiagnosticTests(unittest.TestCase):
+    def test_inventory_timeout_phase_survives_recovery_with_allowlisted_data_only(self):
+        diagnostic = SupervisionDiagnostics(clock=lambda: 1.0)
+        error = InventoryTimeout("LEGACY_RESPONSE")
+        error.stdout = "private process listing"
+        with self.assertRaises(InventoryTimeout):
+            diagnostic.call("GAME_PROCESS_INVENTORY", Mock(side_effect=error))
+        self.assertEqual(diagnostic.snapshot()["failure"], {
+            "check": "GAME_PROCESS_INVENTORY", "category": "TIMEOUT", "phase": "LEGACY_RESPONSE",
+        })
+        self.assertTrue(diagnostic.record_inventory_timeout(retrying=True))
+        diagnostic.record_inventory_recovery()
+        snapshot = diagnostic.snapshot()
+        self.assertIsNone(snapshot["failure"])
+        self.assertEqual(snapshot["inventory_retry"]["last_timeout_phase"], "LEGACY_RESPONSE")
+        self.assertNotIn("private process listing", repr(snapshot))
+        self.assertNotIn("phase", failure_record("GAME_PROCESS_INVENTORY", InventoryTimeout("private value")))
+
     def test_nested_failure_keeps_inner_check_and_original_exception(self):
         diagnostic = SupervisionDiagnostics(clock=lambda: 1.0)
         error = PermissionError(errno.EACCES, "private account token", "/secret/path")

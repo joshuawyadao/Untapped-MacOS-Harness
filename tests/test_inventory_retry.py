@@ -56,8 +56,10 @@ class InventoryRetryTests(unittest.TestCase):
             sequence = iter(steps)
             clock = _Clock()
             process = _Companion(clock, (lambda p: on_wait(p, game)) if on_wait else None)
+            attempt_times = []
 
             def inventory():
+                attempt_times.append(clock.now)
                 step = next(sequence, 'match')
                 if isinstance(step, BaseException):
                     raise step
@@ -87,7 +89,8 @@ class InventoryRetryTests(unittest.TestCase):
             game.kill.assert_not_called()
             game.terminate.assert_not_called()
             return SimpleNamespace(reason=reason, error=error, diagnostic=trace.snapshot(),
-                                   attempts=count, waits=process.waits, elapsed=clock.now)
+                                   attempts=count, attempt_times=attempt_times,
+                                   waits=process.waits, elapsed=clock.now)
         finally:
             case.doCleanups()
 
@@ -107,16 +110,29 @@ class InventoryRetryTests(unittest.TestCase):
         self.assertAlmostEqual(result.elapsed, 1.0)
         self.assertNotIn('private-fixture', repr(result.diagnostic))
 
-    def test_three_consecutive_timeouts_exhaust_without_fourth_attempt(self):
-        errors = [self.timeout() for _ in range(4)]
-        result = self.run_session(errors)
-        self.assertIs(result.error, errors[2])
-        self.assertEqual(result.attempts, 3)
-        self.assertAlmostEqual(result.elapsed, .5)
+    def test_six_consecutive_timeouts_exhaust_without_seventh_attempt(self):
+        errors = [self.timeout() for _ in range(7)]
+        result = self.run_session(errors, seconds=5)
+        self.assertIs(result.error, errors[5])
+        self.assertEqual(result.attempts, 6)
+        for observed, expected in zip(result.attempt_times, (0, .25, .5, 1.5, 2.5, 3.5)):
+            self.assertAlmostEqual(observed, expected)
+        self.assertAlmostEqual(result.elapsed, 3.5)
         self.assertEqual(result.diagnostic['failure'],
             {'check': 'GAME_PROCESS_INVENTORY', 'category': 'TIMEOUT'})
         self.assertEqual(result.diagnostic['inventory_retry'],
-            {'timeouts': 3, 'retries_scheduled': 2, 'recoveries': 0, 'exhaustions': 1})
+            {'timeouts': 6, 'retries_scheduled': 5, 'recoveries': 0, 'exhaustions': 1})
+
+    def test_three_timeouts_then_fresh_verified_fourth_attempt_keeps_session_alive(self):
+        result = self.run_session([self.timeout(), self.timeout(), self.timeout(), 'match'], seconds=2)
+        self.assertIsNone(result.error)
+        self.assertEqual(result.reason, 'SESSION_LIMIT_REACHED')
+        self.assertGreaterEqual(result.attempts, 4)
+        for observed, expected in zip(result.attempt_times[:4], (0, .25, .5, 1.5)):
+            self.assertAlmostEqual(observed, expected)
+        self.assertEqual(result.diagnostic['inventory_retry'],
+            {'timeouts': 3, 'retries_scheduled': 3, 'recoveries': 1, 'exhaustions': 0})
+        self.assertIsNone(result.diagnostic['failure'])
 
     def test_budget_resets_only_after_successful_fresh_identity_check(self):
         result = self.run_session([self.timeout(), self.timeout(), 'match',

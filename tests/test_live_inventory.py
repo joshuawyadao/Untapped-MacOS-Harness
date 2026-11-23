@@ -1,14 +1,16 @@
 """Persistent process inventory and native macOS candidate matching."""
 
+import io
 import os
 import platform
 from pathlib import Path
+import socket
 import stat
 import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from harness import live_inventory, reward_probe
 
@@ -40,6 +42,45 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(inventory.candidates(), [(2, os.getuid(), "/copy/Slay the Spire 2", False)])
         self.assertEqual(inventory.process.pid, worker_pid)
 
+    def test_stalled_worker_reap_does_not_block_fresh_alternate_scan(self):
+        inventory = live_inventory.LiveInventory(self.helper)
+        worker = inventory.process = Mock()
+        worker.poll.return_value = None
+        worker.wait.side_effect = AssertionError("The timed-out scan waited for child cleanup")
+        inventory.channel = Mock()
+        inventory.channel.recv.side_effect = socket.timeout
+        fresh = f"7 {os.getuid()} /fresh/Slay the Spire 2\n"
+        with patch.object(inventory, "_legacy_listing", return_value=fresh, create=True) as legacy:
+            with self.assertRaises(subprocess.TimeoutExpired) as error:
+                inventory.candidates()
+            self.assertEqual(error.exception.phase, "NATIVE_RESPONSE")
+            worker.kill.assert_called_once()
+            worker.wait.assert_not_called()
+            self.assertEqual(inventory.candidates(), [(7, os.getuid(), "/fresh/Slay the Spire 2", False)])
+            legacy.assert_called_once()
+            with self.assertRaises(live_inventory.InventoryTimeout) as blocked:
+                inventory.candidates()
+            self.assertEqual(blocked.exception.phase, "NATIVE_REAP")
+            worker.wait.assert_not_called()
+
+    def test_timed_out_legacy_scan_stops_without_waiting_and_retries_native(self):
+        inventory = live_inventory.LiveInventory(self.helper)
+        inventory._use_legacy = True
+        worker = Mock(returncode=None, stdout=io.StringIO())
+        worker.poll.return_value = None
+        worker.communicate.side_effect = subprocess.TimeoutExpired("legacy fixture", 2)
+        payload = f"7 {os.getuid()} /fresh/Slay the Spire 2\n".encode()
+        with patch.object(live_inventory.subprocess, "Popen", return_value=worker), \
+             patch.object(inventory, "_exchange", return_value=(payload, 0)) as native:
+            with self.assertRaises(live_inventory.InventoryTimeout) as error:
+                inventory.candidates()
+            self.assertEqual(error.exception.phase, "LEGACY_RESPONSE")
+            worker.kill.assert_called_once()
+            worker.wait.assert_not_called()
+            self.assertTrue(worker.stdout.closed)
+            self.assertEqual(inventory.candidates(), [(7, os.getuid(), "/fresh/Slay the Spire 2", False)])
+            native.assert_called_once()
+
     def test_dead_worker_and_malformed_output_fail_and_can_restart(self):
         for body, error in (
             ("import sys\nsys.exit(1)\n", subprocess.CalledProcessError),
@@ -63,11 +104,10 @@ class WorkerTests(unittest.TestCase):
         inventory = live_inventory.LiveInventory(helper)
         self.addCleanup(inventory.close)
         current = f"2 {os.getuid()} /current/Slay the Spire 2\n"
-        with patch.object(reward_probe, "_process_inventory", return_value=current) as legacy:
+        command = (sys.executable, "-c", f"import sys; sys.stdout.write({current!r})")
+        with patch.object(reward_probe, "PROCESS_INVENTORY_COMMAND", command):
             self.assertEqual(inventory.candidates(),
                              [(2, os.getuid(), "/current/Slay the Spire 2", False)])
-        legacy.assert_called_once()
-        self.assertLessEqual(legacy.call_args.kwargs["timeout"], live_inventory.TIMEOUT)
 
     def test_timed_out_worker_is_reaped_then_next_request_uses_a_new_worker(self):
         marker = self.root / "first-request"
@@ -83,6 +123,8 @@ class WorkerTests(unittest.TestCase):
         )
         inventory = live_inventory.LiveInventory(helper)
         self.addCleanup(inventory.close)
+        inventory._start()
+        original = inventory.process
         with patch.object(live_inventory, "TIMEOUT", 0.5):
             with self.assertRaises(subprocess.TimeoutExpired) as error:
                 inventory.candidates()
@@ -90,7 +132,11 @@ class WorkerTests(unittest.TestCase):
             self.assertTrue(marker.exists())
             self.assertIsNone(inventory.process)
             self.assertIsNone(inventory.channel)
+            original.wait(timeout=5)
+            with patch.object(inventory, "_legacy_listing", return_value=""):
+                self.assertEqual(inventory.candidates(), [])
             self.assertEqual(inventory.candidates(), [(7, os.getuid(), "/copy/Slay the Spire 2", False)])
+            self.assertIsNot(inventory.process, original)
 
 
 @unittest.skipUnless(platform.system() == "Darwin" and Path("/usr/bin/clang").is_file(),
